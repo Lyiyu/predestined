@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
-<title>离线媒体库 v3.1</title>
+<title>离线媒体库 v3.2</title>
 <style>
 *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 :root{
@@ -168,6 +168,52 @@ body{font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei
 .dl-item .dl-progress{font-size:11px;color:var(--sub)}
 .dl-item .dl-bar{height:4px;border-radius:2px;background:#e0e0e0;margin-top:4px;overflow:hidden}
 .dl-item .dl-bar i{display:block;height:100%;background:var(--primary);transition:width .3s}
+/* 去重面板 */
+.dup-overlay{position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:400;display:none;align-items:flex-end;justify-content:center}
+.dup-overlay.show{display:flex}
+.dup-panel{background:#fff;width:100%;max-width:640px;max-height:85vh;border-radius:18px 18px 0 0;display:flex;flex-direction:column;animation:slideUp .25s ease}
+.dup-header{display:flex;align-items:center;gap:10px;padding:16px;border-bottom:1px solid var(--line)}
+.dup-header h2{font-size:17px;font-weight:700;flex:1}
+.dup-header .close{font-size:26px;color:#999;cursor:pointer;width:32px;height:32px;display:flex;align-items:center;justify-content:center;flex:0 0 auto}
+.dup-body{overflow-y:auto;padding:14px;flex:1;-webkit-overflow-scrolling:touch}
+.dup-group{background:#f8f9fc;border:1px solid var(--line);border-radius:12px;padding:14px;margin-bottom:12px}
+.dup-group h4{font-size:14px;font-weight:700;margin-bottom:8px;display:flex;align-items:center;gap:6px}
+.dup-pair{display:flex;gap:10px;align-items:center;margin-bottom:10px;padding:8px;border-radius:10px;background:#fff;border:1px solid var(--line)}
+.dup-pair .dup-thumb{width:60px;height:60px;border-radius:8px;overflow:hidden;flex:0 0 auto;background:#dfe1ea}
+.dup-pair .dup-thumb img{width:100%;height:100%;object-fit:cover}
+.dup-pair .dup-info{flex:1;min-width:0}
+.dup-pair .dup-name{font-size:12px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.dup-pair .dup-meta{font-size:11px;color:var(--sub);margin-top:2px}
+.dup-pair .dup-act{display:flex;flex-direction:column;gap:4px;flex:0 0 auto}
+.dup-pair .dup-btn{padding:6px 10px;border:none;border-radius:8px;font-size:12px;cursor:pointer;white-space:nowrap}
+.dup-pair .dup-btn.keep{background:var(--ok);color:#fff}
+.dup-pair .dup-btn.del{background:#fecdd3;color:var(--danger)}
+/* 确认弹窗 */
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:450;display:none;align-items:center;justify-content:center}
+.modal-overlay.show{display:flex}
+.modal-box{background:#fff;border-radius:16px;width:90%;max-width:420px;max-height:80vh;overflow-y:auto;padding:20px;box-shadow:0 8px 32px rgba(0,0,0,.2)}
+.modal-box h3{font-size:16px;font-weight:700;margin-bottom:12px}
+.modal-box .modal-list{max-height:300px;overflow-y:auto;margin-bottom:14px}
+.modal-box .modal-item{display:flex;align-items:center;gap:10px;padding:10px;border-radius:10px;background:#f8f9fc;margin-bottom:6px;cursor:pointer}
+.modal-box .modal-item:hover{background:#eef1ff}
+.modal-box .modal-item.selected{background:#eef1ff;border:1.5px solid var(--primary)}
+.modal-box .modal-item input[type=checkbox]{flex:0 0 auto;width:20px;height:20px}
+.modal-box .modal-item .mi-name{flex:1;font-size:14px;font-weight:600}
+.modal-box .modal-item .mi-count{font-size:12px;color:var(--sub)}
+.modal-box .modal-actions{display:flex;gap:10px}
+.modal-box .modal-actions button{flex:1;padding:12px;border:none;border-radius:12px;font-size:15px;font-weight:700;cursor:pointer}
+.modal-box .modal-actions .btn-cancel{background:#f0f1f7;color:#555}
+.modal-box .modal-actions .btn-ok{background:var(--primary);color:#fff}
+/* 子文件夹切换 */
+.subdir-bar{display:flex;gap:6px;margin:8px 0 4px;flex-wrap:wrap;align-items:center}
+.subdir-bar .subdir-label{font-size:12px;color:var(--sub);flex:0 0 auto}
+.subdir-bar .subdir-chip{padding:5px 12px;border-radius:20px;background:#f0f1f7;color:#555;font-size:12px;cursor:pointer;border:1.5px solid transparent;white-space:nowrap}
+.subdir-bar .subdir-chip.on{background:var(--primary);color:#fff;border-color:var(--primary);font-weight:600}
+/* 新增标签按钮 */
+.tag-add-btn{padding:8px 14px;border-radius:20px;background:rgba(255,255,255,.05);border:2px dashed rgba(255,255,255,.3);color:#ccc;font-size:13px;cursor:pointer;transition:.15s}
+.tag-add-btn:active{transform:scale(.92)}
+.tag-add-btn input{background:transparent;border:none;color:#fff;font-size:13px;outline:none;width:70px}
+.tag-add-btn input::placeholder{color:rgba(255,255,255,.4)}
 .toast{position:fixed;top:calc(60px + var(--safe-t));left:50%;transform:translateX(-50%);background:rgba(0,0,0,.85);color:#fff;padding:10px 18px;border-radius:9px;font-size:13px;z-index:600;opacity:0;transition:.3s;pointer-events:none;max-width:80%;text-align:center}
 .toast.show{opacity:1}
 @media(min-width:700px){
@@ -181,7 +227,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei
 
 <div class="topbar">
   <h1>📁 离线媒体库</h1>
-  <span class="tag">v3.1</span>
+  <span class="tag">v3.2</span>
 </div>
 
 <div class="progress-bar" id="progressBar"><i id="progressFill"></i></div>
@@ -217,8 +263,10 @@ body{font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei
       <input type="text" id="libSearch" placeholder="搜索文件名" oninput="renderLib()">
       <span class="count-tip" id="libCount"></span>
       <button class="btn-sm" onclick="selectAllFiltered()">☑️全选</button>
+      <button class="btn-sm" onclick="findDuplicates()" style="background:#fff;color:var(--primary);border-color:var(--primary)">🔍 查找重复</button>
       <button class="btn-sm" onclick="organizeByPerson()" style="background:var(--primary);color:#fff;border-color:var(--primary)">📁 按人名整理</button>
     </div>
+    <div class="subdir-bar" id="subdirBar" style="display:none"></div>
     <div class="tag-chips light" id="libTagChips" style="margin-bottom:10px"></div>
     <div class="grid" id="libGrid"></div>
     <div class="empty" id="libEmpty" style="display:none"><div class="icon">🗂️</div>没有匹配的文件<br><small>选择文件夹后，所有文件会显示在这里</small></div>
@@ -353,6 +401,9 @@ body{font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei
     <div class="name-chips" id="nameChips"></div>
     <div class="step-label">② 选择标签（可多选）</div>
     <div class="tag-chips" id="tagChips"></div>
+    <div style="margin-top:8px">
+      <span class="tag-add-btn" id="tagAddBtn" onclick="showTagAddInput()">➕ 新增标签</span>
+    </div>
     <div class="step-label">③ 设置日期</div>
     <div class="date-row">
       <input type="date" id="detailDate">
@@ -390,10 +441,36 @@ body{font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei
 
 <div class="toast" id="toast"></div>
 
+<!-- 去重面板 -->
+<div class="dup-overlay" id="dupOverlay" onclick="closeDupOverlay(event)">
+  <div class="dup-panel" onclick="event.stopPropagation()">
+    <div class="dup-header">
+      <h2>🔍 查找重复图片</h2>
+      <span class="close" onclick="closeDupOverlay()">×</span>
+    </div>
+    <div class="dup-body" id="dupBody">
+      <div style="text-align:center;color:var(--sub);padding:40px 20px">点击「查找重复」按钮开始检测<br><small>按文件大小匹配，找出疑似重复的图片</small></div>
+    </div>
+  </div>
+</div>
+
+<!-- 确认弹窗（按人名整理） -->
+<div class="modal-overlay" id="modalOverlay">
+  <div class="modal-box">
+    <h3 id="modalTitle">选择要整理的人名</h3>
+    <div style="font-size:13px;color:var(--sub);margin-bottom:10px" id="modalDesc">勾选需要创建文件夹并移动的人名，未勾选的将保留在原位置。</div>
+    <div class="modal-list" id="modalList"></div>
+    <div class="modal-actions">
+      <button class="btn-cancel" onclick="closeModal()">取消</button>
+      <button class="btn-ok" id="modalConfirmBtn" onclick="modalConfirm()">确认移动</button>
+    </div>
+  </div>
+</div>
+
 <script>
 // ==================== 状态 ====================
-const VERSION='3.1';
-const DB_NAME='offline_media_lib_v31',DB_VERSION=4;
+const VERSION='3.2';
+const DB_NAME='offline_media_lib_v32',DB_VERSION=4;
 const STORE_MEDIA='media',STORE_THUMB='thumbs',STORE_SESSION='session';
 let cfg={rule:'person_seq',tags:['长靴','多人','常服'],dateFormat:'YYYYMMDD',compress:true,maxCount:2000,showHidden:false,dlServer:'http://localhost:8766',dlSubdir:'下载'};
 let curDir=null,curDirName='';
@@ -512,26 +589,8 @@ async function toggleQuotaDetail(){
 function showProgress(pct){const b=document.getElementById('progressBar');b.classList.add('show');document.getElementById('progressFill').style.width=pct+'%'}
 function hideProgress(){document.getElementById('progressBar').classList.remove('show');document.getElementById('progressFill').style.width='0%'}
 
-// ==================== 目录选择（防重入） ====================
-async function pickDir(){
-  if(isPickingDir)return;
-  isPickingDir=true;
-  try{
-    if(!window.showDirectoryPicker){showToast('请使用 Chrome 浏览器');return}
-    curDir=await window.showDirectoryPicker({mode:'readwrite'});
-    curDirName=curDir.name;
-    document.getElementById('dirName').textContent='📂 '+curDir.name;
-    document.getElementById('dirCard').style.display='block';
-    document.getElementById('btnPickDir').style.display='none';
-    document.getElementById('libArea').style.display='block';
-    await rescanDir(false);
-  }catch(e){
-    if(e&&e.name==='AbortError')return;
-    showToast('无法访问文件夹：'+(e.message||e));
-  }finally{
-    isPickingDir=false;
-  }
-}
+// ==================== 目录选择（防重入，v3.2 版本见文件末尾） ====================
+// pickDir 已移至文件末尾 v3.2 区域
 
 // 递归扫描
 async function walkDir(handle,pathArr,out){
@@ -599,20 +658,7 @@ async function saveSession(){
   await dbSaveSession({dirName:curDirName,items:itemsData,ts:Date.now()});
 }
 
-// 恢复会话
-async function restoreSession(){
-  const sess=await dbLoadSession();
-  if(!sess||!sess.dirName||!sess.items)return false;
-  items=sess.items.map(it=>({...it,handle:null}));
-  curDirName=sess.dirName;
-  syncTaggedStatus();
-  document.getElementById('dirName').textContent='📂 '+curDirName+'（需重新授权）';
-  document.getElementById('dirCard').style.display='block';
-  document.getElementById('btnPickDir').style.display='none';
-  document.getElementById('libArea').style.display='block';
-  renderLib();
-  return true;
-}
+// 恢复会话（v3.2 版本见文件末尾，支持 Chrome 授权持久化）
 
 // ==================== 工具 ====================
 function escapeHtml(s){return String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
@@ -620,14 +666,7 @@ function fmtSize(b){if(!b)return'?';if(b<1024)return b+' B';if(b<1048576)return(
 function fmtDate(d){const y=d.getFullYear(),m=String(d.getMonth()+1).padStart(2,'0'),dd=String(d.getDate()).padStart(2,'0');const f=cfg.dateFormat||'YYYYMMDD';if(f==='YYYY-MM-DD')return y+'-'+m+'-'+dd;if(f==='YYYYMM')return ''+y+m;return ''+y+m+dd}
 function getExt(name){const i=name.lastIndexOf('.');return i>=0?name.slice(i):''}
 function getBaseName(name){const i=name.lastIndexOf('.');return i>=0?name.slice(0,i):name}
-function buildName(person,tags,dateStr,idx){
-  const rule=cfg.rule||'person_seq';const tagStr=(tags||[]).sort().join('_');let base;
-  if(rule==='person_seq')base=person;
-  else if(rule==='person')base=person;
-  else if(rule==='person_date')base=person+'_'+dateStr;
-  else base=tagStr?person+'_'+tagStr+'_'+dateStr:person+'_'+dateStr;
-  if(idx)base+='_'+idx;return base;
-}
+// buildName 已移至文件末尾 v3.2 区域（支持标签全量存储：文件名仅含首个标签）
 function showToast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');clearTimeout(window._toastTimer);window._toastTimer=setTimeout(()=>t.classList.remove('show'),3000)}
 
 // ==================== 缩略图懒加载 ====================
@@ -684,57 +723,7 @@ async function loadThumbForCell(el,id){
   }catch(e){el.textContent='🖼'}
 }
 
-// ==================== 渲染：媒体库统一网格 ====================
-function renderLib(){
-  const grid=document.getElementById('libGrid');
-  const empty=document.getElementById('libEmpty');
-  const person=document.getElementById('libPerson').value;
-  const type=document.getElementById('libType').value;
-  const sortMode=document.getElementById('libSort').value;
-  const q=document.getElementById('libSearch').value.toLowerCase();
-  const persons=[...new Set(items.map(i=>i.person).filter(Boolean))].sort();
-  const allTags=[...new Set(items.flatMap(i=>i.tags||[]).filter(Boolean))].sort();
-  const curPerson=person||document.getElementById('libPerson').value;
-  document.getElementById('libPerson').innerHTML='<option value="">全部人名</option>'+persons.map(p=>'<option value="'+escapeHtml(p)+'"'+(curPerson===p?' selected':'')+'>'+escapeHtml(p)+'</option>').join('');
-  const tagChips=document.getElementById('libTagChips');
-  tagChips.innerHTML=allTags.map(t=>'<span class="tchip '+(libSelectedTags.has(t)?'on':'')+'" onclick="toggleLibTag(\''+escapeHtml(t)+'\')">'+escapeHtml(t)+'</span>').join('');
-  const selectedTagArr=[...libSelectedTags];
-  let list=items.filter(p=>{
-    if(type==='tagged'&&!p.renamed)return false;
-    if(type==='untagged'&&p.renamed)return false;
-    if((type==='image'||type==='video')&&p.type!==type)return false;
-    if(person&&p.person!==person)return false;
-    if(selectedTagArr.length>0){const itemTags=p.tags||[];if(!selectedTagArr.every(t=>itemTags.includes(t)))return false}
-    if(q&&!p.name.toLowerCase().includes(q))return false;
-    return true;
-  });
-  if(sortMode==='date')list.sort((a,b)=>(b.lastModified||0)-(a.lastModified||0));
-  else if(sortMode==='size')list.sort((a,b)=>(b.size||0)-(a.size||0));
-  else if(sortMode==='saved')list.sort((a,b)=>(b.savedAt||0)-(a.savedAt||0));
-  else list.sort((a,b)=>a.name.localeCompare(b.name));
-  libFiltered=list;
-  document.getElementById('libCount').textContent='共 '+list.length+' 项';
-  empty.style.display=list.length?'none':'block';
-  const selIds=new Set(selected);
-  grid.innerHTML=list.map(p=>{
-    const isSel=selIds.has(p.id);
-    const doneMark=p.renamed?'<span class="done-mark">✓已标记</span>':'';
-    const typeMark=p.hidden?'<span class="hidden-mark">隐藏</span>':(p.type==='video'?'<span class="badge">▶</span>':'');
-    const tagStr=(p.tags&&p.tags.length)?'·'+escapeHtml(p.tags.join('_')):'';
-    const personStr=p.person?'<b>'+escapeHtml(p.person)+'</b>':'';
-    return '<div class="cell" data-id="'+p.id+'" onclick="onCellClick(\''+p.id+'\')">'+
-      '<div class="media" data-id="'+p.id+'" style="display:flex;align-items:center;justify-content:center;color:#bbb;font-size:20px">···</div>'+
-      doneMark+typeMark+
-      '<div class="sel '+(isSel?'on':'')+'" onclick="event.stopPropagation();toggleSel(\''+p.id+'\')">'+(isSel?'✓':'')+'</div>'+
-      '<div class="name">'+(personStr||escapeHtml(p.name))+tagStr+'</div>'+
-    '</div>';
-  }).join('');
-  initObserver();
-  grid.querySelectorAll('.media[data-id]').forEach(el=>ioObserver.observe(el));
-  updateActionBar();
-  const taggedCount=items.filter(i=>i.renamed).length;
-  document.getElementById('libStats').innerHTML='<div class="stat"><div class="num">'+items.length+'</div><div class="lbl">总文件</div></div><div class="stat"><div class="num">'+taggedCount+'</div><div class="lbl">已标记</div></div><div class="stat"><div class="num">'+(items.length-taggedCount)+'</div><div class="lbl">未标记</div></div>';
-}
+// ==================== 渲染：媒体库统一网格（v3.2 版本见文件末尾） ====================
 function toggleLibTag(t){if(libSelectedTags.has(t))libSelectedTags.delete(t);else libSelectedTags.add(t);renderLib()}
 function onCellClick(id){openDetail(id)}
 function toggleSel(id){if(selected.includes(id))selected=selected.filter(x=>x!==id);else selected.push(id);renderLib()}
@@ -798,57 +787,10 @@ function renderTagChips(){
   el.innerHTML=(cfg.tags||[]).map(t=>'<span class="tchip '+(detailTags.has(t)?'on':'')+'" onclick="toggleDetailTag(\''+escapeHtml(t)+'\')">'+escapeHtml(t)+'</span>').join('');
 }
 function toggleDetailTag(t){if(detailTags.has(t))detailTags.delete(t);else detailTags.add(t);renderTagChips();updatePreviewName()}
-function updatePreviewName(){
-  const item=items[detailIdx];if(!item)return;
-  const tags=[...detailTags].sort();
-  const ext=getExt(item.name);
-  const base=buildName(detailPerson,tags,detailDateStr,0);
-  const previewExt=getExt(item.name);
-  document.getElementById('previewName').textContent=(cfg.rule==='person_seq'?base+'_1':base)+previewExt;
-  document.getElementById('detailConfirm').disabled=!detailPerson;
-}
+// updatePreviewName 和 detailConfirm 已移至文件末尾 v3.2 区域
 document.getElementById('detailDate').addEventListener('input',function(){const d=this.value?new Date(this.value):new Date();detailDateStr=fmtDate(d);updatePreviewName()});
 function closeDetail(){document.getElementById('detailOverlay').classList.remove('show');detailIdx=-1}
-async function detailConfirm(){
-  if(!detailPerson){showToast('请先选择或输入人名');return}
-  const item=items[detailIdx];if(!item)return;
-  // 更新 tags/person 在内存中（即使没有 handle 也能标记）
-  item.tags=[...detailTags].sort();
-  item.person=detailPerson;
-  item.renamed=true;
-  item.savedAt=Date.now();
-  if(!recentNames.includes(detailPerson)){recentNames.unshift(detailPerson);if(recentNames.length>10)recentNames.pop();localStorage.setItem('recent_names_v31',JSON.stringify(recentNames))}
-  // 如果有 handle，执行实际重命名
-  if(item.handle&&curDir){
-    const tags=[...detailTags].sort();
-    const ext=getExt(item.name);
-    const base=buildName(detailPerson,tags,detailDateStr,0);
-    let newName;
-    if(cfg.rule==='person_seq'){let n=1;while(true){newName=base+'_'+n+ext;try{await curDir.getFileHandle(newName,{create:false});n++}catch(e){break}}}
-    else{newName=base+ext;try{await curDir.getFileHandle(newName,{create:false});let n=1;while(true){newName=base+'_'+n+ext;try{await curDir.getFileHandle(newName,{create:false});n++}catch(e){break}}}catch(e){}}
-    try{
-      await item.handle.move(newName);
-      thumbCache.delete(item.name);
-      item.name=newName;
-      showToast('已重命名：'+newName);
-    }catch(e){showToast('重命名失败，标签已保存：'+(e.message||e))}
-  }else{
-    showToast('标签已保存（需重新授权文件夹才能重命名）');
-  }
-  // 保存到媒体库记录
-  let img='',thumb='';
-  if(item.type==='image'&&cfg.compress&&item.handle){
-    try{let newHandle=item.handle;try{newHandle=await curDir.getFileHandle(item.name)}catch(e){}const f=await newHandle.getFile();const c=await compressImage(f,1280);img=c.img;thumb=c.thumb}catch(e){}
-  }
-  const libRec={id:'lib'+Date.now()+'_'+Math.random().toString(36).slice(2,6),name:item.name,person:detailPerson,tags:item.tags,date:detailDateStr,type:item.type,size:item.size,img,thumb,origPath:item.path,renamed:true,savedAt:item.savedAt};
-  await dbSaveMedia([libRec]);
-  // 更新或添加到 libItems
-  const existIdx=libItems.findIndex(i=>i.name===item.name);
-  if(existIdx>=0)libItems[existIdx]=libRec;else libItems.push(libRec);
-  await saveSession();
-  closeDetail();
-  renderLib();updateQuota();renderSetStats();
-}
+// detailConfirm 已移至文件末尾 v3.2 区域
 function detailNext(){
   closeDetail();
   const nextIdx=detailIdx+1;
@@ -907,7 +849,7 @@ async function startDownload(){
 function exportJson(){
   const data=libItems.map(i=>({name:i.name,person:i.person,tags:i.tags||[],date:i.date,type:i.type,size:i.size,origPath:i.origPath||'',savedAt:i.savedAt||0}));
   const blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json'});
-  const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='media_library_v30.json';a.click();
+  const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='media_library_v32.json';a.click();
   showToast('已导出 '+data.length+' 条记录');
 }
 async function importJson(event){
@@ -928,7 +870,7 @@ async function importJson(event){
 }
 
 // ==================== 设置 ====================
-function loadSettings(){try{const s=localStorage.getItem('ff_settings_v31');if(s)cfg=Object.assign(cfg,JSON.parse(s));const rn=localStorage.getItem('recent_names_v31');if(rn)recentNames=JSON.parse(rn)}catch(e){}}
+function loadSettings(){try{const s=localStorage.getItem('ff_settings_v32');if(s)cfg=Object.assign(cfg,JSON.parse(s));const rn=localStorage.getItem('recent_names_v32');if(rn)recentNames=JSON.parse(rn)}catch(e){}}
 function saveSettings(){
   const tags=document.getElementById('setTags').value.split(',').map(s=>s.trim()).filter(Boolean);
   const maxCount=parseInt(document.getElementById('setMaxCount').value)||2000;
@@ -938,7 +880,7 @@ function saveSettings(){
   cfg.maxCount=Math.max(50,Math.min(5000,maxCount));
   cfg.dlServer=document.getElementById('setDlServer').value.trim();
   cfg.dlSubdir=document.getElementById('setDlSubdir').value.trim();
-  localStorage.setItem('ff_settings_v31',JSON.stringify(cfg));
+  localStorage.setItem('ff_settings_v32',JSON.stringify(cfg));
   document.getElementById('setMaxCountVal').textContent=cfg.maxCount;
 }
 function loadSettingsForm(){
@@ -963,61 +905,7 @@ function renderSetStats(){
 async function clearAll(){if(!confirm('确认清空全部标签记录？此操作不可恢复'))return;await dbDeleteMedia();libItems=[];syncTaggedStatus();renderLib();renderSetStats();updateQuota();if(quotaDetailShown)toggleQuotaDetail(),toggleQuotaDetail();showToast('已清空标签记录')}
 async function clearCache(){if(!confirm('确认清空缩略图缓存？下次打开会重新生成'))return;await dbClearThumbs();thumbCache.clear();updateQuota();if(quotaDetailShown)toggleQuotaDetail(),toggleQuotaDetail();showToast('已清空缩略图缓存');renderLib()}
 
-// ==================== 按人名整理 ====================
-async function organizeByPerson(){
-  if(!curDir){showToast('请先选择文件夹');return}
-  const tagged=items.filter(i=>i.renamed&&i.person&&i.handle);
-  if(!tagged.length){showToast('没有已标记人名的文件可整理');return}
-  const persons=[...new Set(tagged.map(i=>i.person))];
-  if(!confirm('将 '+tagged.length+' 个文件按 '+persons.length+' 个人名创建子文件夹并移动？\\n\\n人名：'+persons.join('、')+'\\n\\n⚠️ 此操作会移动文件位置（不改名），移动后自动重新扫描。'))return;
-  showProgress(5);
-  let ok=0,fail=0,skip=0;
-  // 预创建人名文件夹
-  const dirCache={};
-  for(const p of persons){
-    try{dirCache[p]=await curDir.getDirectoryHandle(p,{create:true})}catch(e){showToast('创建文件夹失败：'+p);return}
-  }
-  showProgress(15);
-  for(let i=0;i<tagged.length;i++){
-    const item=tagged[i];
-    const dir=dirCache[item.person];
-    try{
-      // 尝试跨目录移动：handle.move(dir, name)
-      // 若文件已经在目标文件夹内则跳过
-      const pathParts=(item.path||'').split('/');
-      const currentDir=pathParts.length>1?pathParts[pathParts.length-2]:null;
-      if(currentDir===item.person){skip++;showProgress(15+Math.round((i+1)/tagged.length*80));continue}
-      await item.handle.move(dir,item.name);
-      // 移动成功后更新路径
-      item.path=(item.path||'').replace(/^[^\/]+\/?/,item.person+'/');
-      ok++;
-    }catch(e){
-      // 部分浏览器不支持 move(dir,name)，降级为复制+删除
-      try{
-        const file=await item.handle.getFile();
-        const newHandle=await dir.getFileHandle(item.name,{create:true});
-        const w=await newHandle.createWritable();
-        await w.write(file);
-        await w.close();
-        await item.handle.remove();
-        item.path=(item.path||'').replace(/^[^\/]+\/?/,item.person+'/');
-        ok++;
-      }catch(e2){
-        console.error('移动失败',item.name,e,e2);
-        fail++;
-      }
-    }
-    showProgress(15+Math.round((i+1)/tagged.length*80));
-  }
-  selected=[];
-  await saveSession();
-  showProgress(95);
-  // 重新扫描
-  await rescanDir(true);
-  showProgress(100);
-  setTimeout(hideProgress,500);
-  showToast('整理完成：移动 '+ok+' 个'+(skip?'，已在目标位置 '+skip+' 个':'')+(fail?'，失败 '+fail+' 个':''));
-}
+// ==================== 按人名整理（v3.2 版本见文件末尾，支持人工确认） ====================
 
 // ==================== 批量工具 ====================
 function getSelectedItems(){return selected.map(id=>items.find(x=>x.id===id)).filter(Boolean)}
@@ -1060,4 +948,464 @@ function switchTab(t){
 
 // 媒体库加载
 async function loadLibrary(){libItems=await dbLoadMedia();syncTaggedStatus();renderLib()}
+
+// ==================== v3.2 功能 ====================
+
+// ---- 功能1: 图片一键去重（按文件大小匹配） ----
+let dupPairs=[];
+async function findDuplicates(){
+  const imgs=items.filter(i=>i.type==='image'&&i.size>0);
+  if(imgs.length<2){showToast('图片数量不足');return}
+  // 按文件大小分组
+  const sizeMap={};
+  imgs.forEach(i=>{
+    const s=i.size;
+    if(!sizeMap[s])sizeMap[s]=[];
+    sizeMap[s].push(i);
+  });
+  // 找出大小相同的多张图片
+  dupPairs=[];
+  Object.keys(sizeMap).forEach(s=>{
+    if(sizeMap[s].length>=2)dupPairs.push({size:parseInt(s),files:sizeMap[s]});
+  });
+  if(!dupPairs.length){showToast('未发现大小相同的图片');return}
+  // 渲染去重面板
+  const body=document.getElementById('dupBody');
+  let totalDups=dupPairs.reduce((a,b)=>a+b.files.length,0);
+  body.innerHTML='<div style="font-size:13px;color:var(--sub);margin-bottom:12px">发现 '+dupPairs.length+' 组大小相同的图片（共 '+totalDups+' 张），请逐组选择保留哪张，删除其余。</div>';
+  dupPairs.forEach((group,gi)=>{
+    const div=document.createElement('div');
+    div.className='dup-group';
+    div.innerHTML='<h4>📷 第'+(gi+1)+'组 · '+fmtSize(group.size)+' · '+group.files.length+'张</h4>';
+    group.files.forEach((f,fi)=>{
+      const pair=document.createElement('div');
+      pair.className='dup-pair';
+      pair.innerHTML='<div class="dup-thumb" id="dupThumb_'+gi+'_'+fi+'">···</div><div class="dup-info"><div class="dup-name">'+escapeHtml(f.name)+'</div><div class="dup-meta">'+fmtSize(f.size)+' · '+(f.path||'')+'</div></div><div class="dup-act"><button class="dup-btn keep" onclick="dupSelect('+gi+','+fi+')">保留</button><button class="dup-btn del" onclick="dupDelete('+gi+','+fi+')">删除</button></div>';
+      div.appendChild(pair);
+      // 异步加载缩略图
+      loadDupThumb(f,gi,fi);
+    });
+    body.appendChild(div);
+  });
+  document.getElementById('dupOverlay').classList.add('show');
+}
+async function loadDupThumb(item,gi,fi){
+  const el=document.getElementById('dupThumb_'+gi+'_'+fi);
+  if(!el||!item.handle)return;
+  try{
+    const file=await item.handle.getFile();
+    const url=URL.createObjectURL(file);
+    const img=new Image();
+    img.onload=()=>{el.innerHTML='<img src="'+url+'">';};
+    img.onerror=()=>{el.textContent='🖼'};
+    img.src=url;
+  }catch(e){el.textContent='🖼'}
+}
+async function dupDelete(gi,fi){
+  const file=dupPairs[gi].files[fi];
+  if(!file.handle){showToast('无文件权限，需重新授权文件夹');return}
+  if(!confirm('确认删除「'+file.name+'」？\n文件大小：'+fmtSize(file.size)+'\n此操作不可恢复！'))return;
+  try{
+    await file.handle.remove();
+    // 从 items 中移除
+    items=items.filter(i=>i.id!==file.id);
+    thumbCache.delete(file.name);
+    await saveSession();
+    renderLib();
+    showToast('已删除：'+file.name);
+    // 关闭并重新打开去重面板以更新列表
+    closeDupOverlay();
+    findDuplicates();
+  }catch(e){showToast('删除失败：'+(e.message||e))}
+}
+function dupSelect(gi,fi){
+  showToast('已选择保留：'+dupPairs[gi].files[fi].name);
+}
+function closeDupOverlay(e){if(e&&e.target!==e.currentTarget)return;document.getElementById('dupOverlay').classList.remove('show')}
+
+// ---- 功能2: 详情页标签新增按钮 ----
+function showTagAddInput(){
+  const btn=document.getElementById('tagAddBtn');
+  btn.innerHTML='<input type="text" id="newTagInput" placeholder="输入标签名" onkeydown="if(event.key===\'Enter\')addNewTag()" onblur="addNewTag()">';
+  setTimeout(()=>{const inp=document.getElementById('newTagInput');if(inp)inp.focus()},50);
+}
+function addNewTag(){
+  const inp=document.getElementById('newTagInput');
+  if(!inp)return;
+  const tag=inp.value.trim();
+  if(!tag){restoreTagAddBtn();return}
+  // 添加到标签列表
+  if(!cfg.tags.includes(tag)){
+    cfg.tags.push(tag);
+    // 同步到设置页
+    document.getElementById('setTags').value=cfg.tags.join(',');
+    saveSettings();
+  }
+  // 选中该标签
+  detailTags.add(tag);
+  restoreTagAddBtn();
+  renderTagChips();
+  updatePreviewName();
+  showToast('已添加标签：'+tag);
+}
+function restoreTagAddBtn(){
+  document.getElementById('tagAddBtn').innerHTML='➕ 新增标签';
+}
+
+// ---- 功能3: Chrome授权持久化（IDB存储句柄） ----
+// 注意：FileSystemDirectoryHandle 可以通过 IndexedDB 持久化存储
+// 刷新后从 IDB 恢复句柄，无需重新授权（Chrome 86+）
+async function saveDirHandle(handle){
+  try{
+    const db=await openDB();
+    return new Promise((res)=>{
+      // 使用一个单独的 key 存储 handle
+      const tx=db.transaction(STORE_SESSION,'readwrite');
+      tx.objectStore(STORE_SESSION).put({k:'dirHandle',handle});
+      tx.oncomplete=()=>res(true);
+      tx.onerror=()=>res(false);
+    });
+  }catch(e){console.warn('saveDirHandle failed',e)}
+}
+async function loadDirHandle(){
+  try{
+    const db=await openDB();
+    return new Promise((res)=>{
+      const req=db.transaction(STORE_SESSION).objectStore(STORE_SESSION).get('dirHandle');
+      req.onsuccess=()=>res(req.result?req.result.handle:null);
+      req.onerror=()=>res(null);
+    });
+  }catch(e){return null}
+}
+
+// ---- 功能4: 标签全量JSON存储 ----
+// buildName 只使用第一个标签写入文件名，其余标签存入 libItems 的 tags 数组
+// 修改 buildName 函数：person_tag_date 规则只取第一个标签
+// （原 buildName 中 tagStr = tags.sort().join('_')，改为只取第一个）
+// 注意：此修改已在下方 buildName 重写中完成
+
+// 重写 buildName 以支持标签全量存储
+function buildNameV32(person,tags,dateStr,idx){
+  const rule=cfg.rule||'person_seq';
+  let base;
+  if(rule==='person_seq')base=person;
+  else if(rule==='person')base=person;
+  else if(rule==='person_date')base=person+'_'+dateStr;
+  else if(rule==='person_tag_date'){
+    // 只取第一个标签写入文件名
+    const firstTag=tags&&tags.length?tags[0]:'';
+    base=firstTag?person+'_'+firstTag+'_'+dateStr:person+'_'+dateStr;
+  }
+  else base=person+'_'+dateStr;
+  if(idx)base+='_'+idx;
+  return base;
+}
+
+// ---- 功能5: 按人名整理人工确认 ----
+let modalCallback=null;
+let modalState={};
+function organizeByPerson(){
+  if(!curDir){showToast('请先选择文件夹');return}
+  const tagged=items.filter(i=>i.renamed&&i.person&&i.handle);
+  if(!tagged.length){showToast('没有已标记人名的文件可整理');return}
+  const persons=[...new Set(tagged.map(i=>i.person))];
+  const personCounts={};
+  persons.forEach(p=>{personCounts[p]=tagged.filter(i=>i.person===p).length});
+  // 显示确认弹窗，让用户选择哪些人名要整理
+  const list=document.getElementById('modalList');
+  list.innerHTML=persons.map(p=>'<div class="modal-item selected" data-person="'+escapeHtml(p)+'" onclick="toggleModalItem(this)"><input type="checkbox" checked><div class="mi-name">'+escapeHtml(p)+'</div><div class="mi-count">'+personCounts[p]+' 张</div></div>').join('');
+  document.getElementById('modalTitle').textContent='选择要整理的人名';
+  document.getElementById('modalDesc').textContent='勾选需要创建文件夹并移动的人名，未勾选的将保留在原位置。';
+  document.getElementById('modalConfirmBtn').textContent='确认移动';
+  modalCallback=async function(selectedPersons){
+    if(!selectedPersons.length){showToast('未选择任何人名');return}
+    await doOrganizeByPerson(tagged.filter(i=>selectedPersons.includes(i.person)),selectedPersons);
+  };
+  document.getElementById('modalOverlay').classList.add('show');
+}
+function toggleModalItem(el){
+  const cb=el.querySelector('input[type=checkbox]');
+  cb.checked=!cb.checked;
+  el.classList.toggle('selected',cb.checked);
+}
+function closeModal(){document.getElementById('modalOverlay').classList.remove('show');modalCallback=null}
+async function modalConfirm(){
+  const selected=[...document.querySelectorAll('.modal-item.selected')].map(el=>el.dataset.person);
+  closeModal();
+  if(modalCallback)await modalCallback(selected);
+}
+async function doOrganizeByPerson(tagged,selectedPersons){
+  showProgress(5);
+  let ok=0,fail=0,skip=0;
+  const dirCache={};
+  for(const p of selectedPersons){
+    try{dirCache[p]=await curDir.getDirectoryHandle(p,{create:true})}catch(e){showToast('创建文件夹失败：'+p);return}
+  }
+  showProgress(15);
+  for(let i=0;i<tagged.length;i++){
+    const item=tagged[i];
+    const dir=dirCache[item.person];
+    try{
+      const pathParts=(item.path||'').split('/');
+      const currentDir=pathParts.length>1?pathParts[pathParts.length-2]:null;
+      if(currentDir===item.person){skip++;showProgress(15+Math.round((i+1)/tagged.length*80));continue}
+      await item.handle.move(dir,item.name);
+      item.path=(item.path||'').replace(/^[^\/]+\/?/,item.person+'/');
+      ok++;
+    }catch(e){
+      try{
+        const file=await item.handle.getFile();
+        const newHandle=await dir.getFileHandle(item.name,{create:true});
+        const w=await newHandle.createWritable();
+        await w.write(file);
+        await w.close();
+        await item.handle.remove();
+        item.path=(item.path||'').replace(/^[^\/]+\/?/,item.person+'/');
+        ok++;
+      }catch(e2){console.error('移动失败',item.name,e,e2);fail++}
+    }
+    showProgress(15+Math.round((i+1)/tagged.length*80));
+  }
+  selected=[];
+  await saveSession();
+  showProgress(95);
+  await rescanDir(true);
+  showProgress(100);
+  setTimeout(hideProgress,500);
+  showToast('整理完成：移动 '+ok+' 个'+(skip?'，已在目标位置 '+skip+' 个':'')+(fail?'，失败 '+fail+' 个':''));
+}
+
+// ---- 功能6: 子文件夹切换浏览 ----
+let curSubdir=''; // 空字符串=全部，'root'=根目录，其他=子文件夹名
+function renderSubdirBar(){
+  const bar=document.getElementById('subdirBar');
+  // 从 items 的 path 中提取所有顶级目录
+  const subdirs=new Set();
+  items.forEach(i=>{
+    const parts=(i.path||'').split('/');
+    if(parts.length>1)subdirs.add(parts[0]);
+  });
+  if(subdirs.size===0){bar.style.display='none';return}
+  bar.style.display='flex';
+  let chips='<div class="subdir-label">📁 位置：</div>';
+  chips+='<span class="subdir-chip'+(curSubdir===''?' on':'')+'" onclick="switchSubdir(\'\')">全部</span>';
+  chips+='<span class="subdir-chip'+(curSubdir==='root'?' on':'')+'" onclick="switchSubdir(\'root\')">根目录</span>';
+  [...subdirs].sort().forEach(d=>{
+    chips+='<span class="subdir-chip'+(curSubdir===d?' on':'')+'" onclick="switchSubdir(\''+escapeHtml(d)+'\')">'+escapeHtml(d)+'</span>';
+  });
+  bar.innerHTML=chips;
+}
+function switchSubdir(dir){
+  curSubdir=dir;
+  renderLib();
+}
+// 在 renderLib 中应用子文件夹过滤（修改 filter 逻辑）
+
+// ---- 重写 buildName 使用 v3.2 版本（标签全量存储：文件名仅第一个标签） ----
+// 覆盖原 buildName
+function buildName(person,tags,dateStr,idx){
+  return buildNameV32(person,tags,dateStr,idx);
+}
+
+// ---- 重写 renderLib 添加子文件夹过滤 ----
+function renderLib(){
+  const grid=document.getElementById('libGrid');
+  const empty=document.getElementById('libEmpty');
+  const person=document.getElementById('libPerson').value;
+  const type=document.getElementById('libType').value;
+  const sortMode=document.getElementById('libSort').value;
+  const q=document.getElementById('libSearch').value.toLowerCase();
+  const persons=[...new Set(items.map(i=>i.person).filter(Boolean))].sort();
+  const allTags=[...new Set(items.flatMap(i=>i.tags||[]).filter(Boolean))].sort();
+  const curPerson=person||document.getElementById('libPerson').value;
+  document.getElementById('libPerson').innerHTML='<option value="">全部人名</option>'+persons.map(p=>'<option value="'+escapeHtml(p)+'"'+(curPerson===p?' selected':'')+'>'+escapeHtml(p)+'</option>').join('');
+  const tagChips=document.getElementById('libTagChips');
+  tagChips.innerHTML=allTags.map(t=>'<span class="tchip '+(libSelectedTags.has(t)?'on':'')+'" onclick="toggleLibTag(\''+escapeHtml(t)+'\')">'+escapeHtml(t)+'</span>').join('');
+  // 渲染子文件夹切换栏
+  renderSubdirBar();
+  const selectedTagArr=[...libSelectedTags];
+  let list=items.filter(p=>{
+    if(type==='tagged'&&!p.renamed)return false;
+    if(type==='untagged'&&p.renamed)return false;
+    if((type==='image'||type==='video')&&p.type!==type)return false;
+    if(person&&p.person!==person)return false;
+    if(selectedTagArr.length>0){const itemTags=p.tags||[];if(!selectedTagArr.every(t=>itemTags.includes(t)))return false}
+    if(q&&!p.name.toLowerCase().includes(q))return false;
+    // 子文件夹过滤
+    if(curSubdir==='root'){
+      const parts=(p.path||'').split('/');
+      if(parts.length>1)return false;
+    }else if(curSubdir){
+      const parts=(p.path||'').split('/');
+      if(parts[0]!==curSubdir)return false;
+    }
+    return true;
+  });
+  if(sortMode==='date')list.sort((a,b)=>(b.lastModified||0)-(a.lastModified||0));
+  else if(sortMode==='size')list.sort((a,b)=>(b.size||0)-(a.size||0));
+  else if(sortMode==='saved')list.sort((a,b)=>(b.savedAt||0)-(a.savedAt||0));
+  else list.sort((a,b)=>a.name.localeCompare(b.name));
+  libFiltered=list;
+  document.getElementById('libCount').textContent='共 '+list.length+' 项';
+  empty.style.display=list.length?'none':'block';
+  const selIds=new Set(selected);
+  grid.innerHTML=list.map(p=>{
+    const isSel=selIds.has(p.id);
+    const doneMark=p.renamed?'<span class="done-mark">✓已标记</span>':'';
+    const typeMark=p.hidden?'<span class="hidden-mark">隐藏</span>':(p.type==='video'?'<span class="badge">▶</span>':'');
+    // 显示：文件名中只含第一个标签，但全部标签在 chips 中展示
+    const displayTags=(p.tags&&p.tags.length)?'·'+escapeHtml(p.tags.slice(0,2).join('·'))+(p.tags.length>2?'+'+(p.tags.length-2):''):'';
+    const personStr=p.person?'<b>'+escapeHtml(p.person)+'</b>':'';
+    return '<div class="cell" data-id="'+p.id+'" onclick="onCellClick(\''+p.id+'\')">'+
+      '<div class="media" data-id="'+p.id+'" style="display:flex;align-items:center;justify-content:center;color:#bbb;font-size:20px">···</div>'+
+      doneMark+typeMark+
+      '<div class="sel '+(isSel?'on':'')+'" onclick="event.stopPropagation();toggleSel(\''+p.id+'\')">'+(isSel?'✓':'')+'</div>'+
+      '<div class="name">'+(personStr||escapeHtml(p.name))+displayTags+'</div>'+
+    '</div>';
+  }).join('');
+  initObserver();
+  grid.querySelectorAll('.media[data-id]').forEach(el=>ioObserver.observe(el));
+  updateActionBar();
+  const taggedCount=items.filter(i=>i.renamed).length;
+  document.getElementById('libStats').innerHTML='<div class="stat"><div class="num">'+items.length+'</div><div class="lbl">总文件</div></div><div class="stat"><div class="num">'+taggedCount+'</div><div class="lbl">已标记</div></div><div class="stat"><div class="num">'+(items.length-taggedCount)+'</div><div class="lbl">未标记</div></div>';
+}
+
+// ---- 重写 pickDir 添加 Chrome 授权持久化 ----
+async function pickDir(){
+  if(isPickingDir)return;
+  isPickingDir=true;
+  try{
+    if(!window.showDirectoryPicker){showToast('请使用 Chrome 浏览器');return}
+    curDir=await window.showDirectoryPicker({mode:'readwrite'});
+    curDirName=curDir.name;
+    // v3.2: 持久化存储目录句柄
+    await saveDirHandle(curDir);
+    document.getElementById('dirName').textContent='📂 '+curDir.name;
+    document.getElementById('dirCard').style.display='block';
+    document.getElementById('btnPickDir').style.display='none';
+    document.getElementById('libArea').style.display='block';
+    await rescanDir(false);
+  }catch(e){
+    if(e&&e.name==='AbortError')return;
+    showToast('无法访问文件夹：'+(e.message||e));
+  }finally{
+    isPickingDir=false;
+  }
+}
+
+// ---- 重写 restoreSession 添加自动恢复目录句柄 ----
+async function restoreSession(){
+  const sess=await dbLoadSession();
+  if(!sess||!sess.dirName||!sess.items)return false;
+  items=sess.items.map(it=>({...it,handle:null}));
+  curDirName=sess.dirName;
+  // v3.2: 尝试从 IndexedDB 恢复目录句柄（Chrome 授权持久化）
+  const savedHandle=await loadDirHandle();
+  if(savedHandle){
+    try{
+      // 验证句柄权限
+      const perm=await savedHandle.queryPermission({mode:'readwrite'});
+      if(perm==='granted'){
+        curDir=savedHandle;
+        // 恢复文件 handles
+        await restoreHandles();
+        document.getElementById('dirName').textContent='📂 '+curDirName;
+        document.getElementById('dirCard').style.display='block';
+        document.getElementById('btnPickDir').style.display='none';
+        document.getElementById('libArea').style.display='block';
+        syncTaggedStatus();
+        renderLib();
+        showToast('已自动恢复文件夹授权：'+curDirName);
+        return true;
+      }else{
+        // 请求权限
+        const req=await savedHandle.requestPermission({mode:'readwrite'});
+        if(req==='granted'){
+          curDir=savedHandle;
+          await restoreHandles();
+          document.getElementById('dirName').textContent='📂 '+curDirName;
+          document.getElementById('dirCard').style.display='block';
+          document.getElementById('btnPickDir').style.display='none';
+          document.getElementById('libArea').style.display='block';
+          syncTaggedStatus();
+          renderLib();
+          showToast('已恢复文件夹授权：'+curDirName);
+          return true;
+        }
+      }
+    }catch(e){console.warn('restore handle failed',e)}
+  }
+  // 回退到原来的行为
+  syncTaggedStatus();
+  document.getElementById('dirName').textContent='📂 '+curDirName+'（需重新授权）';
+  document.getElementById('dirCard').style.display='block';
+  document.getElementById('btnPickDir').style.display='none';
+  document.getElementById('libArea').style.display='block';
+  renderLib();
+  return true;
+}
+
+// v3.2: 恢复文件 handles（通过遍历目录匹配文件名）
+async function restoreHandles(){
+  if(!curDir)return;
+  const nameMap=new Map();
+  items.forEach(it=>nameMap.set(it.name,it));
+  const allFiles=[];
+  await walkDir(curDir,[],allFiles);
+  // 更新 items 中的 handle
+  const fileMap=new Map(allFiles.map(f=>[f.name,f]));
+  items.forEach(it=>{
+    const found=fileMap.get(it.name);
+    if(found){it.handle=found.handle;it.size=found.size||it.size;it.lastModified=found.lastModified||it.lastModified}
+  });
+}
+
+// ---- 重写 detailConfirm 使用 v3.2 buildName ----
+async function detailConfirm(){
+  if(!detailPerson){showToast('请先选择或输入人名');return}
+  const item=items[detailIdx];if(!item)return;
+  item.tags=[...detailTags].sort();
+  item.person=detailPerson;
+  item.renamed=true;
+  item.savedAt=Date.now();
+  if(!recentNames.includes(detailPerson)){recentNames.unshift(detailPerson);if(recentNames.length>10)recentNames.pop();localStorage.setItem('recent_names_v32',JSON.stringify(recentNames))}
+  if(item.handle&&curDir){
+    const tags=[...detailTags].sort();
+    const ext=getExt(item.name);
+    const base=buildName(detailPerson,tags,detailDateStr,0);
+    let newName;
+    if(cfg.rule==='person_seq'){let n=1;while(true){newName=base+'_'+n+ext;try{await curDir.getFileHandle(newName,{create:false});n++}catch(e){break}}}
+    else{newName=base+ext;try{await curDir.getFileHandle(newName,{create:false});let n=1;while(true){newName=base+'_'+n+ext;try{await curDir.getFileHandle(newName,{create:false});n++}catch(e){break}}}catch(e){}}
+    try{
+      await item.handle.move(newName);
+      thumbCache.delete(item.name);
+      item.name=newName;
+      showToast('已重命名：'+newName);
+    }catch(e){showToast('重命名失败，标签已保存：'+(e.message||e))}
+  }else{
+    showToast('标签已保存（需重新授权文件夹才能重命名）');
+  }
+  let img='',thumb='';
+  if(item.type==='image'&&cfg.compress&&item.handle){
+    try{let newHandle=item.handle;try{newHandle=await curDir.getFileHandle(item.name)}catch(e){}const f=await newHandle.getFile();const c=await compressImage(f,1280);img=c.img;thumb=c.thumb}catch(e){}
+  }
+  const libRec={id:'lib'+Date.now()+'_'+Math.random().toString(36).slice(2,6),name:item.name,person:detailPerson,tags:item.tags,date:detailDateStr,type:item.type,size:item.size,img,thumb,origPath:item.path,renamed:true,savedAt:item.savedAt};
+  await dbSaveMedia([libRec]);
+  const existIdx=libItems.findIndex(i=>i.name===item.name);
+  if(existIdx>=0)libItems[existIdx]=libRec;else libItems.push(libRec);
+  await saveSession();
+  closeDetail();
+  renderLib();updateQuota();renderSetStats();
+}
+
+// ---- 重写 updatePreviewName 使用 v3.2 buildName ----
+function updatePreviewName(){
+  const item=items[detailIdx];if(!item)return;
+  const tags=[...detailTags].sort();
+  const ext=getExt(item.name);
+  const base=buildName(detailPerson,tags,detailDateStr,0);
+  const previewExt=getExt(item.name);
+  document.getElementById('previewName').textContent=(cfg.rule==='person_seq'?base+'_1':base)+previewExt;
+  document.getElementById('detailConfirm').disabled=!detailPerson;
+}
 </script>
