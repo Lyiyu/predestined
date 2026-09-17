@@ -14,12 +14,12 @@
   --safe-b:env(safe-area-inset-bottom,0px);--safe-t:env(safe-area-inset-top,0px);
   --tab-h:56px;
 }
-html,body{height:100%}
-body{font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei",sans-serif;background:var(--bg);color:var(--text);overflow-x:hidden}
-.topbar{position:sticky;top:0;z-index:100;background:linear-gradient(135deg,var(--primary),var(--primary2));color:#fff;padding:calc(10px + var(--safe-t)) 14px 10px;display:flex;align-items:center;gap:8px;box-shadow:0 2px 10px rgba(91,108,255,.25)}
+html,body{height:100%;overflow:hidden}
+body{font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei",sans-serif;background:var(--bg);color:var(--text);display:flex;flex-direction:column;overflow:hidden}
+.topbar{position:relative;flex:0 0 auto;z-index:100;background:linear-gradient(135deg,var(--primary),var(--primary2));color:#fff;padding:calc(10px + var(--safe-t)) 14px 10px;display:flex;align-items:center;gap:8px;box-shadow:0 2px 10px rgba(91,108,255,.25)}
 .topbar h1{font-size:17px;font-weight:700;flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .topbar .tag{font-size:10px;background:rgba(255,255,255,.25);padding:2px 8px;border-radius:20px;font-weight:600}
-.page{display:none;padding:12px 12px calc(var(--tab-h) + var(--safe-b) + 20px);max-width:640px;margin:0 auto}
+.page{display:none;flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;overscroll-behavior:contain;padding:12px 12px calc(var(--safe-b) + 16px);max-width:640px;margin:0 auto}
 .page.show{display:block}
 .tip{background:#eef1ff;border:1px solid #d3d9ff;color:#3d4cc0;border-radius:var(--radius);padding:11px 13px;font-size:13px;line-height:1.7;margin-bottom:12px}
 .tip strong{font-weight:700}
@@ -47,12 +47,12 @@ body{font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei
 .progress-bar{position:fixed;top:calc(52px + var(--safe-t));left:0;right:0;height:3px;background:#e0e0e0;z-index:95;display:none}
 .progress-bar.show{display:block}
 .progress-bar i{display:block;height:100%;background:var(--primary);transition:width .3s;width:0%}
-.actionbar{position:fixed;bottom:0;left:0;right:0;background:#fff;box-shadow:0 -2px 12px rgba(0,0,0,.08);padding:10px 12px calc(10px + var(--safe-b));z-index:90;display:none}
+.actionbar{position:fixed;bottom:calc(var(--tab-h) + var(--safe-b));left:0;right:0;background:#fff;box-shadow:0 -2px 12px rgba(0,0,0,.08);padding:10px 12px 10px;z-index:250;display:none}
 .actionbar .row{display:flex;gap:8px;align-items:center;margin-bottom:8px;flex-wrap:wrap}
 .actionbar .count{font-size:12px;color:var(--sub)}
 .actionbar button{padding:10px 16px;border:none;border-radius:10px;background:var(--primary);color:#fff;font-size:14px;cursor:pointer;white-space:nowrap;font-weight:600}
 .actionbar button.ghost{background:#eef0f6;color:#555}
-.tabbar{position:fixed;bottom:0;left:0;right:0;height:calc(var(--tab-h) + var(--safe-b));padding-bottom:var(--safe-b);background:#fff;border-top:1px solid var(--line);display:flex;z-index:200}
+.tabbar{position:relative;flex:0 0 auto;height:calc(var(--tab-h) + var(--safe-b));padding-bottom:var(--safe-b);background:#fff;border-top:1px solid var(--line);display:flex;z-index:200}
 .tabbar .tab{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;color:#9aa0b5;font-size:10px;cursor:pointer;background:none;border:none}
 .tabbar .tab .ic{font-size:20px;line-height:1}
 .tabbar .tab.active{color:var(--primary);font-weight:600}
@@ -70,7 +70,14 @@ body{font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei
 .quota .q-bar{height:8px;border-radius:4px;background:#eceef5;overflow:hidden}
 .quota .q-bar i{display:block;height:100%;border-radius:4px;background:linear-gradient(90deg,var(--primary),var(--primary2))}
 .quota .q-tip{font-size:12px;color:var(--sub);margin-top:6px;line-height:1.6}
-.setcard{background:var(--card);border-radius:var(--radius);padding:16px;margin-bottom:12px;box-shadow:0 1px 4px rgba(0,0,0,.06)}
+.q-detail{margin-top:10px;display:none}
+.q-detail.show{display:block}
+.q-detail .q-row{display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-top:1px solid var(--line);font-size:12px}
+.q-detail .q-row .q-lbl{color:#555;display:flex;align-items:center;gap:6px}
+.q-detail .q-row .q-val{font-weight:700;color:var(--text)}
+.q-detail .q-row .q-dot{width:8px;height:8px;border-radius:50%;flex:0 0 auto}
+.q-toggle{font-size:11px;color:var(--primary);cursor:pointer;border:none;background:none;padding:4px 0;margin-top:6px;font-weight:600;text-align:left;width:100%}
+.setcard{background:var(--card);border-radius:var(--radius);padding:16px;margin-bottom:14px;box-shadow:0 1px 4px rgba(0,0,0,.06);scroll-margin-bottom:calc(var(--tab-h) + var(--safe-b) + 10px)}
 .setcard h3{font-size:15px;font-weight:700;margin-bottom:12px;display:flex;align-items:center;gap:6px}
 .setitem{margin-bottom:14px}
 .setitem:last-child{margin-bottom:0}
@@ -87,7 +94,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei
 .switch input:checked+.sl::after{left:23px}
 .empty{text-align:center;padding:50px 20px;color:#b0b4c5}
 .empty .icon{font-size:52px;margin-bottom:12px}
-.hint{color:var(--sub);font-size:12px;text-align:center;margin-top:10px;line-height:1.6}
+.hint{color:var(--sub);font-size:12px;text-align:center;margin-top:10px;margin-bottom:6px;line-height:1.6}
 /* 详情页 */
 .detail-overlay{position:fixed;inset:0;background:#000;z-index:500;display:none;flex-direction:column}
 .detail-overlay.show{display:flex}
@@ -164,7 +171,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei
 .toast.show{opacity:1}
 @media(min-width:700px){
   .grid{grid-template-columns:repeat(4,1fr)}
-  .page{padding:20px 20px calc(var(--tab-h) + 20px)}
+  .page{padding:20px 20px calc(var(--safe-b) + 16px)}
   .topbar h1{font-size:20px}
 }
 </style>
@@ -209,6 +216,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei
       <input type="text" id="libSearch" placeholder="搜索文件名" oninput="renderLib()">
       <span class="count-tip" id="libCount"></span>
       <button class="btn-sm" onclick="selectAllFiltered()">☑️全选</button>
+      <button class="btn-sm" onclick="organizeByPerson()" style="background:var(--primary);color:#fff;border-color:var(--primary)">📁 按人名整理</button>
     </div>
     <div class="tag-chips light" id="libTagChips" style="margin-bottom:10px"></div>
     <div class="grid" id="libGrid"></div>
@@ -238,6 +246,8 @@ body{font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei
     <div class="q-head"><span>存储配额</span><span id="quotaText">计算中…</span></div>
     <div class="q-bar"><i id="quotaBar" style="width:0%"></i></div>
     <div class="q-tip" id="quotaTip">当前已用 X / 总额 Y，还可导入 Z 个媒体</div>
+    <button class="q-toggle" onclick="toggleQuotaDetail()">📊 查看分项明细 ▼</button>
+    <div class="q-detail" id="quotaDetail"></div>
   </div>
   <div class="setcard">
     <h3>⚙️ 命名规则</h3>
@@ -431,6 +441,69 @@ async function updateQuota(){
   document.getElementById('quotaBar').style.width=pct+'%';
   const remain=q.quota-q.usage;const estCount=Math.floor(remain/400000);
   document.getElementById('quotaTip').textContent='已用 '+used+' MB / 总额 '+total+' MB（约可再导入 '+Math.max(0,estCount)+' 个媒体）';
+}
+// 计算单个 objectStore 的近似大小（遍历所有记录，累加 value 序列化长度）
+async function storeSize(storeName){
+  try{
+    const db=await openDB();
+    return new Promise((res)=>{
+      const tx=db.transaction(storeName,'readonly');
+      const store=tx.objectStore(storeName);
+      let total=0;
+      const req=store.openCursor();
+      req.onsuccess=e=>{
+        const cur=e.target.result;
+        if(cur){
+          const v=cur.value;
+          // 估算 value 大小：base64 图片按字符数估，其他按 JSON 长度
+          if(v&&typeof v==='object'){
+            if(v.data&&typeof v.data==='string'){total+=v.data.length}       // thumbs: {key,data}
+            else if(v.img&&typeof v.img==='string'){total+=v.img.length+(v.thumb?v.thumb.length:0)}  // media: {img,thumb}
+            else{try{total+=JSON.stringify(v).length}catch(e){total+=500}}
+          }else if(typeof v==='string'){total+=v.length}
+          else{total+=500}
+          cur.continue();
+        }
+      };
+      req.onerror=()=>res(0);
+      tx.oncomplete=()=>res(total);
+      tx.onerror=()=>res(0);
+    });
+  }catch(e){return 0}
+}
+let quotaDetailShown=false;
+async function toggleQuotaDetail(){
+  const el=document.getElementById('quotaDetail');
+  if(!quotaDetailShown){
+    quotaDetailShown=true;
+    el.classList.add('show');
+    document.querySelector('.q-toggle').textContent='📊 收起明细 ▲';
+    el.innerHTML='<div style="font-size:12px;color:#999;padding:6px 0">计算中…</div>';
+    // 并行计算各仓库
+    const [mediaSize,thumbSize,sessSize]=await Promise.all([
+      storeSize(STORE_MEDIA),storeSize(STORE_THUMB),storeSize(STORE_SESSION)
+    ]);
+    const mb=1048576;
+    const fmt=s=>(s/mb).toFixed(2)+' MB';
+    const rows=[
+      {color:'#5b6cff',label:'🖼️ 媒体记录',desc:'重命名时保存的压缩图+标签',size:mediaSize},
+      {color:'#30a46c',label:'🧩 缩略图缓存',desc:'浏览网格时自动生成（不操作也会涨）',size:thumbSize},
+      {color:'#f59e0b',label:'📋 会话数据',desc:'文件列表元数据',size:sessSize},
+      {color:'#999',label:'🌐 其他',desc:'IndexedDB开销+浏览器内部',size:0}
+    ];
+    const totalDB=mediaSize+thumbSize+sessSize;
+    // 实际总用量从 quota API 获取
+    const q=await quotaInfo();
+    const actualTotal=q?q.usage:totalDB;
+    rows[3].size=Math.max(0,actualTotal-totalDB);
+    el.innerHTML=rows.map(r=>
+      '<div class="q-row"><div class="q-lbl"><span class="q-dot" style="background:'+r.color+'"></span><div>'+r.label+'<div style="font-size:10px;color:#bbb;margin-top:1px">'+r.desc+'</div></div></div><div class="q-val">'+fmt(r.size)+'</div></div>'
+    ).join('')+'<div class="q-row" style="border-top:2px solid var(--line);margin-top:4px;padding-top:10px"><div class="q-lbl" style="font-weight:700">合计</div><div class="q-val" style="font-size:14px">'+fmt(actualTotal)+'</div></div>';
+  }else{
+    quotaDetailShown=false;
+    el.classList.remove('show');
+    document.querySelector('.q-toggle').textContent='📊 查看分项明细 ▼';
+  }
 }
 
 // ==================== 进度条 ====================
@@ -882,8 +955,64 @@ function renderSetStats(){
 }
 
 // ==================== 清空 ====================
-async function clearAll(){if(!confirm('确认清空全部标签记录？此操作不可恢复'))return;await dbDeleteMedia();libItems=[];syncTaggedStatus();renderLib();renderSetStats();updateQuota();showToast('已清空标签记录')}
-async function clearCache(){if(!confirm('确认清空缩略图缓存？下次打开会重新生成'))return;await dbClearThumbs();thumbCache.clear();showToast('已清空缩略图缓存');renderLib()}
+async function clearAll(){if(!confirm('确认清空全部标签记录？此操作不可恢复'))return;await dbDeleteMedia();libItems=[];syncTaggedStatus();renderLib();renderSetStats();updateQuota();if(quotaDetailShown)toggleQuotaDetail(),toggleQuotaDetail();showToast('已清空标签记录')}
+async function clearCache(){if(!confirm('确认清空缩略图缓存？下次打开会重新生成'))return;await dbClearThumbs();thumbCache.clear();updateQuota();if(quotaDetailShown)toggleQuotaDetail(),toggleQuotaDetail();showToast('已清空缩略图缓存');renderLib()}
+
+// ==================== 按人名整理 ====================
+async function organizeByPerson(){
+  if(!curDir){showToast('请先选择文件夹');return}
+  const tagged=items.filter(i=>i.renamed&&i.person&&i.handle);
+  if(!tagged.length){showToast('没有已标记人名的文件可整理');return}
+  const persons=[...new Set(tagged.map(i=>i.person))];
+  if(!confirm('将 '+tagged.length+' 个文件按 '+persons.length+' 个人名创建子文件夹并移动？\\n\\n人名：'+persons.join('、')+'\\n\\n⚠️ 此操作会移动文件位置（不改名），移动后自动重新扫描。'))return;
+  showProgress(5);
+  let ok=0,fail=0,skip=0;
+  // 预创建人名文件夹
+  const dirCache={};
+  for(const p of persons){
+    try{dirCache[p]=await curDir.getDirectoryHandle(p,{create:true})}catch(e){showToast('创建文件夹失败：'+p);return}
+  }
+  showProgress(15);
+  for(let i=0;i<tagged.length;i++){
+    const item=tagged[i];
+    const dir=dirCache[item.person];
+    try{
+      // 尝试跨目录移动：handle.move(dir, name)
+      // 若文件已经在目标文件夹内则跳过
+      const pathParts=(item.path||'').split('/');
+      const currentDir=pathParts.length>1?pathParts[pathParts.length-2]:null;
+      if(currentDir===item.person){skip++;showProgress(15+Math.round((i+1)/tagged.length*80));continue}
+      await item.handle.move(dir,item.name);
+      // 移动成功后更新路径
+      item.path=(item.path||'').replace(/^[^\/]+\/?/,item.person+'/');
+      ok++;
+    }catch(e){
+      // 部分浏览器不支持 move(dir,name)，降级为复制+删除
+      try{
+        const file=await item.handle.getFile();
+        const newHandle=await dir.getFileHandle(item.name,{create:true});
+        const w=await newHandle.createWritable();
+        await w.write(file);
+        await w.close();
+        await item.handle.remove();
+        item.path=(item.path||'').replace(/^[^\/]+\/?/,item.person+'/');
+        ok++;
+      }catch(e2){
+        console.error('移动失败',item.name,e,e2);
+        fail++;
+      }
+    }
+    showProgress(15+Math.round((i+1)/tagged.length*80));
+  }
+  selected=[];
+  await saveSession();
+  showProgress(95);
+  // 重新扫描
+  await rescanDir(true);
+  showProgress(100);
+  setTimeout(hideProgress,500);
+  showToast('整理完成：移动 '+ok+' 个'+(skip?'，已在目标位置 '+skip+' 个':'')+(fail?'，失败 '+fail+' 个':''));
+}
 
 // ==================== 批量工具 ====================
 function getSelectedItems(){return selected.map(id=>items.find(x=>x.id===id)).filter(Boolean)}
