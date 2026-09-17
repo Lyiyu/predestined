@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
-<title>离线媒体库 v3.0</title>
+<title>离线媒体库 v3.1</title>
 <style>
 *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 :root{
@@ -57,7 +57,8 @@ body{font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei
 .tabbar .tab .ic{font-size:20px;line-height:1}
 .tabbar .tab.active{color:var(--primary);font-weight:600}
 .filters{display:flex;gap:8px;margin:12px 0;flex-wrap:wrap}
-.filters select,.filters input{padding:8px 10px;border:1px solid var(--line);border-radius:10px;font-size:13px;background:#fff;flex:1;min-width:80px}
+.filters select{padding:8px 10px;border:1px solid var(--line);border-radius:10px;font-size:13px;background:#fff;flex:0 0 auto;width:auto;max-width:32%}
+.filters input{padding:8px 10px;border:1px solid var(--line);border-radius:10px;font-size:13px;background:#fff;flex:1 1 120px;min-width:100px}
 .count-tip{font-size:12px;color:var(--sub);align-self:center;white-space:nowrap}
 .btn-sm{padding:7px 14px;border:1px solid var(--line);border-radius:8px;background:#fff;color:#555;font-size:13px;cursor:pointer;white-space:nowrap;flex:0 0 auto}
 .btn-sm:active{transform:scale(.97)}
@@ -180,7 +181,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei
 
 <div class="topbar">
   <h1>📁 离线媒体库</h1>
-  <span class="tag">v3.0</span>
+  <span class="tag">v3.1</span>
 </div>
 
 <div class="progress-bar" id="progressBar"><i id="progressFill"></i></div>
@@ -205,13 +206,13 @@ body{font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei
   <div id="libArea" style="display:none">
     <div class="stats" id="libStats"></div>
     <div class="filters">
-      <select id="libPerson" onchange="renderLib()"><option value="">全部人名</option></select>
       <select id="libType" onchange="renderLib()"><option value="">全部</option><option value="image">图片</option><option value="video">视频</option><option value="tagged">已标记</option><option value="untagged">未标记</option></select>
+      <select id="libPerson" onchange="renderLib()" style="max-width:25%"><option value="">全部人名</option></select>
       <select id="libSort" onchange="renderLib()">
-        <option value="name">按文件名</option>
-        <option value="date">按修改时间</option>
-        <option value="saved">按保存时间</option>
-        <option value="size">按大小</option>
+        <option value="name">文件名</option>
+        <option value="date">修改时间</option>
+        <option value="saved">保存时间</option>
+        <option value="size">大小</option>
       </select>
       <input type="text" id="libSearch" placeholder="搜索文件名" oninput="renderLib()">
       <span class="count-tip" id="libCount"></span>
@@ -254,6 +255,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei
     <div class="setitem">
       <label>重命名格式</label>
       <select id="setRule" onchange="saveSettings()">
+        <option value="person_seq">仅人名+序号</option>
         <option value="person_tag_date">人名_标签_日期</option>
         <option value="person_date">人名_日期</option>
         <option value="person">仅人名</option>
@@ -390,10 +392,10 @@ body{font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei
 
 <script>
 // ==================== 状态 ====================
-const VERSION='3.0';
-const DB_NAME='offline_media_lib_v30',DB_VERSION=4;
+const VERSION='3.1';
+const DB_NAME='offline_media_lib_v31',DB_VERSION=4;
 const STORE_MEDIA='media',STORE_THUMB='thumbs',STORE_SESSION='session';
-let cfg={rule:'person_tag_date',tags:['长靴','多人','常服'],dateFormat:'YYYYMMDD',compress:true,maxCount:2000,showHidden:false,dlServer:'http://localhost:8766',dlSubdir:'下载'};
+let cfg={rule:'person_seq',tags:['长靴','多人','常服'],dateFormat:'YYYYMMDD',compress:true,maxCount:2000,showHidden:false,dlServer:'http://localhost:8766',dlSubdir:'下载'};
 let curDir=null,curDirName='';
 let items=[];
 let selected=[];
@@ -619,8 +621,9 @@ function fmtDate(d){const y=d.getFullYear(),m=String(d.getMonth()+1).padStart(2,
 function getExt(name){const i=name.lastIndexOf('.');return i>=0?name.slice(i):''}
 function getBaseName(name){const i=name.lastIndexOf('.');return i>=0?name.slice(0,i):name}
 function buildName(person,tags,dateStr,idx){
-  const rule=cfg.rule||'person_tag_date';const tagStr=(tags||[]).sort().join('_');let base;
-  if(rule==='person')base=person;
+  const rule=cfg.rule||'person_seq';const tagStr=(tags||[]).sort().join('_');let base;
+  if(rule==='person_seq')base=person;
+  else if(rule==='person')base=person;
   else if(rule==='person_date')base=person+'_'+dateStr;
   else base=tagStr?person+'_'+tagStr+'_'+dateStr:person+'_'+dateStr;
   if(idx)base+='_'+idx;return base;
@@ -800,7 +803,8 @@ function updatePreviewName(){
   const tags=[...detailTags].sort();
   const ext=getExt(item.name);
   const base=buildName(detailPerson,tags,detailDateStr,0);
-  document.getElementById('previewName').textContent=base+ext;
+  const previewExt=getExt(item.name);
+  document.getElementById('previewName').textContent=(cfg.rule==='person_seq'?base+'_1':base)+previewExt;
   document.getElementById('detailConfirm').disabled=!detailPerson;
 }
 document.getElementById('detailDate').addEventListener('input',function(){const d=this.value?new Date(this.value):new Date();detailDateStr=fmtDate(d);updatePreviewName()});
@@ -813,14 +817,15 @@ async function detailConfirm(){
   item.person=detailPerson;
   item.renamed=true;
   item.savedAt=Date.now();
-  if(!recentNames.includes(detailPerson)){recentNames.unshift(detailPerson);if(recentNames.length>10)recentNames.pop();localStorage.setItem('recent_names_v30',JSON.stringify(recentNames))}
+  if(!recentNames.includes(detailPerson)){recentNames.unshift(detailPerson);if(recentNames.length>10)recentNames.pop();localStorage.setItem('recent_names_v31',JSON.stringify(recentNames))}
   // 如果有 handle，执行实际重命名
   if(item.handle&&curDir){
     const tags=[...detailTags].sort();
     const ext=getExt(item.name);
     const base=buildName(detailPerson,tags,detailDateStr,0);
-    let newName=base+ext;
-    try{await curDir.getFileHandle(newName,{create:false});let n=1;while(true){newName=base+'_'+n+ext;try{await curDir.getFileHandle(newName,{create:false});n++}catch(e){break}}}catch(e){}
+    let newName;
+    if(cfg.rule==='person_seq'){let n=1;while(true){newName=base+'_'+n+ext;try{await curDir.getFileHandle(newName,{create:false});n++}catch(e){break}}}
+    else{newName=base+ext;try{await curDir.getFileHandle(newName,{create:false});let n=1;while(true){newName=base+'_'+n+ext;try{await curDir.getFileHandle(newName,{create:false});n++}catch(e){break}}}catch(e){}}
     try{
       await item.handle.move(newName);
       thumbCache.delete(item.name);
@@ -923,7 +928,7 @@ async function importJson(event){
 }
 
 // ==================== 设置 ====================
-function loadSettings(){try{const s=localStorage.getItem('ff_settings_v30');if(s)cfg=Object.assign(cfg,JSON.parse(s));const rn=localStorage.getItem('recent_names_v30');if(rn)recentNames=JSON.parse(rn)}catch(e){}}
+function loadSettings(){try{const s=localStorage.getItem('ff_settings_v31');if(s)cfg=Object.assign(cfg,JSON.parse(s));const rn=localStorage.getItem('recent_names_v31');if(rn)recentNames=JSON.parse(rn)}catch(e){}}
 function saveSettings(){
   const tags=document.getElementById('setTags').value.split(',').map(s=>s.trim()).filter(Boolean);
   const maxCount=parseInt(document.getElementById('setMaxCount').value)||2000;
@@ -933,11 +938,11 @@ function saveSettings(){
   cfg.maxCount=Math.max(50,Math.min(5000,maxCount));
   cfg.dlServer=document.getElementById('setDlServer').value.trim();
   cfg.dlSubdir=document.getElementById('setDlSubdir').value.trim();
-  localStorage.setItem('ff_settings_v30',JSON.stringify(cfg));
+  localStorage.setItem('ff_settings_v31',JSON.stringify(cfg));
   document.getElementById('setMaxCountVal').textContent=cfg.maxCount;
 }
 function loadSettingsForm(){
-  document.getElementById('setRule').value=cfg.rule||'person_tag_date';
+  document.getElementById('setRule').value=cfg.rule||'person_seq';
   document.getElementById('setTags').value=(cfg.tags||[]).join(',');
   document.getElementById('setDateFormat').value=cfg.dateFormat||'YYYYMMDD';
   document.getElementById('setMaxCount').value=cfg.maxCount||2000;
