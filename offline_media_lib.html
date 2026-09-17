@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
-<title>离线媒体库 v2.1</title>
+<title>离线媒体库 v2.2</title>
 <style>
 *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 :root{
@@ -44,6 +44,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei
 .cell .name{font-size:11px;color:#666;padding:6px 8px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;background:#fff}
 .badge{position:absolute;top:6px;left:6px;background:rgba(0,0,0,.55);color:#fff;font-size:9px;padding:2px 6px;border-radius:4px;z-index:2}
 .hidden-mark{position:absolute;top:6px;left:6px;background:rgba(0,0,0,.55);color:#ffd166;font-size:9px;padding:2px 6px;border-radius:4px;z-index:2}
+.done-mark{position:absolute;top:6px;left:6px;background:var(--ok);color:#fff;font-size:9px;padding:2px 6px;border-radius:4px;z-index:2}
 /* ===== 进度条 ===== */
 .progress-bar{position:fixed;top:calc(52px + var(--safe-t));left:0;right:0;height:3px;background:#e0e0e0;z-index:95;display:none}
 .progress-bar.show{display:block}
@@ -117,6 +118,8 @@ body{font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei
 .tag-chips .tchip{padding:8px 14px;border-radius:20px;background:rgba(255,255,255,.08);color:#ccc;font-size:13px;cursor:pointer;border:1.5px solid transparent;transition:.15s}
 .tag-chips .tchip.on{background:var(--primary);color:#fff;border-color:#fff}
 .tag-chips .tchip:active{transform:scale(.92)}
+.tag-chips.light .tchip{background:#f0f1f7;color:#5a5f75;border:1.5px solid var(--line)}
+.tag-chips.light .tchip.on{background:var(--primary);color:#fff;border-color:var(--primary)}
 /* 日期 */
 .date-row{display:flex;gap:10px;align-items:center}
 .date-row input[type=date]{flex:1;padding:10px;border:1px solid rgba(255,255,255,.2);border-radius:10px;background:rgba(255,255,255,.08);color:#fff;font-size:14px}
@@ -170,7 +173,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei
 
 <div class="topbar">
   <h1>📁 离线媒体库</h1>
-  <span class="tag">v2.1</span>
+  <span class="tag">v2.2</span>
 </div>
 
 <!-- 进度条 -->
@@ -188,7 +191,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei
     </div>
     <div class="dir-row" style="margin-top:6px">
       <label style="display:flex;align-items:center;gap:6px;font-size:13px;color:#555">
-        <input type="checkbox" id="showHidden" onchange="cfg.showHidden=this.checked;rescanDir(true)"> 显示隐藏文件夹/文件
+        <input type="checkbox" id="showHidden" onchange="cfg.showHidden=this.checked;saveSettings();rescanDir(true)"> 显示隐藏文件夹/文件
       </label>
     </div>
   </div>
@@ -200,7 +203,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei
         <option value="date">按修改时间</option>
         <option value="size">按大小</option>
       </select>
-      <select id="orgType" onchange="renderOrg()"><option value="">全部</option><option value="image">图片</option><option value="video">视频</option></select>
+      <select id="orgType" onchange="renderOrg()"><option value="">全部</option><option value="image">图片</option><option value="video">视频</option><option value="pending">未整理</option><option value="done">已整理</option></select>
       <input type="text" id="orgSearch" placeholder="搜索文件名" oninput="renderOrg()">
       <span class="count-tip" id="orgCount"></span>
       <button class="btn-sm" onclick="selectAllFiltered()">☑️全选</button>
@@ -216,10 +219,10 @@ body{font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei
   <div class="stats" id="libStats"></div>
   <div class="filters">
     <select id="libPerson"><option value="">全部人名</option></select>
-    <select id="libTag"><option value="">全部标签</option></select>
     <select id="libType"><option value="">全部类型</option><option value="image">图片</option><option value="video">视频</option></select>
     <span class="count-tip" id="libCount"></span>
   </div>
+  <div class="tag-chips light" id="libTagChips" style="margin-bottom:10px"></div>
   <div class="grid" id="libGrid"></div>
   <div class="empty" id="libEmpty" style="display:none"><div class="ic">🗂️</div>媒体库为空<br><span>先在「整理」页选择文件夹并重命名照片</span></div>
 </div>
@@ -282,8 +285,11 @@ body{font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei
   <div class="setcard">
     <h3>💾 数据</h3>
     <button class="btn-ghost" onclick="exportJson()" style="margin-top:0">📄 导出媒体库 JSON（备份/迁移）</button>
-    <div class="sub" style="margin-top:6px">网页版数据存在浏览器本地，清除浏览器数据或换机时会丢失。JSON 是整理记录的备份。</div>
+    <div class="sub" style="margin-top:6px">网页版数据存在浏览器本地 IndexedDB，刷新不丢。JSON 是整理记录的备份，可迁移到其他设备。</div>
     <button class="btn-danger" onclick="clearAll()">🗑️ 清空媒体库</button>
+    <div class="sub" style="margin-top:6px">清空媒体库记录。整理页的文件列表和缩略图缓存不受影响。</div>
+    <button class="btn-danger" onclick="clearCache()" style="margin-top:8px">🧹 清空缩略图缓存</button>
+    <div class="sub" style="margin-top:6px">清空整理页的缩略图缓存，下次打开会重新生成。文件列表和媒体库记录不受影响。</div>
   </div>
 </div>
 
@@ -354,41 +360,49 @@ body{font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei
 
 <script>
 // ==================== 状态 ====================
-const VERSION='2.1';
+const VERSION='2.2';
+const DB_NAME='offline_media_lib_v22',DB_VERSION=3;
+const STORE_MEDIA='media',STORE_THUMB='thumbs',STORE_SESSION='session';
 let cfg={rule:'person_tag_date',tags:['长靴','多人','常服'],dateFormat:'YYYYMMDD',compress:true,maxCount:2000,showHidden:false};
 let curDir=null,curDirName='';
 let items=[];
 let selected=[];
 let libItems=[],libFiltered=[];
 let currentTab='org';
-let recentNames=[]; // 最近使用的人名
-let isPickingDir=false; // 防重入锁
-let thumbCache=new Map(); // 内存缩略图缓存 {name→url}
-let thumbDB=null; // IndexedDB 缩略图缓存
-let detailIdx=-1; // 当前详情页对应的 items 索引
+let recentNames=[];
+let isPickingDir=false;
+let thumbCache=new Map();
+let detailIdx=-1;
 let detailPerson='',detailTags=new Set(),detailDateStr='';
+let libSelectedTags=new Set();
+let renamedNames=new Set(); // 当前目录中已重命名的文件名集合
 
-// ==================== IndexedDB：媒体库 ====================
-const DB_NAME='offline_media_lib_v21',STORE_MEDIA='media',STORE_THUMB='thumbs';
+// ==================== IndexedDB ====================
 function openDB(){
   return new Promise((res,rej)=>{
-    const req=indexedDB.open(DB_NAME,2);
+    const req=indexedDB.open(DB_NAME,DB_VERSION);
     req.onupgradeneeded=e=>{
       const db=e.target.result;
       if(!db.objectStoreNames.contains(STORE_MEDIA))db.createObjectStore(STORE_MEDIA,{keyPath:'id'});
       if(!db.objectStoreNames.contains(STORE_THUMB))db.createObjectStore(STORE_THUMB,{keyPath:'key'});
+      if(!db.objectStoreNames.contains(STORE_SESSION))db.createObjectStore(STORE_SESSION,{keyPath:'k'});
     };
     req.onsuccess=e=>res(e.target.result);
     req.onerror=e=>rej(e.target.error);
   });
 }
-async function dbSaveMedia(list){const db=await openDB();return new Promise((res,rej)=>{const tx=db.transaction(STORE_MEDIA,'readwrite');list.forEach(it=>tx.objectStore(STORE_MEDIA).put(it));tx.oncomplete=res;tx.onerror=()=>rej(tx.error);})}
-async function dbLoadMedia(){const db=await openDB();return new Promise((res,rej)=>{const req=db.transaction(STORE_MEDIA).objectStore(STORE_MEDIA).getAll();req.onsuccess=()=>res(req.result||[]);req.onerror=()=>rej(req.error);})}
-async function dbDeleteMedia(){const db=await openDB();return new Promise((res,rej)=>{const tx=db.transaction(STORE_MEDIA,'readwrite');tx.objectStore(STORE_MEDIA).clear();tx.oncomplete=res;tx.onerror=()=>rej(tx.error);})}
+// 媒体库记录
+async function dbSaveMedia(list){const db=await openDB();return new Promise((res,rej)=>{const tx=db.transaction(STORE_MEDIA,'readwrite');list.forEach(it=>tx.objectStore(STORE_MEDIA).put(it));tx.oncomplete=res;tx.onerror=()=>rej(tx.error)})}
+async function dbLoadMedia(){const db=await openDB();return new Promise((res,rej)=>{const req=db.transaction(STORE_MEDIA).objectStore(STORE_MEDIA).getAll();req.onsuccess=()=>res(req.result||[]);req.onerror=()=>rej(req.error)})}
+async function dbDeleteMedia(){const db=await openDB();return new Promise((res,rej)=>{const tx=db.transaction(STORE_MEDIA,'readwrite');tx.objectStore(STORE_MEDIA).clear();tx.oncomplete=res;tx.onerror=()=>rej(tx.error)})}
 // 缩略图缓存
-async function dbGetThumb(key){const db=await openDB();return new Promise((res)=>{const req=db.transaction(STORE_THUMB).objectStore(STORE_THUMB).get(key);req.onsuccess=()=>res(req.result?req.result.data:null);req.onerror=()=>res(null);})}
-async function dbPutThumb(key,data){const db=await openDB();return new Promise((res)=>{const tx=db.transaction(STORE_THUMB,'readwrite');tx.objectStore(STORE_THUMB).put({key,data});tx.oncomplete=res;tx.onerror=()=>res();})}
-async function dbClearThumbs(){const db=await openDB();return new Promise((res)=>{const tx=db.transaction(STORE_THUMB,'readwrite');tx.objectStore(STORE_THUMB).clear();tx.oncomplete=res;tx.onerror=()=>res();})}
+async function dbGetThumb(key){const db=await openDB();return new Promise((res)=>{const req=db.transaction(STORE_THUMB).objectStore(STORE_THUMB).get(key);req.onsuccess=()=>res(req.result?req.result.data:null);req.onerror=()=>res(null)})}
+async function dbPutThumb(key,data){const db=await openDB();return new Promise((res)=>{const tx=db.transaction(STORE_THUMB,'readwrite');tx.objectStore(STORE_THUMB).put({key,data});tx.oncomplete=res;tx.onerror=()=>res()})}
+async function dbClearThumbs(){const db=await openDB();return new Promise((res)=>{const tx=db.transaction(STORE_THUMB,'readwrite');tx.objectStore(STORE_THUMB).clear();tx.oncomplete=res;tx.onerror=()=>res()})}
+// 会话状态（文件夹名、文件列表、排序/筛选状态）
+async function dbSaveSession(data){const db=await openDB();return new Promise((res)=>{const tx=db.transaction(STORE_SESSION,'readwrite');tx.objectStore(STORE_SESSION).put({k:'session',...data});tx.oncomplete=res;tx.onerror=()=>res()})}
+async function dbLoadSession(){const db=await openDB();return new Promise((res)=>{const req=db.transaction(STORE_SESSION).objectStore(STORE_SESSION).get('session');req.onsuccess=()=>res(req.result||null);req.onerror=()=>res(null)})}
+async function dbClearSession(){const db=await openDB();return new Promise((res)=>{const tx=db.transaction(STORE_SESSION,'readwrite');tx.objectStore(STORE_SESSION).delete('session');tx.oncomplete=res;tx.onerror=()=>res()})}
 
 // ==================== 存储配额 ====================
 async function quotaInfo(){try{if(!navigator.storage||!navigator.storage.estimate)return null;const est=await navigator.storage.estimate();return{usage:est.usage||0,quota:est.quota||0}}catch(e){return null}}
@@ -408,7 +422,7 @@ function hideProgress(){document.getElementById('progressBar').classList.remove(
 
 // ==================== 目录选择（防重入） ====================
 async function pickDir(){
-  if(isPickingDir)return; // 防重入
+  if(isPickingDir)return;
   isPickingDir=true;
   try{
     if(!window.showDirectoryPicker){showToast('请使用 Chrome 浏览器');return}
@@ -443,7 +457,7 @@ async function walkDir(handle,pathArr,out){
         const isImg=/(\.jpg|\.jpeg|\.png|\.webp|\.heic)$/i.test(lower);
         const isVid=/\.(mp4|mov|avi|mkv|webm)$/i.test(lower);
         if(!isImg&&!isVid)continue;
-        out.push({id:'f'+Math.random().toString(36).slice(2,9),name,type:isVid?'video':'image',size:0,path:p.join('/'),handle:entry,hidden:isHidden,lastModified:0});
+        out.push({id:'f'+Math.random().toString(36).slice(2,9),name,type:isVid?'video':'image',size:0,path:p.join('/'),handle:entry,hidden:isHidden,lastModified:0,renamed:false});
       }
     }
   }catch(e){}
@@ -452,29 +466,63 @@ async function walkDir(handle,pathArr,out){
 async function rescanDir(forceFull){
   if(!curDir)return;
   showProgress(5);
-  // 增量扫描：如果不强制全量，保留已有 items 的缩略图缓存
   const oldItems=forceFull?[]:items.slice();
   const oldMap=new Map(oldItems.map(i=>[i.name,i]));
   items=[];
   await walkDir(curDir,[],items);
   showProgress(40);
-  // 读取文件元数据（分批，避免并发过多）
+  // 标记已重命名的文件
+  syncRenamedStatus();
+  // 读取文件元数据（分批）
   const batchSize=20;
   for(let i=0;i<items.length;i+=batchSize){
     const batch=items.slice(i,i+batchSize);
     await Promise.all(batch.map(async it=>{
-      // 如果旧缓存有同名文件，复用
       const old=oldMap.get(it.name);
-      if(old&&!forceFull){it.size=old.size;it.lastModified=old.lastModified;return}
+      if(old&&!forceFull){it.size=old.size;it.lastModified=old.lastModified;it.renamed=old.renamed;return}
       try{const f=await it.handle.getFile();it.size=f.size;it.lastModified=f.lastModified}catch(e){it.size=0}
     }));
     showProgress(40+Math.round((i+batchSize)/items.length*40));
   }
   showProgress(85);
+  // 持久化文件列表
+  await saveSession();
   renderOrg();
   showProgress(100);
   setTimeout(hideProgress,500);
   showToast('扫描完成：'+items.length+' 个文件');
+}
+
+// 同步已重命名状态：文件名在媒体库记录中存在则标记 renamed
+function syncRenamedStatus(){
+  const libNames=new Set(libItems.map(i=>i.name));
+  items.forEach(it=>{it.renamed=libNames.has(it.name)});
+}
+
+// 保存会话状态到 IndexedDB
+async function saveSession(){
+  if(!curDirName)return;
+  // 只保存可序列化的字段（handle 不可序列化，不保存）
+  const itemsData=items.map(it=>({id:it.id,name:it.name,type:it.type,size:it.size,path:it.path,hidden:it.hidden,lastModified:it.lastModified,renamed:it.renamed||false}));
+  await dbSaveSession({dirName:curDirName,items:itemsData,ts:Date.now()});
+}
+
+// 恢复会话状态（刷新后调用）
+async function restoreSession(){
+  const sess=await dbLoadSession();
+  if(!sess||!sess.dirName||!sess.items)return false;
+  // 恢复文件列表（但 handle 为 null，需要用户重新授权文件夹）
+  items=sess.items.map(it=>({...it,handle:null}));
+  curDirName=sess.dirName;
+  // 标记已重命名
+  syncRenamedStatus();
+  // 恢复 UI
+  document.getElementById('dirName').textContent='📂 '+curDirName+'（需重新授权）';
+  document.getElementById('dirCard').style.display='block';
+  document.getElementById('btnPickDir').style.display='none';
+  document.getElementById('orgArea').style.display='block';
+  renderOrg();
+  return true;
 }
 
 // ==================== 工具 ====================
@@ -513,14 +561,15 @@ async function loadThumbForCell(el,id){
   if(!item)return;
   // 先查内存缓存
   if(thumbCache.has(item.name)){el.innerHTML='<img src="'+thumbCache.get(item.name)+'">';return}
-  // 查 IndexedDB 缓存
+  // 查 IndexedDB 缩略图缓存
   const cached=await dbGetThumb(item.name+'@'+curDirName);
   if(cached){thumbCache.set(item.name,cached);el.innerHTML='<img src="'+cached+'">';return}
+  // 如果 handle 为 null（刷新后未授权），无法加载实际图片
+  if(!item.handle){el.textContent='🔒';return}
   // 实际加载
   try{
     const file=await item.handle.getFile();
     if(item.type==='video'){
-      // 视频抽帧
       const url=URL.createObjectURL(file);
       const v=document.createElement('video');v.preload='metadata';v.muted=true;
       await new Promise((res)=>{
@@ -528,7 +577,6 @@ async function loadThumbForCell(el,id){
         v.src=url;
       });
     }else{
-      // 图片缩略图（压缩为小 dataURL）
       const url=URL.createObjectURL(file);
       const img=new Image();
       await new Promise((res)=>{
@@ -554,8 +602,13 @@ function renderOrg(){
   const type=document.getElementById('orgType').value;
   const q=document.getElementById('orgSearch').value.toLowerCase();
   const sortMode=document.getElementById('orgSort').value;
-  let list=items.filter(p=>{if(type&&p.type!==type)return false;if(q&&!p.name.toLowerCase().includes(q))return false;return true});
-  // 排序
+  let list=items.filter(p=>{
+    if(type==='pending'&&p.renamed)return false;
+    if(type==='done'&&!p.renamed)return false;
+    if((type==='image'||type==='video')&&p.type!==type)return false;
+    if(q&&!p.name.toLowerCase().includes(q))return false;
+    return true;
+  });
   if(sortMode==='date')list.sort((a,b)=>(b.lastModified||0)-(a.lastModified||0));
   else if(sortMode==='size')list.sort((a,b)=>(b.size||0)-(a.size||0));
   else list.sort((a,b)=>a.name.localeCompare(b.name));
@@ -564,31 +617,27 @@ function renderOrg(){
   const selIds=new Set(selected);
   grid.innerHTML=list.map((p)=>{
     const isSel=selIds.has(p.id);
+    const doneMark=p.renamed?'<span class="done-mark">✓已整理</span>':'';
+    const typeMark=p.hidden?'<span class="hidden-mark">隐藏</span>':(p.type==='video'?'<span class="badge">▶</span>':'');
     return '<div class="cell" data-id="'+p.id+'" onclick="onCellClick(\''+p.id+'\')">'+
       '<div class="media" data-id="'+p.id+'" style="display:flex;align-items:center;justify-content:center;color:#bbb;font-size:20px">···</div>'+
-      (p.hidden?'<span class="hidden-mark">隐藏</span>':(p.type==='video'?'<span class="badge">▶</span>':''))+
+      doneMark+typeMark+
       '<div class="sel '+(isSel?'on':'')+'" onclick="event.stopPropagation();toggleSel(\''+p.id+'\')">'+(isSel?'✓':'')+'</div>'+
       '<div class="name">'+escapeHtml(p.name)+'</div>'+
     '</div>';
   }).join('');
-  // 懒加载缩略图
   initObserver();
   grid.querySelectorAll('.media[data-id]').forEach(el=>ioObserver.observe(el));
   updateActionBar();
 }
 
-function onCellClick(id){
-  // 点击图片打开详情页
-  openDetail(id);
-}
-
+function onCellClick(id){openDetail(id)}
 function toggleSel(id){if(selected.includes(id))selected=selected.filter(x=>x!==id);else selected.push(id);renderOrg()}
 function clearSel(){selected=[];renderOrg()}
 function updateActionBar(){const bar=document.getElementById('actionBar');document.getElementById('selCount').textContent='已选 '+selected.length+' 项';bar.style.display=selected.length>0?'block':'none'}
-
 function selectAllFiltered(){
   const type=document.getElementById('orgType').value;const q=document.getElementById('orgSearch').value.toLowerCase();
-  const filtered=items.filter(p=>{if(type&&p.type!==type)return false;if(q&&!p.name.toLowerCase().includes(q))return false;return true});
+  const filtered=items.filter(p=>{if(type==='pending'&&p.renamed)return false;if(type==='done'&&!p.renamed)return false;if((type==='image'||type==='video')&&p.type!==type)return false;if(q&&!p.name.toLowerCase().includes(q))return false;return true});
   const allSel=filtered.length>0&&filtered.every(p=>selected.includes(p.id));
   if(allSel){const fids=new Set(filtered.map(p=>p.id));selected=selected.filter(id=>!fids.has(id))}
   else{filtered.forEach(p=>{if(!selected.includes(p.id))selected.push(p.id)})}
@@ -603,13 +652,9 @@ function openDetail(id){
   const item=items[idx];
   detailPerson='';detailTags=new Set();detailDateStr=fmtDate(new Date());
   document.getElementById('detailTitle').textContent=item.name;
-  // 加载大图
   loadDetailImage(item);
-  // 人名备选
   renderNameChips();
-  // 标签
   renderTagChips();
-  // 日期
   const today=new Date();
   document.getElementById('detailDate').value=today.getFullYear()+'-'+String(today.getMonth()+1).padStart(2,'0')+'-'+String(today.getDate()).padStart(2,'0');
   updatePreviewName();
@@ -618,6 +663,13 @@ function openDetail(id){
 
 async function loadDetailImage(item){
   const el=document.getElementById('detailImg');
+  // 如果 handle 为 null，尝试从媒体库加载
+  if(!item.handle){
+    const libRec=libItems.find(i=>i.name===item.name);
+    if(libRec&&(libRec.img||libRec.thumb)){el.innerHTML='<img src="'+(libRec.img||libRec.thumb)+'" style="max-width:100%;max-height:100%">';return}
+    el.innerHTML='<div style="color:#666">🔒 需重新选择文件夹才能加载原图</div>';
+    return;
+  }
   el.innerHTML='<div style="color:#666">加载中…</div>';
   try{
     const file=await item.handle.getFile();
@@ -632,13 +684,11 @@ async function loadDetailImage(item){
 
 function renderNameChips(){
   const el=document.getElementById('nameChips');
-  // 最近3个人名 + 新增输入
   const names=recentNames.slice(0,3);
   let html=names.map(n=>'<span class="nchip '+(detailPerson===n?'on':'')+'" onclick="selectName(\''+escapeHtml(n)+'\')">'+escapeHtml(n)+'</span>').join('');
   html+='<span class="nchip add"><input type="text" id="newNameInput" placeholder="新人名" oninput="onNameInput(this.value)" onchange="onNameInput(this.value)"></span>';
   el.innerHTML=html;
 }
-
 function selectName(n){detailPerson=n;renderNameChips();updatePreviewName()}
 function onNameInput(v){if(v.trim())detailPerson=v.trim();updatePreviewName()}
 
@@ -659,32 +709,32 @@ function updatePreviewName(){
 
 document.getElementById('detailDate').addEventListener('input',function(){const d=this.value?new Date(this.value):new Date();detailDateStr=fmtDate(d);updatePreviewName()});
 
-function closeDetail(){document.getElementById('detailOverlay').classList.remove('show');detailIdx=-1}
+function closeDetail(){document.getElementById('detailOverlay').classList.remove('show');document.getElementById('detailPanel').style.display='block';detailIdx=-1}
 
 async function detailConfirm(){
   if(!detailPerson){showToast('请先选择或输入人名');return}
   const item=items[detailIdx];if(!item)return;
+  if(!item.handle){showToast('需重新选择文件夹才能重命名');return}
   const tags=[...detailTags].sort();
   const ext=getExt(item.name);
   const base=buildName(detailPerson,tags,detailDateStr,0);
   let newName=base+ext;
-  // 同名检查
   try{await curDir.getFileHandle(newName,{create:false});let n=1;while(true){newName=base+'_'+n+ext;try{await curDir.getFileHandle(newName,{create:false});n++}catch(e){break}}}catch(e){}
   try{
     await item.handle.move(newName);
-    // 更新人名记录
-    if(!recentNames.includes(detailPerson)){recentNames.unshift(detailPerson);if(recentNames.length>10)recentNames.pop()}
-    // 入库
+    if(!recentNames.includes(detailPerson)){recentNames.unshift(detailPerson);if(recentNames.length>10)recentNames.pop();localStorage.setItem('recent_names_v22',JSON.stringify(recentNames))}
     let img='',thumb='';
     if(item.type==='image'&&cfg.compress){
       try{let newHandle=item.handle;try{newHandle=await curDir.getFileHandle(newName)}catch(e){}const f=await newHandle.getFile();const c=await compressImage(f,1280);img=c.img;thumb=c.thumb}catch(e){}
     }
     const libRec={id:'lib'+Date.now()+'_'+Math.random().toString(36).slice(2,6),name:newName,person:detailPerson,tags,date:detailDateStr,type:item.type,size:item.size,img,thumb,origPath:item.path,renamed:true};
     await dbSaveMedia([libRec]);libItems.push(libRec);
-    // 从列表移除
-    items=items.filter(x=>x.id!==item.id);
+    // 标记为已整理
+    item.renamed=true;item.name=newName;
     // 缩略图缓存清理旧名
     thumbCache.delete(item.name);
+    // 持久化文件列表
+    await saveSession();
     showToast('已重命名：'+newName);
     closeDetail();
     renderOrg();updateQuota();
@@ -692,19 +742,11 @@ async function detailConfirm(){
 }
 
 function detailNext(){
-  // 跳过当前，打开下一张
-  const curId=items[detailIdx]?.id;
   closeDetail();
-  // 找到下一张
   const nextIdx=detailIdx+1;
-  if(nextIdx<items.length){
-    openDetail(items[nextIdx].id);
-  }else{
-    showToast('已到最后一张');
-  }
+  if(nextIdx<items.length){openDetail(items[nextIdx].id)}else{showToast('已到最后一张')}
 }
 
-// 压缩图片
 function compressImage(file,maxSide){
   return new Promise(res=>{
     const url=URL.createObjectURL(file);const img=new Image();
@@ -714,43 +756,50 @@ function compressImage(file,maxSide){
 }
 
 // ==================== 媒体库 ====================
-async function loadLibrary(){libItems=await dbLoadMedia();renderLib()}
+async function loadLibrary(){libItems=await dbLoadMedia();syncRenamedStatus();renderLib()}
 function renderLib(){
   const grid=document.getElementById('libGrid');
-  const person=document.getElementById('libPerson').value;const tag=document.getElementById('libTag').value;const type=document.getElementById('libType').value;
+  const person=document.getElementById('libPerson').value;const type=document.getElementById('libType').value;
   const persons=[...new Set(libItems.map(i=>i.person).filter(Boolean))].sort();
-  const tags=[...new Set(libItems.flatMap(i=>i.tags||[]).filter(Boolean))].sort();
-  document.getElementById('libPerson').innerHTML='<option value="">全部人名</option>'+persons.map(p=>'<option value="'+escapeHtml(p)+'">'+escapeHtml(p)+'</option>').join('');
-  document.getElementById('libTag').innerHTML='<option value="">全部标签</option>'+tags.map(t=>'<option value="'+escapeHtml(t)+'">'+escapeHtml(t)+'</option>').join('');
-  const filtered=libItems.filter(i=>{if(person&&i.person!==person)return false;if(tag&&!(i.tags||[]).includes(tag))return false;if(type&&i.type!==type)return false;return true});
+  const allTags=[...new Set(libItems.flatMap(i=>i.tags||[]).filter(Boolean))].sort();
+  const curPerson=person||document.getElementById('libPerson').value;
+  document.getElementById('libPerson').innerHTML='<option value="">全部人名</option>'+persons.map(p=>'<option value="'+escapeHtml(p)+'"'+(curPerson===p?' selected':'')+'>'+escapeHtml(p)+'</option>').join('');
+  const tagChips=document.getElementById('libTagChips');
+  tagChips.innerHTML=allTags.map(t=>'<span class="tchip '+(libSelectedTags.has(t)?'on':'')+'" onclick="toggleLibTag(\''+escapeHtml(t)+'\')">'+escapeHtml(t)+'</span>').join('');
+  const selectedTagArr=[...libSelectedTags];
+  const filtered=libItems.filter(i=>{
+    if(person&&i.person!==person)return false;
+    if(type&&i.type!==type)return false;
+    if(selectedTagArr.length>0){const itemTags=i.tags||[];if(!selectedTagArr.every(t=>itemTags.includes(t)))return false}
+    return true;
+  });
   libFiltered=filtered;
   document.getElementById('libCount').textContent='显示 '+filtered.length+' / '+libItems.length;
   document.getElementById('libEmpty').style.display=libItems.length?'none':'block';
   grid.innerHTML=filtered.map((i,idx)=>{
     const thumb=i.thumb||i.img||'';
     const mediaHtml=thumb?'<img src="'+thumb+'" style="width:100%;height:100%;object-fit:cover">':'<div style="aspect-ratio:1;background:#eee;display:flex;align-items:center;justify-content:center;color:#bbb">无图</div>';
-    const tagHtml=(i.tags&&i.length)?'·'+escapeHtml(i.tags.join('_')):'';
+    const tagHtml=(i.tags&&i.tags.length)?'·'+escapeHtml(i.tags.join('_')):'';
     const dateHtml=i.date?'·'+escapeHtml(i.date):'';
     return '<div class="cell" onclick="previewLib('+idx+')">'+(i.type==='video'?'<span class="badge">▶</span>':'')+mediaHtml+'<div class="name"><b>'+escapeHtml(i.person||'?')+'</b>'+tagHtml+dateHtml+'</div></div>';
   }).join('');
-  const statHtml='<div class="stat"><div class="num">'+libItems.length+'</div><div class="lbl">总文件</div></div><div class="stat"><div class="num">'+persons.length+'</div><div class="lbl">人数</div></div><div class="stat"><div class="num">'+tags.length+'</div><div class="lbl">标签数</div></div>';
+  const statHtml='<div class="stat"><div class="num">'+libItems.length+'</div><div class="lbl">总文件</div></div><div class="stat"><div class="num">'+persons.length+'</div><div class="lbl">人数</div></div><div class="stat"><div class="num">'+allTags.length+'</div><div class="lbl">标签数</div></div>';
   document.getElementById('libStats').innerHTML=statHtml;
 }
-['libPerson','libTag','libType'].forEach(id=>document.getElementById(id).addEventListener('change',renderLib));
+function toggleLibTag(t){if(libSelectedTags.has(t))libSelectedTags.delete(t);else libSelectedTags.add(t);renderLib()}
+['libPerson','libType'].forEach(id=>document.getElementById(id).addEventListener('change',renderLib));
 function previewLib(idx){
   const i=libFiltered[idx];if(!i)return;
   const el=document.getElementById('detailImg');
   document.getElementById('detailTitle').textContent=i.name;
   if(i.type==='video'){if(i.thumb)el.innerHTML='<img src="'+i.thumb+'" style="max-width:100%;max-height:100%"><div style="color:#fff;text-align:center;padding-top:8px">视频仅存缩略图</div>';else el.innerHTML='<div style="color:#fff">无法预览</div>'}
   else{if(i.img)el.innerHTML='<img src="'+i.img+'" style="max-width:100%;max-height:100%">';else if(i.thumb)el.innerHTML='<img src="'+i.thumb+'" style="max-width:100%;max-height:100%">';else el.innerHTML='<div style="color:#fff">无法预览</div>'}
-  // 隐藏重命名面板
   document.getElementById('detailPanel').style.display='none';
   document.getElementById('detailOverlay').classList.add('show');
 }
-function closeDetail(){document.getElementById('detailOverlay').classList.remove('show');document.getElementById('detailPanel').style.display='block';detailIdx=-1}
 
 // ==================== 设置 ====================
-function loadSettings(){try{const s=localStorage.getItem('ff_settings_v21');if(s)cfg=Object.assign(cfg,JSON.parse(s));const rn=localStorage.getItem('recent_names_v21');if(rn)recentNames=JSON.parse(rn)}catch(e){}}
+function loadSettings(){try{const s=localStorage.getItem('ff_settings_v22');if(s)cfg=Object.assign(cfg,JSON.parse(s));const rn=localStorage.getItem('recent_names_v22');if(rn)recentNames=JSON.parse(rn)}catch(e){}}
 function saveSettings(){
   const tags=document.getElementById('setTags').value.split(',').map(s=>s.trim()).filter(Boolean);
   const maxCount=parseInt(document.getElementById('setMaxCount').value)||2000;
@@ -758,7 +807,7 @@ function saveSettings(){
   cfg.dateFormat=document.getElementById('setDateFormat').value;
   cfg.compress=document.getElementById('setCompress').checked;
   cfg.maxCount=Math.max(50,Math.min(5000,maxCount));
-  localStorage.setItem('ff_settings_v21',JSON.stringify(cfg));
+  localStorage.setItem('ff_settings_v22',JSON.stringify(cfg));
   document.getElementById('setMaxCountVal').textContent=cfg.maxCount;
 }
 function loadSettingsForm(){
@@ -781,10 +830,11 @@ function renderSetStats(){
 function exportJson(){
   const data=libItems.map(i=>({name:i.name,person:i.person,tags:i.tags||[],date:i.date,type:i.type,size:i.size,origPath:i.origPath||''}));
   const blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json'});
-  const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='media_library_v21.json';a.click();
+  const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='media_library_v22.json';a.click();
   showToast('已导出 '+data.length+' 条记录');
 }
-async function clearAll(){if(!confirm('确认清空全部媒体库记录？此操作不可恢复'))return;await dbDeleteMedia();libItems=[];renderLib();renderSetStats();updateQuota();showToast('已清空')}
+async function clearAll(){if(!confirm('确认清空全部媒体库记录？此操作不可恢复'))return;await dbDeleteMedia();libItems=[];syncRenamedStatus();renderLib();renderSetStats();renderOrg();updateQuota();showToast('已清空媒体库')}
+async function clearCache(){if(!confirm('确认清空缩略图缓存？下次打开整理页会重新生成缩略图'))return;await dbClearThumbs();thumbCache.clear();showToast('已清空缩略图缓存');renderOrg()}
 
 // ==================== 批量工具 ====================
 function getSelectedItems(){return selected.map(id=>items.find(x=>x.id===id)).filter(Boolean)}
@@ -794,8 +844,8 @@ function renderManualList(){const list=getSelectedItems();document.getElementByI
 async function applyBatchRename(newNames){
   if(!newNames.length){showToast('没有可处理的文件');return}
   showProgress(10);let ok=0,fail=0,skip=0;const usedNames=new Set();
-  for(let i=0;i<newNames.length;i++){const{item,newName}=newNames[i];if(newName===item.name){skip++;continue}let fn=newName;if(usedNames.has(fn)){const ext=getExt(fn),base=getBaseName(fn);let n=1;while(usedNames.has(base+'_'+n+ext))n++;fn=base+'_'+n+ext}usedNames.add(fn);try{await item.handle.move(fn);thumbCache.delete(item.name);ok++}catch(e){fail++}showProgress(10+Math.round((i+1)/newNames.length*80))}
-  selected=[];await rescanDir(false);closeToolsModal();showProgress(100);setTimeout(hideProgress,500);
+  for(let i=0;i<newNames.length;i++){const{item,newName}=newNames[i];if(newName===item.name){skip++;continue}let fn=newName;if(usedNames.has(fn)){const ext=getExt(fn),base=getBaseName(fn);let n=1;while(usedNames.has(base+'_'+n+ext))n++;fn=base+'_'+n+ext}usedNames.add(fn);try{await item.handle.move(fn);thumbCache.delete(item.name);item.name=fn;ok++}catch(e){fail++}showProgress(10+Math.round((i+1)/newNames.length*80))}
+  selected=[];await saveSession();closeToolsModal();showProgress(100);setTimeout(hideProgress,500);
   showToast('完成：成功 '+ok+' 个'+(fail?'，失败 '+fail+' 个':'')+(skip?'，跳过 '+skip+' 个':''));
 }
 function batchReplace(){const o=document.getElementById('replaceOld').value,n=document.getElementById('replaceNew').value;if(!o){showToast('请输入旧字符');return}applyBatchRename(getSelectedItems().map(i=>({item:i,newName:i.name.split(o).join(n)})))}
@@ -821,6 +871,9 @@ function switchTab(t){
   document.getElementById('showHidden').checked=cfg.showHidden;
   try{await loadLibrary()}catch(e){}
   await updateQuota();
+  // 尝试恢复上次会话
+  const restored=await restoreSession();
+  if(restored){showToast('已恢复上次会话：'+curDirName+'（需重新选择文件夹授权后才能重命名）')}
   switchTab('org');
 })();
 </script>
