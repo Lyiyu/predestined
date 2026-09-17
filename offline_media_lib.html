@@ -236,7 +236,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei
     <h3>⚙️ 命名规则</h3>
     <div class="setitem">
       <label>重命名格式</label>
-      <select id="setRule">
+      <select id="setRule" onchange="saveSettings()">
         <option value="person_tag_date">人名_标签_日期</option>
         <option value="person_date">人名_日期</option>
         <option value="person">仅人名</option>
@@ -244,7 +244,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei
     </div>
     <div class="setitem">
       <label>日期格式</label>
-      <select id="setDateFormat">
+      <select id="setDateFormat" onchange="saveSettings()">
         <option value="YYYYMMDD">20260917</option>
         <option value="YYYY-MM-DD">2026-09-17</option>
         <option value="YYYYMM">202609</option>
@@ -255,7 +255,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei
     <h3>🏷️ 标签设置</h3>
     <div class="setitem">
       <label>自定义标签（逗号分隔，展示在详情页供选择）</label>
-      <input type="text" id="setTags" placeholder="长靴,多人,常服,露营">
+      <input type="text" id="setTags" placeholder="长靴,多人,常服,露营" onchange="saveSettings()">
       <div class="sub">点击图片详情页时显示这些标签，可多选</div>
     </div>
   </div>
@@ -264,7 +264,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei
     <div class="setitem">
       <label>最大可导入数量</label>
       <div class="row">
-        <input type="range" id="setMaxCount" min="50" max="5000" step="50" value="2000" style="flex:3">
+        <input type="range" id="setMaxCount" min="50" max="5000" step="50" value="2000" style="flex:3" onchange="saveSettings()">
         <span id="setMaxCountVal" style="flex:1;text-align:center;font-weight:700">2000</span>
       </div>
       <div class="sub">超过此数量将无法继续入库，避免浏览器存储被占满</div>
@@ -760,7 +760,6 @@ function saveSettings(){
   cfg.maxCount=Math.max(50,Math.min(5000,maxCount));
   localStorage.setItem('ff_settings_v21',JSON.stringify(cfg));
   document.getElementById('setMaxCountVal').textContent=cfg.maxCount;
-  showToast('设置已保存');
 }
 function loadSettingsForm(){
   document.getElementById('setRule').value=cfg.rule||'person_tag_date';
@@ -770,7 +769,7 @@ function loadSettingsForm(){
   document.getElementById('setMaxCountVal').textContent=cfg.maxCount||2000;
   document.getElementById('setCompress').checked=cfg.compress!==false;
 }
-function toggleSwitch(id){const el=document.getElementById(id);el.checked=!el.checked;if(id==='setCompress')cfg.compress=el.checked}
+function toggleSwitch(id){const el=document.getElementById(id);el.checked=!el.checked;if(id==='setCompress'){cfg.compress=el.checked;saveSettings()}}
 document.getElementById('setMaxCount').addEventListener('input',function(){document.getElementById('setMaxCountVal').textContent=this.value});
 function renderSetStats(){
   const persons=[...new Set(libItems.map(i=>i.person).filter(Boolean))].length;
