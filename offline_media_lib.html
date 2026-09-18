@@ -5,17 +5,17 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
-<title>离线媒体库 v3.5</title>
+<title>离线媒体库 v3.5.1</title>
 <style>
 *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 :root{
   --primary:#5b6cff;--primary2:#7c5cff;--bg:#f3f4f8;--card:#fff;--text:#1f2333;
   --sub:#8a8fa3;--line:#e6e8f0;--danger:#e5484d;--ok:#30a46c;--radius:14px;
   --safe-b:env(safe-area-inset-bottom,0px);--safe-t:env(safe-area-inset-top,0px);
-  --tab-h:56px;
+  --tab-h:56px;--btn-h:42px;--gap:10px;--shadow:0 2px 8px rgba(0,0,0,.06);--shadow-lg:0 4px 16px rgba(0,0,0,.1);
 }
 html,body{height:100%;overflow:hidden}
-body{font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei",sans-serif;background:var(--bg);color:var(--text);display:flex;flex-direction:column;overflow:hidden}
+body{font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei",sans-serif;background:var(--bg);color:var(--text);display:flex;flex-direction:column;overflow:hidden;word-break:keep-all;-webkit-word-break:keep-all;overflow-wrap:anywhere}
 .topbar{position:relative;flex:0 0 auto;z-index:100;background:linear-gradient(135deg,var(--primary),var(--primary2));color:#fff;padding:calc(10px + var(--safe-t)) 14px 10px;display:flex;align-items:center;gap:8px;box-shadow:0 2px 10px rgba(91,108,255,.25)}
 .topbar h1{font-size:17px;font-weight:700;flex:1 1 auto;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .topbar .topbar-btn{background:rgba(255,255,255,.25);border:none;color:#fff;font-size:16px;width:34px;height:34px;border-radius:50%;cursor:pointer;display:flex;align-items:center;justify-content:center;flex:0 0 auto;padding:0;line-height:1}
@@ -29,15 +29,17 @@ body{font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei
 .btn-main:active{transform:scale(.98)}
 .btn-ghost{width:100%;padding:12px;border:1.5px dashed #c3c8d8;border-radius:var(--radius);background:#fff;color:#7a7f94;font-size:14px;cursor:pointer;margin-top:8px}
 .btn-danger{width:100%;padding:12px;border:1.5px solid #fecdd3;border-radius:var(--radius);background:#fff;color:var(--danger);font-size:14px;cursor:pointer;margin-top:8px}
-.dir-card{background:var(--card);border-radius:var(--radius);padding:14px;box-shadow:0 1px 4px rgba(0,0,0,.06);margin-bottom:12px}
+.dir-card{background:var(--card);border-radius:var(--radius);padding:14px;box-shadow:var(--shadow);margin-bottom:12px}
 .dir-card .dir-name{font-size:15px;font-weight:600;word-break:break-all;line-height:1.5}
 .dir-card .dir-meta{font-size:12px;color:var(--sub);margin-top:4px}
-.dir-row{display:flex;gap:8px;align-items:center;margin-top:10px}
-.dir-row button{flex:1;padding:10px;border:none;border-radius:10px;background:var(--primary);color:#fff;font-size:14px;cursor:pointer}
+.dir-row{display:flex;gap:8px;align-items:stretch;margin-top:10px;flex-wrap:wrap}
+.dir-row button{flex:1 1 0;padding:10px 8px;border:none;border-radius:10px;background:var(--primary);color:#fff;font-size:13px;cursor:pointer;white-space:nowrap;min-width:0;overflow:hidden;text-overflow:ellipsis;display:flex;align-items:center;justify-content:center;gap:3px;transition:transform .15s}
+.dir-row button:active{transform:scale(.96)}
 .dir-row button.ghost{background:#f0f1f7;color:#5a5f75}
 .dir-row button:disabled{opacity:.5;pointer-events:none}
 .grid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin-top:10px}
-.cell{position:relative;border-radius:12px;overflow:hidden;background:var(--card);box-shadow:0 1px 4px rgba(0,0,0,.08);cursor:pointer}
+.cell{position:relative;border-radius:12px;overflow:hidden;background:var(--card);box-shadow:var(--shadow);cursor:pointer;transition:box-shadow .2s}
+.cell:active{box-shadow:var(--shadow-lg)}
 .cell .media{width:100%;aspect-ratio:1;background:#dfe1ea;display:flex;align-items:center;justify-content:center;color:#bbb;font-size:20px;overflow:hidden}
 .cell .media img{width:100%;height:100%;object-fit:cover;display:block}
 .cell .sel{position:absolute;top:6px;right:6px;width:24px;height:24px;border-radius:50%;border:2px solid #fff;background:rgba(0,0,0,.35);display:flex;align-items:center;justify-content:center;color:#fff;font-size:14px;z-index:2}
@@ -49,28 +51,28 @@ body{font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei
 .progress-bar{position:fixed;top:calc(52px + var(--safe-t));left:0;right:0;height:3px;background:#e0e0e0;z-index:95;display:none}
 .progress-bar.show{display:block}
 .progress-bar i{display:block;height:100%;background:var(--primary);transition:width .3s;width:0%}
-.actionbar{position:fixed;bottom:calc(var(--tab-h) + var(--safe-b));left:0;right:0;background:#fff;box-shadow:0 -2px 12px rgba(0,0,0,.08);padding:10px 12px 10px;z-index:250;display:none}
-.actionbar .row{display:flex;gap:8px;align-items:center;margin-bottom:8px;flex-wrap:wrap}
-.actionbar .count{font-size:12px;color:var(--sub)}
-.actionbar button{padding:10px 16px;border:none;border-radius:10px;background:var(--primary);color:#fff;font-size:14px;cursor:pointer;white-space:nowrap;font-weight:600}
+.actionbar{position:fixed;bottom:calc(var(--tab-h) + var(--safe-b));left:0;right:0;background:#fff;box-shadow:0 -2px 12px rgba(0,0,0,.08);padding:12px 14px 12px;z-index:250;display:none}
+.actionbar .row{display:flex;gap:10px;align-items:center;flex-wrap:nowrap}
+.actionbar .count{font-size:13px;color:#555;white-space:nowrap;flex:0 0 auto;font-weight:500}
+.actionbar button{padding:10px 14px;border:none;border-radius:10px;background:var(--primary);color:#fff;font-size:13px;cursor:pointer;white-space:nowrap;font-weight:600;flex:0 0 auto}
 .actionbar button.ghost{background:#eef0f6;color:#555}
 .tabbar{position:relative;flex:0 0 auto;height:calc(var(--tab-h) + var(--safe-b));padding-bottom:var(--safe-b);background:#fff;border-top:1px solid var(--line);display:flex;z-index:200}
 .tabbar .tab{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;color:#9aa0b5;font-size:10px;cursor:pointer;background:none;border:none}
-.tabbar .tab .ic{font-size:20px;line-height:1}
+.tabbar .tab .ic{font-size:20px;line-height:1;height:22px;display:flex;align-items:center;justify-content:center}
 .tabbar .tab.active{color:var(--primary);font-weight:600}
-.filters{display:flex;gap:8px;margin:12px 0;flex-wrap:wrap}
-.filters select{padding:8px 10px;border:1px solid var(--line);border-radius:10px;font-size:13px;background:#fff;flex:0 0 auto;width:auto;max-width:100%}
+.filters{display:flex;gap:8px;margin:12px 0;flex-wrap:wrap;align-items:center}
+.filters select{padding:8px 10px;border:1px solid var(--line);border-radius:10px;font-size:13px;background:#fff;flex:0 0 auto;width:auto;max-width:32%;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .filters select.person-select{max-width:100%;min-width:0;width:auto;text-overflow:ellipsis}
 .filters .sort-dir{width:38px;padding:8px 0;text-align:center}
-.filters input{padding:8px 10px;border:1px solid var(--line);border-radius:10px;font-size:13px;background:#fff;flex:1 1 120px;min-width:100px}
-.count-tip{font-size:12px;color:var(--sub);align-self:center;white-space:nowrap}
-.btn-sm{padding:7px 14px;border:1px solid var(--line);border-radius:8px;background:#fff;color:#555;font-size:13px;cursor:pointer;white-space:nowrap;flex:0 0 auto}
-.btn-sm:active{transform:scale(.97)}
+.filters input{padding:8px 10px;border:1px solid var(--line);border-radius:10px;font-size:13px;background:#fff;flex:1 1 100px;min-width:80px}
+.count-tip{font-size:12px;color:#666;align-self:center;white-space:nowrap;flex:0 0 auto}
+.btn-sm{padding:8px 12px;border:1px solid var(--line);border-radius:10px;background:#fff;color:#555;font-size:13px;cursor:pointer;white-space:nowrap;flex:0 0 auto;transition:transform .15s,background .15s;display:inline-flex;align-items:center;justify-content:center;gap:3px}
+.btn-sm:active{transform:scale(.95)}
 .stats{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:12px}
-.stat{background:var(--card);border-radius:var(--radius);padding:14px 10px;text-align:center;box-shadow:0 1px 4px rgba(0,0,0,.06)}
-.stat .num{font-size:24px;font-weight:800;color:var(--primary)}
-.stat .lbl{font-size:11px;color:var(--sub);margin-top:3px}
-.quota{background:var(--card);border-radius:var(--radius);padding:14px;box-shadow:0 1px 4px rgba(0,0,0,.06);margin-bottom:12px}
+.stat{background:var(--card);border-radius:var(--radius);padding:14px 8px;text-align:center;box-shadow:var(--shadow);overflow:hidden;min-width:0}
+.stat .num{font-size:22px;font-weight:800;color:var(--primary);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.stat .lbl{font-size:11px;color:#666;margin-top:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.quota{background:var(--card);border-radius:var(--radius);padding:14px;box-shadow:var(--shadow);margin-bottom:12px}
 .quota .q-head{display:flex;justify-content:space-between;font-size:13px;font-weight:600;margin-bottom:8px}
 .quota .q-bar{height:8px;border-radius:4px;background:#eceef5;overflow:hidden}
 .quota .q-bar i{display:block;height:100%;border-radius:4px;background:linear-gradient(90deg,var(--primary),var(--primary2))}
@@ -82,13 +84,14 @@ body{font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei
 .q-detail .q-row .q-val{font-weight:700;color:var(--text)}
 .q-detail .q-row .q-dot{width:8px;height:8px;border-radius:50%;flex:0 0 auto}
 .q-toggle{font-size:11px;color:var(--primary);cursor:pointer;border:none;background:none;padding:4px 0;margin-top:6px;font-weight:600;text-align:left;width:100%}
-.setcard{background:var(--card);border-radius:var(--radius);padding:16px;margin-bottom:14px;box-shadow:0 1px 4px rgba(0,0,0,.06);scroll-margin-bottom:calc(var(--tab-h) + var(--safe-b) + 10px)}
+.setcard{background:var(--card);border-radius:var(--radius);padding:16px;margin-bottom:14px;box-shadow:var(--shadow);scroll-margin-bottom:calc(var(--tab-h) + var(--safe-b) + 10px)}
 .setcard h3{font-size:15px;font-weight:700;margin-bottom:12px;display:flex;align-items:center;gap:6px}
 .setitem{margin-bottom:14px}
 .setitem:last-child{margin-bottom:0}
-.setitem label{display:block;font-size:13px;color:#555;margin-bottom:7px;font-weight:500}
-.setitem input[type=text],.setitem select{width:100%;padding:11px 12px;border:1px solid var(--line);border-radius:10px;font-size:14px;background:#fff}
-.setitem .sub{font-size:11px;color:var(--sub);margin-top:5px;line-height:1.6}
+.setitem label{display:block;font-size:13px;color:#555;margin-bottom:7px;font-weight:500;word-break:keep-all;overflow-wrap:anywhere}
+.setitem input[type=text],.setitem select,.setitem input[type=number]{width:100%;padding:11px 12px;border:1px solid var(--line);border-radius:10px;font-size:14px;background:#fff;transition:border-color .2s}
+.setitem input[type=text]:focus,.setitem select:focus,.setitem input[type=number]:focus{border-color:var(--primary);outline:none}
+.setitem .sub{font-size:11px;color:#888;margin-top:5px;line-height:1.6;word-break:keep-all;overflow-wrap:anywhere}
 .setitem .row{display:flex;gap:8px;align-items:center}
 .setitem .row>*{flex:1}
 .switch{display:flex;align-items:center;justify-content:space-between}
@@ -109,7 +112,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei
 .detail-img{flex:1;overflow:hidden;display:flex;align-items:center;justify-content:center;padding:8px}
 .detail-img img{max-width:100%;max-height:100%;border-radius:8px;object-fit:contain}
 .detail-panel{background:#1a1a2e;color:#fff;padding:16px 16px calc(16px + var(--safe-b));border-radius:18px 18px 0 0;max-height:55vh;overflow-y:auto;-webkit-overflow-scrolling:touch}
-.detail-panel .step-label{font-size:13px;color:#9aa0b5;margin-bottom:8px;margin-top:14px}
+.detail-panel .step-label{font-size:13px;color:#9aa0b5;margin-bottom:10px;margin-top:18px}
 .detail-panel .step-label:first-child{margin-top:0}
 .name-chips{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:6px}
 .name-chips .nchip{padding:10px 16px;border-radius:10px;background:rgba(255,255,255,.1);color:#fff;font-size:14px;cursor:pointer;border:2px solid transparent;transition:.15s}
@@ -127,14 +130,14 @@ body{font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei
 .date-row{display:flex;gap:10px;align-items:center}
 .date-row input[type=date]{flex:1;padding:10px;border:1px solid rgba(255,255,255,.2);border-radius:10px;background:rgba(255,255,255,.08);color:#fff;font-size:14px}
 .date-row input[type=date]::-webkit-calendar-picker-indicator{filter:invert(1)}
-.preview-name{background:rgba(255,255,255,.06);border-radius:10px;padding:12px;margin-top:14px;text-align:center}
-.preview-name .pl{font-size:11px;color:#9aa0b5;margin-bottom:4px}
-.preview-name .pn{font-size:16px;font-weight:700;color:#fff;word-break:break-all}
-.confirm-bar{display:flex;gap:10px;margin-top:16px}
-.confirm-bar button{flex:1;padding:14px;border:none;border-radius:12px;font-size:16px;font-weight:700;cursor:pointer}
-.confirm-bar button.skip{background:rgba(255,255,255,.08);color:#999}
-.confirm-bar button.confirm{background:var(--primary);color:#fff}
-.confirm-bar button.del{background:#e5484d;color:#fff}
+.preview-name{background:rgba(255,255,255,.06);border-radius:10px;padding:12px;margin-top:14px;text-align:center;border:1px solid rgba(255,255,255,.12)}
+.preview-name .pl{font-size:11px;color:#9aa0b5;margin-bottom:6px}
+.preview-name .pn{font-size:16px;font-weight:700;color:#fff;word-break:break-all;line-height:1.5}
+.confirm-bar{display:flex;gap:8px;margin-top:16px}
+.confirm-bar button{flex:1;padding:12px 6px;border:none;border-radius:12px;font-size:14px;font-weight:700;cursor:pointer;white-space:nowrap;min-width:0;overflow:hidden;text-overflow:ellipsis;transition:transform .15s}
+.confirm-bar button.skip{background:rgba(255,255,255,.08);color:#999;flex:0 0 auto;width:80px}
+.confirm-bar button.confirm{background:var(--primary);color:#fff;flex:2 1 0}
+.confirm-bar button.del{background:#e5484d;color:#fff;flex:0 0 auto;width:80px}
 .confirm-bar button:active{transform:scale(.98)}
 .confirm-bar button:disabled{opacity:.5}
 /* 批量工具弹窗 */
@@ -161,12 +164,12 @@ body{font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei
 .manual-item input{flex:1;padding:9px 10px;border:1px solid var(--line);border-radius:8px;font-size:13px;min-width:0}
 .manual-item .ext{font-size:12px;color:var(--sub);flex:0 0 auto;white-space:nowrap}
 /* 下载页 */
-.dl-card{background:var(--card);border-radius:var(--radius);padding:16px;box-shadow:0 1px 4px rgba(0,0,0,.06);margin-bottom:14px}
+.dl-card{background:var(--card);border-radius:var(--radius);padding:16px;box-shadow:var(--shadow);margin-bottom:14px}
 .dl-card h3{font-size:16px;font-weight:700;margin-bottom:12px}
 .dl-card textarea{width:100%;min-height:96px;padding:12px;border:1px solid var(--line);border-radius:10px;font-size:14px;background:#fff;resize:vertical;font-family:inherit;line-height:1.6}
 .dl-card .sub{font-size:12px;color:var(--sub);margin-top:8px;line-height:1.7}
 .dl-status{margin-top:12px}
-.dl-item{display:flex;align-items:flex-start;gap:10px;padding:10px 12px;border-radius:10px;background:#f8f9fc;margin-bottom:8px;font-size:13px}
+.dl-item{display:flex;align-items:flex-start;gap:10px;padding:12px;border-radius:10px;background:#f8f9fc;margin-bottom:10px;font-size:13px;transition:background .15s}
 .dl-item .dl-icon{font-size:18px;flex:0 0 auto;width:22px;height:22px;display:flex;align-items:center;justify-content:center;margin-top:1px}
 .dl-item .dl-info{flex:1;min-width:0}
 .dl-item .dl-name{font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%;line-height:1.5}
@@ -191,8 +194,8 @@ body{font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei
 .dup-pair .dup-name{font-size:13px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .dup-pair .dup-meta{font-size:11px;color:var(--sub);margin-top:3px;line-height:1.5}
 .dup-pair .dup-badge{display:inline-block;background:#eef1ff;color:var(--primary);font-size:10px;padding:2px 6px;border-radius:4px;margin-top:4px;margin-right:4px}
-.dup-pair .dup-act{display:flex;flex-direction:column;gap:4px;flex:0 0 auto}
-.dup-pair .dup-btn{padding:6px 10px;border:none;border-radius:8px;font-size:12px;cursor:pointer;white-space:nowrap}
+.dup-pair .dup-act{display:flex;flex-direction:row;gap:4px;flex:0 0 auto;flex-wrap:wrap;max-width:100px}
+.dup-pair .dup-btn{padding:6px 8px;border:none;border-radius:8px;font-size:11px;cursor:pointer;white-space:nowrap}
 .dup-pair .dup-btn.keep{background:var(--ok);color:#fff}
 .dup-pair .dup-btn.del{background:#fecdd3;color:var(--danger)}
 .dup-pair .dup-btn.rename{background:var(--primary);color:#fff}
@@ -217,6 +220,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei
 .modal-box .modal-actions button{flex:1;padding:12px;border:none;border-radius:12px;font-size:15px;font-weight:700;cursor:pointer}
 .modal-box .modal-actions .btn-cancel{background:#f0f1f7;color:#555}
 .modal-box .modal-actions .btn-ok{background:var(--primary);color:#fff}
+.modal-box .modal-actions .btn-ok.danger{background:var(--danger);color:#fff}
 /* 子文件夹切换 */
 .subdir-bar{display:flex;gap:6px;margin:8px 0 4px;flex-wrap:wrap;align-items:center}
 .subdir-bar .subdir-label{font-size:12px;color:var(--sub);flex:0 0 auto}
@@ -233,7 +237,21 @@ body{font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei
   .grid{grid-template-columns:repeat(4,1fr)}
   .page{padding:20px 20px calc(var(--safe-b) + 16px)}
   .topbar h1{font-size:20px}
+  .filters{flex-wrap:nowrap}
+  .filters .action-row{flex-wrap:nowrap}
 }
+/* v3.5.1: 手机端按钮防孤行 */
+.btn-main,.btn-ghost,.btn-danger{word-break:keep-all;overflow-wrap:anywhere;line-height:1.5}
+.tool-card h4{word-break:keep-all;overflow-wrap:anywhere}
+.tool-card .desc{word-break:keep-all;overflow-wrap:break-word}
+.dl-card h3{word-break:keep-all}
+.setcard h3{word-break:keep-all}
+/* v3.5.1: 操作栏按钮优化 */
+.actionbar button{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+/* v3.5.1: 批量工具弹窗按钮 */
+.tool-btn{word-break:keep-all;overflow-wrap:anywhere}
+/* v3.5.1: 确认弹窗按钮 */
+.modal-box .modal-actions button{word-break:keep-all;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 </style>
 </head>
 <body>
@@ -241,7 +259,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei
 <div class="topbar">
   <h1>📁 离线媒体库</h1>
   <button class="topbar-btn" onclick="location.reload()" title="刷新页面（用于重新授权文件夹）">🔄</button>
-  <span class="tag">v3.5</span>
+  <span class="tag">v3.5.1</span>
 </div>
 
 <div class="progress-bar" id="progressBar"><i id="progressFill"></i></div>
@@ -256,8 +274,8 @@ body{font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei
       <button class="ghost" id="btnRescan" onclick="rescanDir(true)">🔄 重新扫描</button>
       <button class="ghost" id="btnReauth" onclick="reauthorizeDir()" style="display:none">🔓 恢复授权</button>
     </div>
-    <div class="dir-row" style="margin-top:6px">
-      <label style="display:flex;align-items:center;gap:6px;font-size:13px;color:#555">
+    <div class="dir-row" style="margin-top:6px;justify-content:center">
+      <label style="display:flex;align-items:center;gap:6px;font-size:13px;color:#555;white-space:nowrap">
         <input type="checkbox" id="showHidden" onchange="cfg.showHidden=this.checked;saveSettings();rescanDir(true)"> 显示隐藏文件夹/文件
       </label>
     </div>
@@ -278,10 +296,12 @@ body{font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei
       <button class="btn-sm sort-dir" id="btnSortDir" onclick="toggleSortDir()" title="切换排序方向">↓</button>
       <input type="text" id="libSearch" placeholder="搜索文件名" oninput="renderLib()">
       <span class="count-tip" id="libCount"></span>
-      <button class="btn-sm" onclick="selectAllFiltered()">☑️全选</button>
-      <button class="btn-sm" onclick="findDuplicates()" style="background:#fff;color:var(--primary);border-color:var(--primary)">🔍 查找重复文件</button>
-      <button class="btn-sm" onclick="organizeByPerson()" style="background:var(--primary);color:#fff;border-color:var(--primary)">📁 按人名整理</button>
-      <button class="btn-sm" onclick="organizeByPersonMedia()" style="background:#fff;color:#30a46c;border-color:#30a46c">🗂️ 按人名聚合</button>
+    </div>
+    <div class="filters" style="margin-top:0">
+      <button class="btn-sm" onclick="selectAllFiltered()" style="background:#fff;color:var(--primary);border-color:var(--primary);white-space:nowrap">☑️ 全选</button>
+      <button class="btn-sm" onclick="findDuplicates()" style="background:#fff;color:var(--primary);border-color:var(--primary)">🔍 重复</button>
+      <button class="btn-sm" onclick="organizeByPerson()" style="background:var(--primary);color:#fff;border-color:var(--primary)">📁 整理</button>
+      <button class="btn-sm" onclick="organizeByPersonMedia()" style="background:#fff;color:var(--primary);border-color:var(--primary)">🗂️ 聚合</button>
     </div>
     <div class="subdir-bar" id="subdirBar" style="display:none"></div>
     <div class="tag-chips light" id="libTagChips" style="margin-bottom:10px"></div>
@@ -295,10 +315,10 @@ body{font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei
 <div class="page" id="pageDl">
   <div class="dl-card">
     <h3>📥 无水印下载</h3>
-    <div id="dlModeTip" class="tip" style="margin-bottom:10px">当前模式：第三方网站。粘贴抖音/小红书/B站等链接，每行一个。</div>
+    <div id="dlModeTip" class="tip" style="margin-bottom:10px;line-height:1.6">当前模式：第三方网站。粘贴链接，每行一个。</div>
     <textarea id="dlUrls" placeholder="粘贴抖音/小红书/B站/视频号分享链接，每行一个&#10;示例：&#10;https://v.douyin.com/xxx/&#10;https://www.xiaohongshu.com/explore/xxx"></textarea>
     <button class="btn-main" onclick="startDownload()">📥 开始解析下载</button>
-    <div class="sub" style="text-align:center;color:#9aa0b5;font-size:11px">第三方模式：自动解析并下载到媒体库文件夹；本地模式：需启动下载服务。</div>
+    <div class="sub" style="text-align:center;color:#9aa0b5;font-size:11px;line-height:1.6">第三方模式：自动解析并下载到媒体库文件夹<br>本地模式：需启动下载服务</div>
   </div>
   <div class="dl-card" id="dlStatusCard" style="display:none">
     <h3>📊 下载状态</h3>
@@ -413,8 +433,8 @@ body{font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei
   </div>
   <div class="setcard">
     <h3>💾 数据与迁移</h3>
-    <button class="btn-ghost" onclick="exportJson()" style="margin-top:0">📄 导出媒体库 JSON（备份/迁移）</button>
-    <div class="sub" style="margin-top:6px">导出所有标签记录。换手机时：旧手机导出JSON→传到新手机→选文件夹→导入JSON→自动恢复所有标签和人名。</div>
+    <button class="btn-ghost" onclick="exportJson()" style="margin-top:0">📄 导出媒体库 JSON</button>
+    <div class="sub" style="margin-top:6px">导出所有标签记录。换手机时：旧手机导出JSON → 传到新手机 → 选文件夹 → 导入JSON → 自动恢复所有标签和人名。</div>
     <button class="btn-ghost" onclick="document.getElementById('importJsonFile').click()" style="margin-top:8px">📥 导入 JSON（恢复标签/人名）</button>
     <input type="file" id="importJsonFile" accept=".json" style="display:none" onchange="importJson(event)">
     <div class="sub" style="margin-top:6px">导入JSON后，系统会匹配当前文件夹中的文件名，自动恢复标签、人名和整理状态。</div>
@@ -466,7 +486,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei
     </div>
     <div class="confirm-bar">
       <button class="skip" onclick="detailNext()">⏭️ 跳过</button>
-      <button class="confirm" id="detailConfirm" onclick="detailConfirm()">✅ 确认重命名</button>
+      <button class="confirm" id="detailConfirm" onclick="detailConfirm()">✅ 确认</button>
       <button class="del" onclick="askDeleteCurrent()">🗑️ 删除</button>
     </div>
   </div>
@@ -524,7 +544,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei
 
 <script>
 // ==================== 状态 ====================
-const VERSION='3.5';
+const VERSION='3.5.1';
 const DB_NAME='offline_media_lib_v34',DB_VERSION=5;
 const STORE_MEDIA='media',STORE_THUMB='thumbs',STORE_SESSION='session';
 let cfg={rule:'person_seq',tags:['长靴','多人','常服'],dateFormat:'YYYYMMDD',compress:true,maxCount:2000,showHidden:false,dlServer:'http://localhost:8766',dlSubdir:'下载',recentNameLimit:5,dlSite:'https://downloader.bhwa233.com/zh',dlMode:'site',dlIntervalMin:3,dlIntervalMax:8,dlMaxSize:0};
@@ -1261,6 +1281,7 @@ function askDeleteCurrent(){
   document.getElementById('modalTitle').textContent='🗑️ 删除文件';
   document.getElementById('modalDesc').textContent='将从本地文件夹永久删除该文件，此操作不可恢复！';
   document.getElementById('modalConfirmBtn').textContent='确认删除';
+  document.getElementById('modalConfirmBtn').classList.add('danger');
   modalCallback=async function(selectedPersons){
     if(!selectedPersons||!selectedPersons.includes('__confirm')){showToast('已取消');return}
     const ok=await doDeleteFromDisk(item);
@@ -1281,6 +1302,7 @@ function askDeleteSelected(){
   document.getElementById('modalTitle').textContent='🗑️ 批量删除';
   document.getElementById('modalDesc').textContent='将从本地永久删除选中的 '+list.length+' 个文件，此操作不可恢复！';
   document.getElementById('modalConfirmBtn').textContent='确认删除';
+  document.getElementById('modalConfirmBtn').classList.add('danger');
   modalCallback=async function(selectedPersons){
     if(!selectedPersons||!selectedPersons.includes('__confirm')){showToast('已取消');return}
     closeToolsModal();
@@ -1681,7 +1703,7 @@ function toggleModalItem(el){
   cb.checked=!cb.checked;
   el.classList.toggle('selected',cb.checked);
 }
-function closeModal(){document.getElementById('modalOverlay').classList.remove('show');modalCallback=null}
+function closeModal(){document.getElementById('modalOverlay').classList.remove('show');modalCallback=null;var btn=document.getElementById('modalConfirmBtn');if(btn)btn.classList.remove('danger')}
 async function modalConfirm(){
   const selected=[...document.querySelectorAll('.modal-item.selected')].map(el=>el.dataset.person);
   const cb=modalCallback;
