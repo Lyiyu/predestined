@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
-<title>离线媒体库 v3.4.1</title>
+<title>离线媒体库 v3.5</title>
 <style>
 *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 :root{
@@ -134,6 +134,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei
 .confirm-bar button{flex:1;padding:14px;border:none;border-radius:12px;font-size:16px;font-weight:700;cursor:pointer}
 .confirm-bar button.skip{background:rgba(255,255,255,.08);color:#999}
 .confirm-bar button.confirm{background:var(--primary);color:#fff}
+.confirm-bar button.del{background:#e5484d;color:#fff}
 .confirm-bar button:active{transform:scale(.98)}
 .confirm-bar button:disabled{opacity:.5}
 /* 批量工具弹窗 */
@@ -240,7 +241,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei
 <div class="topbar">
   <h1>📁 离线媒体库</h1>
   <button class="topbar-btn" onclick="location.reload()" title="刷新页面（用于重新授权文件夹）">🔄</button>
-  <span class="tag">v3.4.1</span>
+  <span class="tag">v3.5</span>
 </div>
 
 <div class="progress-bar" id="progressBar"><i id="progressFill"></i></div>
@@ -466,6 +467,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei
     <div class="confirm-bar">
       <button class="skip" onclick="detailNext()">⏭️ 跳过</button>
       <button class="confirm" id="detailConfirm" onclick="detailConfirm()">✅ 确认重命名</button>
+      <button class="del" onclick="askDeleteCurrent()">🗑️ 删除</button>
     </div>
   </div>
 </div>
@@ -487,6 +489,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei
       <div class="tool-card"><h4>🗑️ 删除字符</h4><div class="desc">从文件名中删除指定字符</div><div class="inputs"><input type="text" id="delChars" placeholder="要删除的字符"></div><button class="tool-btn" onclick="batchDelete()">应用</button></div>
       <div class="tool-card"><h4>📐 正则替换</h4><div class="desc">使用正则表达式进行复杂规则替换</div><div class="inputs"><input type="text" id="regexPattern" placeholder="正则表达式"><input type="text" id="regexRepl" placeholder="替换为"></div><button class="tool-btn" onclick="batchRegex()">应用</button></div>
       <div class="tool-card"><h4>✍️ 手动修改</h4><div class="desc">逐个编辑文件名（不含扩展名）</div><div class="manual-list" id="manualList"></div><button class="tool-btn" onclick="batchManual()">应用</button></div>
+      <div class="tool-card" style="border-color:#fecdd3"><h4>🗑️ 删除选中文件</h4><div class="desc">将选中的文件从本地文件夹中永久删除（不可恢复，请谨慎操作）</div><button class="tool-btn" style="background:var(--danger,#e5484d)" onclick="askDeleteSelected()">🗑️ 删除选中</button></div>
     </div>
   </div>
 </div>
@@ -521,7 +524,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei
 
 <script>
 // ==================== 状态 ====================
-const VERSION='3.4';
+const VERSION='3.5';
 const DB_NAME='offline_media_lib_v34',DB_VERSION=5;
 const STORE_MEDIA='media',STORE_THUMB='thumbs',STORE_SESSION='session';
 let cfg={rule:'person_seq',tags:['长靴','多人','常服'],dateFormat:'YYYYMMDD',compress:true,maxCount:2000,showHidden:false,dlServer:'http://localhost:8766',dlSubdir:'下载',recentNameLimit:5,dlSite:'https://downloader.bhwa233.com/zh',dlMode:'site',dlIntervalMin:3,dlIntervalMax:8,dlMaxSize:0};
@@ -1249,6 +1252,87 @@ async function batchToJpg(){
   showToast('转换完成：成功 '+ok+' 个'+(fail?'，失败 '+fail+' 个':'')+(skip?'，跳过 '+skip+' 个':''));
 }
 
+// ==================== 删除文件 ====================
+// 详情页：删除当前文件
+function askDeleteCurrent(){
+  const item=items[detailIdx];if(!item)return;
+  const list=document.getElementById('modalList');
+  list.innerHTML='<div class="modal-item selected" data-person="__confirm" onclick="toggleModalItem(this)"><input type="checkbox" checked><div class="mi-name">确认删除</div><div class="mi-count">'+escapeHtml(item.name)+'</div></div>';
+  document.getElementById('modalTitle').textContent='🗑️ 删除文件';
+  document.getElementById('modalDesc').textContent='将从本地文件夹永久删除该文件，此操作不可恢复！';
+  document.getElementById('modalConfirmBtn').textContent='确认删除';
+  modalCallback=async function(selectedPersons){
+    if(!selectedPersons||!selectedPersons.includes('__confirm')){showToast('已取消');return}
+    const ok=await doDeleteFromDisk(item);
+    if(ok){
+      closeDetail();
+      await rescanDir(true);
+      showToast('已删除：'+item.name);
+    }
+  };
+  document.getElementById('modalOverlay').classList.add('show');
+}
+// 批量工具：删除选中文件
+function askDeleteSelected(){
+  const list=getSelectedItems();
+  if(!list.length){showToast('请先选择文件');return}
+  const list2=document.getElementById('modalList');
+  list2.innerHTML='<div class="modal-item selected" data-person="__confirm" style="background:#fef2f2;border-color:#fecdd3"><input type="checkbox" checked><div class="mi-name">确认删除 '+list.length+' 个文件</div><div class="mi-count">永久删除，不可恢复</div></div>';
+  document.getElementById('modalTitle').textContent='🗑️ 批量删除';
+  document.getElementById('modalDesc').textContent='将从本地永久删除选中的 '+list.length+' 个文件，此操作不可恢复！';
+  document.getElementById('modalConfirmBtn').textContent='确认删除';
+  modalCallback=async function(selectedPersons){
+    if(!selectedPersons||!selectedPersons.includes('__confirm')){showToast('已取消');return}
+    closeToolsModal();
+    showProgress(10);
+    let ok=0,fail=0;
+    for(let i=0;i<list.length;i++){
+      const item=list[i];
+      try{
+        await doDeleteFromDisk(item);
+        ok++;
+      }catch(e){console.error('删除失败',item.name,e);fail++}
+      showProgress(10+Math.round((i+1)/list.length*80));
+    }
+    selected=[];await saveSession();showProgress(100);setTimeout(hideProgress,500);
+    await rescanDir(true);
+    showToast('删除完成：成功 '+ok+' 个'+(fail?'，失败 '+fail+' 个':''));
+  };
+  document.getElementById('modalOverlay').classList.add('show');
+}
+// 核心：从文件系统删除 + 从内存/DB 移除
+async function doDeleteFromDisk(item){
+  if(item.handle&&item.handle.remove){await item.handle.remove()}
+  else{throw new Error('无法删除：没有文件句柄')}
+  // 清理缩略图缓存
+  thumbCache.delete(item.name);
+  // 从 items 移除
+  const ii=items.findIndex(x=>x.id===item.id);
+  if(ii>=0)items.splice(ii,1);
+  // 从 libItems 移除（媒体库记录）
+  const li=libItems.findIndex(x=>x.name===item.name||x.origPath===item.path);
+  if(li>=0)libItems.splice(li,1);
+  // 从 DB 移除（匹配 name 或 origPath）
+  try{
+    const db=await openDB();
+    await new Promise((res,rej)=>{
+      const tx=db.transaction(STORE_MEDIA,'readwrite');
+      const store=tx.objectStore(STORE_MEDIA);
+      const req=store.getAll();
+      req.onsuccess=()=>{
+        const all=req.result||[];
+        const toDel=all.filter(r=>r.name===item.name||r.origPath===item.path);
+        toDel.forEach(r=>store.delete(r.id));
+        tx.oncomplete=res;tx.onerror=()=>rej(tx.error);
+      };
+      req.onerror=()=>rej(req.error);
+    });
+  }catch(e){}
+  // 更新统计
+  updateQuota();renderSetStats();
+  return true;
+}
+
 // ==================== Tab ====================
 function switchTab(t){
   currentTab=t;
@@ -1600,8 +1684,9 @@ function toggleModalItem(el){
 function closeModal(){document.getElementById('modalOverlay').classList.remove('show');modalCallback=null}
 async function modalConfirm(){
   const selected=[...document.querySelectorAll('.modal-item.selected')].map(el=>el.dataset.person);
+  const cb=modalCallback;
   closeModal();
-  if(modalCallback)await modalCallback(selected);
+  if(cb)await cb(selected);
 }
 async function doOrganizeByPerson(tagged,selectedPersons){
   showProgress(5);
