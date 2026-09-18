@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
-<title>离线媒体库 v3.2</title>
+<title>离线媒体库 v3.3</title>
 <style>
 *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 :root{
@@ -178,16 +178,24 @@ body{font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei
 .dup-body{overflow-y:auto;padding:14px;flex:1;-webkit-overflow-scrolling:touch}
 .dup-group{background:#f8f9fc;border:1px solid var(--line);border-radius:12px;padding:14px;margin-bottom:12px}
 .dup-group h4{font-size:14px;font-weight:700;margin-bottom:8px;display:flex;align-items:center;gap:6px}
-.dup-pair{display:flex;gap:10px;align-items:center;margin-bottom:10px;padding:8px;border-radius:10px;background:#fff;border:1px solid var(--line)}
-.dup-pair .dup-thumb{width:60px;height:60px;border-radius:8px;overflow:hidden;flex:0 0 auto;background:#dfe1ea}
+.dup-pair{display:flex;gap:10px;align-items:flex-start;margin-bottom:10px;padding:10px;border-radius:10px;background:#fff;border:1px solid var(--line)}
+.dup-pair .dup-thumb{width:100px;height:100px;border-radius:8px;overflow:hidden;flex:0 0 auto;background:#dfe1ea;display:flex;align-items:center;justify-content:center;color:#bbb;font-size:20px}
 .dup-pair .dup-thumb img{width:100%;height:100%;object-fit:cover}
+.dup-pair .dup-thumb video{width:100%;height:100%;object-fit:cover}
 .dup-pair .dup-info{flex:1;min-width:0}
-.dup-pair .dup-name{font-size:12px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.dup-pair .dup-meta{font-size:11px;color:var(--sub);margin-top:2px}
+.dup-pair .dup-name{font-size:13px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.dup-pair .dup-meta{font-size:11px;color:var(--sub);margin-top:3px;line-height:1.5}
+.dup-pair .dup-badge{display:inline-block;background:#eef1ff;color:var(--primary);font-size:10px;padding:2px 6px;border-radius:4px;margin-top:4px;margin-right:4px}
 .dup-pair .dup-act{display:flex;flex-direction:column;gap:4px;flex:0 0 auto}
 .dup-pair .dup-btn{padding:6px 10px;border:none;border-radius:8px;font-size:12px;cursor:pointer;white-space:nowrap}
 .dup-pair .dup-btn.keep{background:var(--ok);color:#fff}
 .dup-pair .dup-btn.del{background:#fecdd3;color:var(--danger)}
+.dup-pair .dup-btn.rename{background:var(--primary);color:#fff}
+/* 拖动排序 */
+.drag-item{cursor:grab;user-select:none;-webkit-user-drag:element;touch-action:none}
+.drag-item.dragging{opacity:.4;cursor:grabbing}
+.drag-item.drag-over{border-color:var(--primary)!important;background:#eef1ff!important}
+.detail-tag-order{font-size:11px;color:#9aa0b5;margin-top:6px;line-height:1.5}
 /* 确认弹窗 */
 .modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:450;display:none;align-items:center;justify-content:center}
 .modal-overlay.show{display:flex}
@@ -227,7 +235,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei
 
 <div class="topbar">
   <h1>📁 离线媒体库</h1>
-  <span class="tag">v3.2</span>
+  <span class="tag">v3.3</span>
 </div>
 
 <div class="progress-bar" id="progressBar"><i id="progressFill"></i></div>
@@ -263,7 +271,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei
       <input type="text" id="libSearch" placeholder="搜索文件名" oninput="renderLib()">
       <span class="count-tip" id="libCount"></span>
       <button class="btn-sm" onclick="selectAllFiltered()">☑️全选</button>
-      <button class="btn-sm" onclick="findDuplicates()" style="background:#fff;color:var(--primary);border-color:var(--primary)">🔍 查找重复</button>
+      <button class="btn-sm" onclick="findDuplicates()" style="background:#fff;color:var(--primary);border-color:var(--primary)">🔍 查找重复文件</button>
       <button class="btn-sm" onclick="organizeByPerson()" style="background:var(--primary);color:#fff;border-color:var(--primary)">📁 按人名整理</button>
     </div>
     <div class="subdir-bar" id="subdirBar" style="display:none"></div>
@@ -305,6 +313,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei
       <select id="setRule" onchange="saveSettings()">
         <option value="person_seq">仅人名+序号</option>
         <option value="person_tag_date">人名_标签_日期</option>
+        <option value="person_tag_seq">人名_标签_序号</option>
         <option value="person_date">人名_日期</option>
         <option value="person">仅人名</option>
       </select>
@@ -397,9 +406,9 @@ body{font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei
   </div>
   <div class="detail-img" id="detailImg"></div>
   <div class="detail-panel" id="detailPanel">
-    <div class="step-label">① 选择人名</div>
+    <div class="step-label">① 选择人名（可拖动排序）</div>
     <div class="name-chips" id="nameChips"></div>
-    <div class="step-label">② 选择标签（可多选）</div>
+    <div class="step-label">② 选择标签（可多选，拖动排序决定写入文件名的首选标签）</div>
     <div class="tag-chips" id="tagChips"></div>
     <div style="margin-top:8px">
       <span class="tag-add-btn" id="tagAddBtn" onclick="showTagAddInput()">➕ 新增标签</span>
@@ -445,11 +454,11 @@ body{font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei
 <div class="dup-overlay" id="dupOverlay" onclick="closeDupOverlay(event)">
   <div class="dup-panel" onclick="event.stopPropagation()">
     <div class="dup-header">
-      <h2>🔍 查找重复图片</h2>
+      <h2>🔍 查找重复文件</h2>
       <span class="close" onclick="closeDupOverlay()">×</span>
     </div>
     <div class="dup-body" id="dupBody">
-      <div style="text-align:center;color:var(--sub);padding:40px 20px">点击「查找重复」按钮开始检测<br><small>按文件大小匹配，找出疑似重复的图片</small></div>
+      <div style="text-align:center;color:var(--sub);padding:40px 20px">点击「查找重复」按钮开始检测<br><small>按文件大小匹配，找出疑似重复的图片和视频</small></div>
     </div>
   </div>
 </div>
@@ -469,10 +478,11 @@ body{font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei
 
 <script>
 // ==================== 状态 ====================
-const VERSION='3.2';
-const DB_NAME='offline_media_lib_v32',DB_VERSION=4;
+const VERSION='3.3';
+const DB_NAME='offline_media_lib_v33',DB_VERSION=5;
 const STORE_MEDIA='media',STORE_THUMB='thumbs',STORE_SESSION='session';
 let cfg={rule:'person_seq',tags:['长靴','多人','常服'],dateFormat:'YYYYMMDD',compress:true,maxCount:2000,showHidden:false,dlServer:'http://localhost:8766',dlSubdir:'下载'};
+let detailTagOrder=[]; // v3.3: 详情页标签拖动排序数组
 let curDir=null,curDirName='';
 let items=[];
 let selected=[];
@@ -745,6 +755,9 @@ function openDetail(id){
   const item=items[idx];
   detailPerson=item.person||'';
   detailTags=new Set(item.tags||[]);
+  detailTagOrder=[...(item.tags||[])]; // v3.3: 拖动排序初始化
+  // 补上未在 item.tags 中但存在于 cfg.tags 的标签
+  (cfg.tags||[]).forEach(t=>{if(!detailTagOrder.includes(t))detailTagOrder.push(t)});
   detailDateStr=fmtDate(new Date());
   document.getElementById('detailTitle').textContent=item.name;
   document.getElementById('detailPanel').style.display='block';
@@ -774,17 +787,33 @@ async function loadDetailImage(item){
 }
 function renderNameChips(){
   const el=document.getElementById('nameChips');
-  const names=recentNames.slice(0,3);
-  let html=names.map(n=>'<span class="nchip '+(detailPerson===n?'on':'')+'" onclick="selectName(\''+escapeHtml(n)+'\')">'+escapeHtml(n)+'</span>').join('');
+  const names=recentNames.slice(0,5);
+  let html=names.map((n,i)=>'<span class="nchip drag-item '+(detailPerson===n?'on':'')+'" draggable="true" data-name="'+escapeHtml(n)+'" data-idx="'+i+'" onclick="selectName(\''+escapeHtml(n)+'\')">'+escapeHtml(n)+'</span>').join('');
   html+='<span class="nchip add"><input type="text" id="newNameInput" placeholder="新人名" oninput="onNameInput(this.value)" onchange="onNameInput(this.value)"></span>';
   el.innerHTML=html;
   if(detailPerson){const inp=document.getElementById('newNameInput');if(inp&&!names.includes(detailPerson))inp.value=detailPerson}
+  // 绑定拖动事件
+  bindDragSort(el,'name',function(){renderNameChips();updatePreviewName()});
 }
 function selectName(n){detailPerson=n;renderNameChips();updatePreviewName()}
 function onNameInput(v){if(v.trim())detailPerson=v.trim();updatePreviewName()}
 function renderTagChips(){
   const el=document.getElementById('tagChips');
-  el.innerHTML=(cfg.tags||[]).map(t=>'<span class="tchip '+(detailTags.has(t)?'on':'')+'" onclick="toggleDetailTag(\''+escapeHtml(t)+'\')">'+escapeHtml(t)+'</span>').join('');
+  // v3.3: 使用 detailTagOrder 决定标签显示顺序，拖动可排序
+  // detailTagOrder 是一个数组，包含所有已选标签按拖动顺序排列
+  const allTags=cfg.tags||[];
+  // 确保新标签加入 order
+  allTags.forEach(t=>{if(!detailTagOrder.includes(t))detailTagOrder.push(t)});
+  // 按顺序渲染
+  const orderedTags=[...detailTagOrder];
+  // 补上不在 order 中的标签
+  allTags.forEach(t=>{if(!orderedTags.includes(t))orderedTags.push(t)});
+  el.innerHTML=orderedTags.map(t=>{
+    const isOn=detailTags.has(t);
+    return '<span class="tchip drag-item '+(isOn?'on':'')+'" draggable="true" data-tag="'+escapeHtml(t)+'" onclick="toggleDetailTag(\''+escapeHtml(t)+'\')">'+escapeHtml(t)+'</span>';
+  }).join('');
+  // 绑定拖动事件
+  bindDragSort(el,'tag',function(){renderTagChips();updatePreviewName()});
 }
 function toggleDetailTag(t){if(detailTags.has(t))detailTags.delete(t);else detailTags.add(t);renderTagChips();updatePreviewName()}
 // updatePreviewName 和 detailConfirm 已移至文件末尾 v3.2 区域
@@ -849,7 +878,7 @@ async function startDownload(){
 function exportJson(){
   const data=libItems.map(i=>({name:i.name,person:i.person,tags:i.tags||[],date:i.date,type:i.type,size:i.size,origPath:i.origPath||'',savedAt:i.savedAt||0}));
   const blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json'});
-  const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='media_library_v32.json';a.click();
+  const a=document.createElement('a');a.href=URL.createObjectURL(blob);  a.download='media_library_v33.json';a.click();
   showToast('已导出 '+data.length+' 条记录');
 }
 async function importJson(event){
@@ -870,7 +899,7 @@ async function importJson(event){
 }
 
 // ==================== 设置 ====================
-function loadSettings(){try{const s=localStorage.getItem('ff_settings_v32');if(s)cfg=Object.assign(cfg,JSON.parse(s));const rn=localStorage.getItem('recent_names_v32');if(rn)recentNames=JSON.parse(rn)}catch(e){}}
+function loadSettings(){try{const s=localStorage.getItem('ff_settings_v33');if(s)cfg=Object.assign(cfg,JSON.parse(s));const rn=localStorage.getItem('recent_names_v33');if(rn)recentNames=JSON.parse(rn)}catch(e){}}
 function saveSettings(){
   const tags=document.getElementById('setTags').value.split(',').map(s=>s.trim()).filter(Boolean);
   const maxCount=parseInt(document.getElementById('setMaxCount').value)||2000;
@@ -880,7 +909,7 @@ function saveSettings(){
   cfg.maxCount=Math.max(50,Math.min(5000,maxCount));
   cfg.dlServer=document.getElementById('setDlServer').value.trim();
   cfg.dlSubdir=document.getElementById('setDlSubdir').value.trim();
-  localStorage.setItem('ff_settings_v32',JSON.stringify(cfg));
+  localStorage.setItem('ff_settings_v33',JSON.stringify(cfg));
   document.getElementById('setMaxCountVal').textContent=cfg.maxCount;
 }
 function loadSettingsForm(){
@@ -915,7 +944,7 @@ function renderManualList(){const list=getSelectedItems();document.getElementByI
 async function applyBatchRename(newNames){
   if(!newNames.length){showToast('没有可处理的文件');return}
   showProgress(10);let ok=0,fail=0,skip=0;const usedNames=new Set();
-  for(let i=0;i<newNames.length;i++){const{item,newName}=newNames[i];if(newName===item.name){skip++;continue}let fn=newName;if(usedNames.has(fn)){const ext=getExt(fn),base=getBaseName(fn);let n=1;while(usedNames.has(base+'_'+n+ext))n++;fn=base+'_'+n+ext}usedNames.add(fn);try{await item.handle.move(fn);thumbCache.delete(item.name);item.name=fn;ok++}catch(e){fail++}showProgress(10+Math.round((i+1)/newNames.length*80))}
+  for(let i=0;i<newNames.length;i++){const{item,newName}=newNames[i];if(newName===item.name){skip++;continue}let fn=newName;if(usedNames.has(fn)){const ext=getExt(fn),base=getBaseName(fn);let n=1;while(usedNames.has(base+'_'+n+ext))n++;fn=base+'_'+n+ext}usedNames.add(fn);try{const parent=item.handle.getParent?await item.handle.getParent():null;await item.handle.move(fn);thumbCache.delete(item.name);item.name=fn;if(parent){try{item.handle=await parent.getFileHandle(fn)}catch(e){}}ok++}catch(e){fail++}showProgress(10+Math.round((i+1)/newNames.length*80))}
   selected=[];await saveSession();closeToolsModal();showProgress(100);setTimeout(hideProgress,500);
   showToast('完成：成功 '+ok+' 个'+(fail?'，失败 '+fail+' 个':'')+(skip?'，跳过 '+skip+' 个':''));
 }
@@ -949,40 +978,156 @@ function switchTab(t){
 // 媒体库加载
 async function loadLibrary(){libItems=await dbLoadMedia();syncTaggedStatus();renderLib()}
 
-// ==================== v3.2 功能 ====================
+// ==================== v3.3 功能 ====================
 
-// ---- 功能1: 图片一键去重（按文件大小匹配） ----
+// ---- 通用拖动排序（支持人名chips和标签chips） ----
+let _dragEl=null,_dragType=null,_dragCallback=null;
+function bindDragSort(container,type,callback){
+  _dragType=type;_dragCallback=callback;
+  const items=container.querySelectorAll('.drag-item[draggable="true"]');
+  items.forEach(el=>{
+    el.addEventListener('dragstart',onDragStart);
+    el.addEventListener('dragover',onDragOver);
+    el.addEventListener('dragleave',onDragLeave);
+    el.addEventListener('drop',onDrop);
+    el.addEventListener('dragend',onDragEnd);
+    // 触摸事件支持（手机端）
+    el.addEventListener('touchstart',onTouchStart,{passive:false});
+    el.addEventListener('touchmove',onTouchMove,{passive:false});
+    el.addEventListener('touchend',onTouchEnd,{passive:false});
+  });
+}
+function onDragStart(e){
+  _dragEl=e.target;
+  e.target.classList.add('dragging');
+  e.dataTransfer.effectAllowed='move';
+  e.dataTransfer.setData('text/plain','');
+}
+function onDragOver(e){
+  e.preventDefault();
+  if(e.target.classList.contains('drag-item')&&e.target!==_dragEl){
+    e.target.classList.add('drag-over');
+  }
+}
+function onDragLeave(e){
+  e.target.classList.remove('drag-over');
+}
+function onDrop(e){
+  e.preventDefault();
+  if(e.target.classList.contains('drag-item')&&e.target!==_dragEl){
+    e.target.classList.remove('drag-over');
+    reorderDragItems(_dragType,_dragEl,e.target);
+  }
+}
+function onDragEnd(e){
+  e.target.classList.remove('dragging');
+  document.querySelectorAll('.drag-over').forEach(el=>el.classList.remove('drag-over'));
+  _dragEl=null;
+}
+function reorderDragItems(type,fromEl,toEl){
+  if(_dragType==='name'){
+    // 人名排序：重新排列 recentNames
+    const fromName=fromEl.dataset.name;
+    const toName=toEl.dataset.name;
+    if(!fromName||!toName||fromName===toName)return;
+    const fromIdx=recentNames.indexOf(fromName);
+    const toIdx=recentNames.indexOf(toName);
+    if(fromIdx<0||toIdx<0)return;
+    recentNames.splice(fromIdx,1);
+    recentNames.splice(toIdx,0,fromName);
+    if(recentNames.length>10)recentNames.length=10;
+    localStorage.setItem('recent_names_v33',JSON.stringify(recentNames));
+  }else if(_dragType==='tag'){
+    // 标签排序：重新排列 detailTagOrder
+    const fromTag=fromEl.dataset.tag;
+    const toTag=toEl.dataset.tag;
+    if(!fromTag||!toTag||fromTag===toTag)return;
+    const fromIdx=detailTagOrder.indexOf(fromTag);
+    const toIdx=detailTagOrder.indexOf(toTag);
+    if(fromIdx<0||toIdx<0)return;
+    detailTagOrder.splice(fromIdx,1);
+    detailTagOrder.splice(toIdx,0,fromTag);
+  }
+  if(_dragCallback)_dragCallback();
+}
+// 触摸事件支持
+let _touchEl=null,_touchClone=null,_touchIdx=-1;
+function onTouchStart(e){
+  const el=e.currentTarget;
+  _touchEl=el;
+  _touchIdx=-1;
+}
+function onTouchMove(e){
+  if(!_touchEl)return;
+  e.preventDefault();
+  const touch=e.touches[0];
+  const target=document.elementFromPoint(touch.clientX,touch.clientY);
+  if(target&&target.classList.contains('drag-item')&&target!==_touchEl){
+    target.classList.add('drag-over');
+    _touchIdx=Array.from(target.parentElement.querySelectorAll('.drag-item')).indexOf(target);
+  }
+  document.querySelectorAll('.drag-over').forEach(el=>{if(el!==target)el.classList.remove('drag-over')});
+}
+function onTouchEnd(e){
+  if(!_touchEl)return;
+  const touch=e.changedTouches[0];
+  const target=document.elementFromPoint(touch.clientX,touch.clientY);
+  if(target&&target.classList.contains('drag-item')&&target!==_touchEl){
+    reorderDragItems(_dragType,_touchEl,target);
+  }
+  document.querySelectorAll('.drag-over').forEach(el=>el.classList.remove('drag-over'));
+  _touchEl=null;
+}
+
+// ---- 功能1: 文件一键去重（按文件大小匹配，支持图片+视频，耦合重命名） ----
 let dupPairs=[];
 async function findDuplicates(){
-  const imgs=items.filter(i=>i.type==='image'&&i.size>0);
-  if(imgs.length<2){showToast('图片数量不足');return}
+  const files=items.filter(i=>i.size>0); // 图片+视频都查
+  if(files.length<2){showToast('文件数量不足');return}
   // 按文件大小分组
   const sizeMap={};
-  imgs.forEach(i=>{
+  files.forEach(i=>{
     const s=i.size;
     if(!sizeMap[s])sizeMap[s]=[];
     sizeMap[s].push(i);
   });
-  // 找出大小相同的多张图片
+  // 找出大小相同的多张文件
   dupPairs=[];
   Object.keys(sizeMap).forEach(s=>{
     if(sizeMap[s].length>=2)dupPairs.push({size:parseInt(s),files:sizeMap[s]});
   });
-  if(!dupPairs.length){showToast('未发现大小相同的图片');return}
+  if(!dupPairs.length){showToast('未发现大小相同的文件');return}
   // 渲染去重面板
   const body=document.getElementById('dupBody');
   let totalDups=dupPairs.reduce((a,b)=>a+b.files.length,0);
-  body.innerHTML='<div style="font-size:13px;color:var(--sub);margin-bottom:12px">发现 '+dupPairs.length+' 组大小相同的图片（共 '+totalDups+' 张），请逐组选择保留哪张，删除其余。</div>';
+  body.innerHTML='<div style="font-size:13px;color:var(--sub);margin-bottom:12px">发现 '+dupPairs.length+' 组大小相同的文件（共 '+totalDups+' 个），请逐组选择保留哪个，删除其余。可点击「✏️重命名」对保留的文件直接命名。</div>';
   dupPairs.forEach((group,gi)=>{
     const div=document.createElement('div');
     div.className='dup-group';
-    div.innerHTML='<h4>📷 第'+(gi+1)+'组 · '+fmtSize(group.size)+' · '+group.files.length+'张</h4>';
+    const typeIcon=group.files[0].type==='video'?'🎬':'📷';
+    div.innerHTML='<h4>'+typeIcon+' 第'+(gi+1)+'组 · '+fmtSize(group.size)+' · '+group.files.length+'个</h4>';
     group.files.forEach((f,fi)=>{
       const pair=document.createElement('div');
       pair.className='dup-pair';
-      pair.innerHTML='<div class="dup-thumb" id="dupThumb_'+gi+'_'+fi+'">···</div><div class="dup-info"><div class="dup-name">'+escapeHtml(f.name)+'</div><div class="dup-meta">'+fmtSize(f.size)+' · '+(f.path||'')+'</div></div><div class="dup-act"><button class="dup-btn keep" onclick="dupSelect('+gi+','+fi+')">保留</button><button class="dup-btn del" onclick="dupDelete('+gi+','+fi+')">删除</button></div>';
+      // 构建信息标签
+      let badges='';
+      if(f.person)badges+='<span class="dup-badge">👤 '+escapeHtml(f.person)+'</span>';
+      if(f.tags&&f.tags.length)badges+='<span class="dup-badge">🏷️ '+escapeHtml(f.tags.join('·'))+'</span>';
+      if(f.renamed)badges+='<span class="dup-badge">✓已命名</span>';
+      if(f.type==='video')badges+='<span class="dup-badge">🎬视频</span>';
+      pair.innerHTML='<div class="dup-thumb" id="dupThumb_'+gi+'_'+fi+'">···</div>'+
+        '<div class="dup-info">'+
+          '<div class="dup-name">'+escapeHtml(f.name)+'</div>'+
+          '<div class="dup-meta">'+fmtSize(f.size)+' · '+(f.path||'根目录')+'</div>'+
+          (badges?'<div style="margin-top:4px">'+badges+'</div>':'')+
+        '</div>'+
+        '<div class="dup-act">'+
+          '<button class="dup-btn keep" onclick="dupSelect('+gi+','+fi+')">保留</button>'+
+          '<button class="dup-btn rename" onclick="dupRename('+gi+','+fi+')">✏️重命名</button>'+
+          '<button class="dup-btn del" onclick="dupDelete('+gi+','+fi+')">删除</button>'+
+        '</div>';
       div.appendChild(pair);
-      // 异步加载缩略图
+      // 异步加载缩略图（图片和视频都加载）
       loadDupThumb(f,gi,fi);
     });
     body.appendChild(div);
@@ -992,14 +1137,31 @@ async function findDuplicates(){
 async function loadDupThumb(item,gi,fi){
   const el=document.getElementById('dupThumb_'+gi+'_'+fi);
   if(!el||!item.handle)return;
+  // 先查缓存
+  const cached=thumbCache.get(item.name);
+  if(cached){el.innerHTML='<img src="'+cached+'">';return}
+  const dbCached=await dbGetThumb(item.name+'@'+curDirName);
+  if(dbCached){thumbCache.set(item.name,dbCached);el.innerHTML='<img src="'+dbCached+'">';return}
+  // 从媒体库记录中查找缩略图
+  const rec=libItems.find(i=>i.name===item.name);
+  if(rec&&(rec.img||rec.thumb)){const t=rec.thumb||rec.img;el.innerHTML='<img src="'+t+'">';return}
   try{
     const file=await item.handle.getFile();
-    const url=URL.createObjectURL(file);
-    const img=new Image();
-    img.onload=()=>{el.innerHTML='<img src="'+url+'">';};
-    img.onerror=()=>{el.textContent='🖼'};
-    img.src=url;
-  }catch(e){el.textContent='🖼'}
+    if(item.type==='video'){
+      // 视频：截取第一帧作为缩略图
+      const url=URL.createObjectURL(file);
+      const v=document.createElement('video');v.preload='metadata';v.muted=true;
+      v.onloadeddata=()=>{try{v.currentTime=Math.min(v.duration/2||0,1);v.onseeked=()=>{try{const c=document.createElement('canvas');c.width=v.videoWidth||120;c.height=v.videoHeight||120;c.getContext('2d').drawImage(v,0,0,c.width,c.height);const data=c.toDataURL('image/jpeg',.5);thumbCache.set(item.name,data);dbPutThumb(item.name+'@'+curDirName,data);el.innerHTML='<img src="'+data+'">';URL.revokeObjectURL(url)}catch(e){el.textContent='🎬';URL.revokeObjectURL(url)}}}catch(e){el.textContent='🎬'}};
+      v.onerror=()=>{el.textContent='🎬';URL.revokeObjectURL(url)};
+      v.src=url;
+    }else{
+      const url=URL.createObjectURL(file);
+      const img=new Image();
+      img.onload=()=>{const maxSide=200;const r=Math.min(1,maxSide/Math.max(img.width,img.height));const w=Math.max(1,Math.round(img.width*r)),h=Math.max(1,Math.round(img.height*r));const c=document.createElement('canvas');c.width=w;c.height=h;c.getContext('2d').drawImage(img,0,0,w,h);const data=c.toDataURL('image/jpeg',.6);thumbCache.set(item.name,data);dbPutThumb(item.name+'@'+curDirName,data);el.innerHTML='<img src="'+data+'">';URL.revokeObjectURL(url)};
+      img.onerror=()=>{el.textContent='🖼'};
+      img.src=url;
+    }
+  }catch(e){el.textContent=item.type==='video'?'🎬':'🖼'}
 }
 async function dupDelete(gi,fi){
   const file=dupPairs[gi].files[fi];
@@ -1007,19 +1169,28 @@ async function dupDelete(gi,fi){
   if(!confirm('确认删除「'+file.name+'」？\n文件大小：'+fmtSize(file.size)+'\n此操作不可恢复！'))return;
   try{
     await file.handle.remove();
-    // 从 items 中移除
     items=items.filter(i=>i.id!==file.id);
     thumbCache.delete(file.name);
     await saveSession();
     renderLib();
     showToast('已删除：'+file.name);
-    // 关闭并重新打开去重面板以更新列表
     closeDupOverlay();
     findDuplicates();
   }catch(e){showToast('删除失败：'+(e.message||e))}
 }
 function dupSelect(gi,fi){
-  showToast('已选择保留：'+dupPairs[gi].files[fi].name);
+  const file=dupPairs[gi].files[fi];
+  // 标记为保留（高亮显示）
+  document.querySelectorAll('.dup-pair').forEach(p=>p.style.borderColor='');
+  const groups=document.querySelectorAll('#dupBody .dup-group');
+  if(groups[gi]){const pairs=groups[gi].querySelectorAll('.dup-pair');if(pairs[fi])pairs[fi].style.borderColor='var(--ok)';}
+  showToast('已选择保留：'+file.name);
+}
+function dupRename(gi,fi){
+  const file=dupPairs[gi].files[fi];
+  if(!file.handle){showToast('无文件权限，需重新授权文件夹');return}
+  closeDupOverlay();
+  openDetail(file.id);
 }
 function closeDupOverlay(e){if(e&&e.target!==e.currentTarget)return;document.getElementById('dupOverlay').classList.remove('show')}
 
@@ -1084,7 +1255,7 @@ async function loadDirHandle(){
 // （原 buildName 中 tagStr = tags.sort().join('_')，改为只取第一个）
 // 注意：此修改已在下方 buildName 重写中完成
 
-// 重写 buildName 以支持标签全量存储
+// 重写 buildName 以支持标签全量存储 + person_tag_seq
 function buildNameV32(person,tags,dateStr,idx){
   const rule=cfg.rule||'person_seq';
   let base;
@@ -1095,6 +1266,11 @@ function buildNameV32(person,tags,dateStr,idx){
     // 只取第一个标签写入文件名
     const firstTag=tags&&tags.length?tags[0]:'';
     base=firstTag?person+'_'+firstTag+'_'+dateStr:person+'_'+dateStr;
+  }
+  else if(rule==='person_tag_seq'){
+    // 人名_标签_序号
+    const firstTag=tags&&tags.length?tags[0]:'';
+    base=firstTag?person+'_'+firstTag:person;
   }
   else base=person+'_'+dateStr;
   if(idx)base+='_'+idx;
@@ -1150,6 +1326,8 @@ async function doOrganizeByPerson(tagged,selectedPersons){
       const currentDir=pathParts.length>1?pathParts[pathParts.length-2]:null;
       if(currentDir===item.person){skip++;showProgress(15+Math.round((i+1)/tagged.length*80));continue}
       await item.handle.move(dir,item.name);
+      // v3.3 修复：移动后更新 handle 指向新位置，后续重命名才不会失败
+      try{item.handle=await dir.getFileHandle(item.name)}catch(e){}
       item.path=(item.path||'').replace(/^[^\/]+\/?/,item.person+'/');
       ok++;
     }catch(e){
@@ -1160,6 +1338,7 @@ async function doOrganizeByPerson(tagged,selectedPersons){
         await w.write(file);
         await w.close();
         await item.handle.remove();
+        item.handle=newHandle; // v3.3: 更新句柄
         item.path=(item.path||'').replace(/^[^\/]+\/?/,item.person+'/');
         ok++;
       }catch(e2){console.error('移动失败',item.name,e,e2);fail++}
@@ -1360,34 +1539,64 @@ async function restoreHandles(){
   });
 }
 
-// ---- 重写 detailConfirm 使用 v3.2 buildName ----
+// ---- 重写 detailConfirm（v3.3：先重命名成功再保存标记，失败不产生假标记） ----
 async function detailConfirm(){
   if(!detailPerson){showToast('请先选择或输入人名');return}
   const item=items[detailIdx];if(!item)return;
-  item.tags=[...detailTags].sort();
+  // v3.3: 按 detailTagOrder 排序，第一个标签写入文件名
+  const orderedTags=detailTagOrder.filter(t=>detailTags.has(t));
+  // ---- 1. 先执行重命名（有权限时） ----
+  if(!(item.handle&&curDir)){
+    showToast('需先授权文件夹才能重命名');
+    return;
+  }
+  const ext=getExt(item.name);
+  const base=buildName(detailPerson,orderedTags,detailDateStr,0);
+  // 获取文件所在目录（保持文件在原文件夹，只改名字）
+  let parent=curDir;
+  try{const p=await item.handle.getParent();if(p)parent=p}catch(e){}
+  // 在父目录中生成不重复的新文件名
+  const exists=async n=>{try{await parent.getFileHandle(n,{create:false});return true}catch(e){return false}};
+  const needsSeq=(cfg.rule==='person_seq'||cfg.rule==='person_tag_seq');
+  let newName='';
+  if(needsSeq){let n=1;while(await exists(base+'_'+n+ext))n++;newName=base+'_'+n+ext}
+  else{let n=1;while(true){newName=base+(n>1?'_'+n:'')+ext;if(!(await exists(newName)))break;n++}}
+  let renamed=false;
+  try{
+    await item.handle.move(newName); // move(仅名字)：在原文件夹内改名，不移动目录
+    thumbCache.delete(item.name);
+    item.name=newName;
+    // 更新 handle 指向新文件（重要：否则后续操作失效）
+    try{item.handle=await parent.getFileHandle(newName)}catch(e){}
+    renamed=true;
+  }catch(e){
+    // 降级方案：复制到新名字 + 删除原文件（仍保留在原文件夹）
+    try{
+      const file=await item.handle.getFile();
+      const newHandle=await parent.getFileHandle(newName,{create:true});
+      const w=await newHandle.createWritable();
+      await w.write(file);
+      await w.close();
+      await item.handle.remove();
+      thumbCache.delete(item.name);
+      item.name=newName;
+      item.handle=newHandle;
+      renamed=true;
+    }catch(e2){
+      console.error('重命名失败',item.name,e,e2);
+      showToast('重命名失败，未保存标记：'+(e2.message||e2));
+      return; // 不产生假标记
+    }
+  }
+  // ---- 2. 重命名成功后才保存标签标记 ----
+  item.tags=orderedTags;
   item.person=detailPerson;
   item.renamed=true;
   item.savedAt=Date.now();
-  if(!recentNames.includes(detailPerson)){recentNames.unshift(detailPerson);if(recentNames.length>10)recentNames.pop();localStorage.setItem('recent_names_v32',JSON.stringify(recentNames))}
-  if(item.handle&&curDir){
-    const tags=[...detailTags].sort();
-    const ext=getExt(item.name);
-    const base=buildName(detailPerson,tags,detailDateStr,0);
-    let newName;
-    if(cfg.rule==='person_seq'){let n=1;while(true){newName=base+'_'+n+ext;try{await curDir.getFileHandle(newName,{create:false});n++}catch(e){break}}}
-    else{newName=base+ext;try{await curDir.getFileHandle(newName,{create:false});let n=1;while(true){newName=base+'_'+n+ext;try{await curDir.getFileHandle(newName,{create:false});n++}catch(e){break}}}catch(e){}}
-    try{
-      await item.handle.move(newName);
-      thumbCache.delete(item.name);
-      item.name=newName;
-      showToast('已重命名：'+newName);
-    }catch(e){showToast('重命名失败，标签已保存：'+(e.message||e))}
-  }else{
-    showToast('标签已保存（需重新授权文件夹才能重命名）');
-  }
+  if(!recentNames.includes(detailPerson)){recentNames.unshift(detailPerson);if(recentNames.length>10)recentNames.pop();localStorage.setItem('recent_names_v33',JSON.stringify(recentNames))}
   let img='',thumb='';
   if(item.type==='image'&&cfg.compress&&item.handle){
-    try{let newHandle=item.handle;try{newHandle=await curDir.getFileHandle(item.name)}catch(e){}const f=await newHandle.getFile();const c=await compressImage(f,1280);img=c.img;thumb=c.thumb}catch(e){}
+    try{const f=await item.handle.getFile();const c=await compressImage(f,1280);img=c.img;thumb=c.thumb}catch(e){}
   }
   const libRec={id:'lib'+Date.now()+'_'+Math.random().toString(36).slice(2,6),name:item.name,person:detailPerson,tags:item.tags,date:detailDateStr,type:item.type,size:item.size,img,thumb,origPath:item.path,renamed:true,savedAt:item.savedAt};
   await dbSaveMedia([libRec]);
@@ -1396,16 +1605,18 @@ async function detailConfirm(){
   await saveSession();
   closeDetail();
   renderLib();updateQuota();renderSetStats();
+  showToast('已重命名：'+newName);
 }
 
 // ---- 重写 updatePreviewName 使用 v3.2 buildName ----
 function updatePreviewName(){
   const item=items[detailIdx];if(!item)return;
-  const tags=[...detailTags].sort();
+  // v3.3: 按 detailTagOrder 排序，第一个标签写入文件名
+  const tags=detailTagOrder.filter(t=>detailTags.has(t));
   const ext=getExt(item.name);
   const base=buildName(detailPerson,tags,detailDateStr,0);
   const previewExt=getExt(item.name);
-  document.getElementById('previewName').textContent=(cfg.rule==='person_seq'?base+'_1':base)+previewExt;
+  document.getElementById('previewName').textContent=(cfg.rule==='person_seq'||cfg.rule==='person_tag_seq'?base+'_1':base)+previewExt;
   document.getElementById('detailConfirm').disabled=!detailPerson;
 }
 </script>
