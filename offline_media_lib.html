@@ -23,7 +23,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei
 .topbar .tag{font-size:10px;background:rgba(255,255,255,.25);padding:2px 8px;border-radius:20px;font-weight:600;flex:0 0 auto}
 .page{display:none;flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;overscroll-behavior:contain;padding:12px 12px calc(var(--safe-b) + 16px);max-width:640px;margin:0 auto}
 .page.show{display:block}
-.tip{background:#eef1ff;border:1px solid #d3d9ff;color:#3d4cc0;border-radius:var(--radius);padding:11px 13px;font-size:13px;line-height:1.7;margin-bottom:12px}
+.tip{background:#eef1ff;border:1px solid #d3d9ff;color:#3d4cc0;border-radius:var(--radius);padding:11px 13px;font-size:13px;line-height:1.7;margin-bottom:12px;overflow-wrap:break-word;word-break:break-word}
 .tip strong{font-weight:700}
 .btn-main{width:100%;padding:14px;border:none;border-radius:var(--radius);background:linear-gradient(135deg,var(--primary),var(--primary2));color:#fff;font-size:16px;font-weight:700;cursor:pointer;margin-top:10px;box-shadow:0 4px 14px rgba(91,108,255,.3)}
 .btn-main:active{transform:scale(.98)}
@@ -160,17 +160,17 @@ body{font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei
 .manual-item input{flex:1;padding:9px 10px;border:1px solid var(--line);border-radius:8px;font-size:13px;min-width:0}
 .manual-item .ext{font-size:12px;color:var(--sub);flex:0 0 auto;white-space:nowrap}
 /* 下载页 */
-.dl-card{background:var(--card);border-radius:var(--radius);padding:16px;box-shadow:0 1px 4px rgba(0,0,0,.06);margin-bottom:12px}
-.dl-card h3{font-size:15px;font-weight:700;margin-bottom:10px}
-.dl-card textarea{width:100%;min-height:80px;padding:10px;border:1px solid var(--line);border-radius:10px;font-size:13px;background:#fff;resize:vertical;font-family:inherit}
-.dl-card .sub{font-size:11px;color:var(--sub);margin-top:6px;line-height:1.6}
-.dl-status{margin-top:10px}
-.dl-item{display:flex;align-items:center;gap:8px;padding:8px 10px;border-radius:8px;background:#f8f9fc;margin-bottom:6px;font-size:13px}
-.dl-item .dl-icon{font-size:18px;flex:0 0 auto}
+.dl-card{background:var(--card);border-radius:var(--radius);padding:16px;box-shadow:0 1px 4px rgba(0,0,0,.06);margin-bottom:14px}
+.dl-card h3{font-size:16px;font-weight:700;margin-bottom:12px}
+.dl-card textarea{width:100%;min-height:96px;padding:12px;border:1px solid var(--line);border-radius:10px;font-size:14px;background:#fff;resize:vertical;font-family:inherit;line-height:1.6}
+.dl-card .sub{font-size:12px;color:var(--sub);margin-top:8px;line-height:1.7}
+.dl-status{margin-top:12px}
+.dl-item{display:flex;align-items:flex-start;gap:10px;padding:10px 12px;border-radius:10px;background:#f8f9fc;margin-bottom:8px;font-size:13px}
+.dl-item .dl-icon{font-size:18px;flex:0 0 auto;width:22px;height:22px;display:flex;align-items:center;justify-content:center;margin-top:1px}
 .dl-item .dl-info{flex:1;min-width:0}
-.dl-item .dl-name{font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.dl-item .dl-progress{font-size:11px;color:var(--sub)}
-.dl-item .dl-bar{height:4px;border-radius:2px;background:#e0e0e0;margin-top:4px;overflow:hidden}
+.dl-item .dl-name{font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%;line-height:1.5}
+.dl-item .dl-progress{font-size:11px;color:var(--sub);margin-top:2px;line-height:1.5;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%}
+.dl-item .dl-bar{height:5px;border-radius:3px;background:#e0e0e0;margin-top:7px;overflow:hidden}
 .dl-item .dl-bar i{display:block;height:100%;background:var(--primary);transition:width .3s}
 /* 去重面板 */
 .dup-overlay{position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:400;display:none;align-items:flex-end;justify-content:center}
@@ -297,7 +297,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei
     <div id="dlModeTip" class="tip" style="margin-bottom:10px">当前模式：第三方网站。粘贴抖音/小红书/B站等链接，每行一个。</div>
     <textarea id="dlUrls" placeholder="粘贴抖音/小红书/B站/视频号分享链接，每行一个&#10;示例：&#10;https://v.douyin.com/xxx/&#10;https://www.xiaohongshu.com/explore/xxx"></textarea>
     <button class="btn-main" onclick="startDownload()">📥 开始解析下载</button>
-    <div class="sub">第三方模式：自动调用解析接口识别文件并批量下载到媒体库文件夹；本地模式：需启动下载服务（见设置页）。</div>
+    <div class="sub" style="text-align:center;color:#9aa0b5;font-size:11px">第三方模式：自动解析并下载到媒体库文件夹；本地模式：需启动下载服务。</div>
   </div>
   <div class="dl-card" id="dlStatusCard" style="display:none">
     <h3>📊 下载状态</h3>
@@ -380,9 +380,9 @@ body{font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei
       <div class="sub">批量下载时每个链接之间的间隔，避免被第三方网站限流。</div>
     </div>
     <div class="setitem">
-      <label>最大下载容量（MB）</label>
-      <input type="number" id="setDlMaxSize" min="1" max="1024" value="100" onchange="saveSettings()">
-      <div class="sub">单个视频/文件的最大下载容量限制，超过此大小将跳过。</div>
+      <label>最大下载容量（MB，0=无限制）</label>
+      <input type="number" id="setDlMaxSize" min="0" max="1024" value="0" onchange="saveSettings()">
+      <div class="sub">单个视频/文件的最大下载容量限制，超过此大小将跳过；填 0 表示不限制。</div>
     </div>
   </div>
   <div class="setcard">
@@ -519,7 +519,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei
 const VERSION='3.4';
 const DB_NAME='offline_media_lib_v34',DB_VERSION=5;
 const STORE_MEDIA='media',STORE_THUMB='thumbs',STORE_SESSION='session';
-let cfg={rule:'person_seq',tags:['长靴','多人','常服'],dateFormat:'YYYYMMDD',compress:true,maxCount:2000,showHidden:false,dlServer:'http://localhost:8766',dlSubdir:'下载',recentNameLimit:5,dlSite:'https://downloader.bhwa233.com/zh',dlMode:'site',dlInterval:3000,dlMaxSize:100};
+let cfg={rule:'person_seq',tags:['长靴','多人','常服'],dateFormat:'YYYYMMDD',compress:true,maxCount:2000,showHidden:false,dlServer:'http://localhost:8766',dlSubdir:'下载',recentNameLimit:5,dlSite:'https://downloader.bhwa233.com/zh',dlMode:'site',dlInterval:3000,dlMaxSize:0};
 let detailTagOrder=[]; // v3.3: 详情页标签拖动排序数组
 let curDir=null,curDirName='';
 let items=[];
@@ -886,6 +886,17 @@ async function startDownload(){
     await startDownloadSite(urls);
   }
 }
+// 简化 URL 显示：域名+ID，避免长链接撑爆布局
+function shortUrl(u){
+  try{
+    const p=new URL(u);
+    let id=(p.pathname.split('/').filter(Boolean).pop()||'')+(p.searchParams.get('modal_id')?'':'');
+    if(p.searchParams.get('modal_id'))id=p.searchParams.get('modal_id');
+    if(p.searchParams.get('bvid'))id=p.searchParams.get('bvid');
+    if(p.hostname==='v.douyin.com')id=p.pathname.split('/').filter(Boolean).pop()||id;
+    return p.hostname.replace('www.','')+(id?' / '+id:'');
+  }catch(e){return u.substring(0,40)}
+}
 // 本地服务模式（v3.3 逻辑）
 async function startDownloadLocal(urls){
   const statusCard=document.getElementById('dlStatusCard');
@@ -895,7 +906,7 @@ async function startDownloadLocal(urls){
   let ok=0,fail=0;
   for(let i=0;i<urls.length;i++){
     const url=urls[i];
-    const itemHtml='<div class="dl-item" id="dlItem_'+i+'"><div class="dl-icon">⏳</div><div class="dl-info"><div class="dl-name">'+escapeHtml(url.substring(0,60))+'</div><div class="dl-progress">等待中…</div><div class="dl-bar"><i style="width:0%"></i></div></div></div>';
+    const itemHtml='<div class="dl-item" id="dlItem_'+i+'"><div class="dl-icon">⏳</div><div class="dl-info"><div class="dl-name" title="'+escapeHtml(url)+'">'+escapeHtml(shortUrl(url))+'</div><div class="dl-progress">等待中…</div><div class="dl-bar"><i style="width:0%"></i></div></div></div>';
     statusEl.insertAdjacentHTML('beforeend',itemHtml);
     try{
       const resp=await fetch(cfg.dlServer+'/download',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({url,subdir:cfg.dlSubdir||''})});
@@ -945,7 +956,7 @@ async function startDownloadSite(urls){
   let ok=0,fail=0;
   for(let i=0;i<urls.length;i++){
     const url=urls[i];
-    const itemHtml='<div class="dl-item" id="dlItem_'+i+'"><div class="dl-icon">⏳</div><div class="dl-info"><div class="dl-name">'+escapeHtml(url.substring(0,60))+'</div><div class="dl-progress">解析中…</div><div class="dl-bar"><i style="width:0%"></i></div></div></div>';
+    const itemHtml='<div class="dl-item" id="dlItem_'+i+'"><div class="dl-icon">⏳</div><div class="dl-info"><div class="dl-name" title="'+escapeHtml(url)+'">'+escapeHtml(shortUrl(url))+'</div><div class="dl-progress">解析中…</div><div class="dl-bar"><i style="width:0%"></i></div></div></div>';
     statusEl.insertAdjacentHTML('beforeend',itemHtml);
     const item=document.getElementById('dlItem_'+i);
     try{
@@ -955,27 +966,52 @@ async function startDownloadSite(urls){
       const parseData=await parseResp.json();
       if(!parseData.success||!parseData.data)throw new Error(parseData.error||parseData.message||'解析失败');
       const data=parseData.data;
-      if(item){item.querySelector('.dl-progress').textContent='解析成功：'+((data.title||data.filename||'内容').substring(0,30));}
-      // 2. 找到可下载的文件（优先视频，其次图片）
-      const files=data.files||data.media||data.videos||[];
-      let dlFile=null;
-      if(files.length){
-        // 优先视频
-        dlFile=files.find(f=>f.type==='video'||/\.(mp4|mov|webm|m3u8)/i.test(f.url||f.src||''))||files[0];
-      }else if(data.videoUrl||data.url||data.downloadUrl){
-        dlFile={url:data.videoUrl||data.url||data.downloadUrl,type:'video',filename:data.title||''};
+      const title=(data.title||data.filename||'内容');
+      if(item){item.querySelector('.dl-progress').textContent='解析成功，开始下载…';item.querySelector('.dl-bar i').style.width='10%';}
+      // 2. 构建可下载文件列表
+      const dlList=[];
+      // 2a. files/media/videos 数组（兼容旧结构）
+      const arrFiles=data.files||data.media||data.videos||[];
+      arrFiles.forEach(f=>{
+        const u=f.url||f.src||f.downloadUrl||'';
+        if(u)dlList.push({url:u,type:f.type==='image'?'image':'video',filename:f.filename||f.name||''});
+      });
+      // 2b. 单视频字段（downloadUrl 优先，其次 videoDownloadUrl / downloadVideoUrl / videoUrl）
+      const singleCandidates=[
+        data.downloadUrl,data.videoDownloadUrl,data.downloadVideoUrl,data.audioDownloadUrl,data.videoUrl,data.url
+      ].filter(Boolean);
+      singleCandidates.forEach((u,idx)=>{
+        if(!dlList.some(f=>f.url===u)){
+          const isImg=/image|\.(jpg|jpeg|png|gif|webp)/i.test(u);
+          dlList.push({url:u,type:isImg?'image':'video',filename:title+'_'+(idx+1)});
+        }
+      });
+      // 2c. 小红书图文：images 数组
+      if(data.images&&data.images.length){
+        data.images.forEach((im,idx)=>{
+          const u=im.url||im.downloadUrl||im.src||(typeof im==='string'?im:'');
+          if(u&&!dlList.some(f=>f.url===u))dlList.push({url:u,type:'image',filename:title+'_img'+(idx+1)});
+        });
       }
-      if(!dlFile||!dlFile.url){if(item){item.querySelector('.dl-icon').textContent='❌';item.querySelector('.dl-progress').textContent='未找到可下载文件'};fail++;continue}
-      // 3. 下载到本地
-      const dlUrl=dlFile.url;
-      // 大小检查
-      if(cfg.dlMaxSize&&dlFile.size&&dlFile.size>cfg.dlMaxSize*1048576){if(item){item.querySelector('.dl-icon').textContent='⏭️';item.querySelector('.dl-progress').textContent='超过容量限制跳过';}fail++;continue}
-      const fileName=await downloadToFolder(dlUrl,(dlFile.filename||data.title||'download')+(dlFile.type==='image'?'.jpg':'.mp4'));
-      if(item){
-        item.querySelector('.dl-icon').textContent='✅';
-        item.querySelector('.dl-progress').textContent=fileName||'完成';
-        item.querySelector('.dl-bar i').style.width='100%';
+      // 2d. 兜底：直接下载地址
+      if(!dlList.length&&data.rawUrl){dlList.push({url:data.rawUrl,type:'video',filename:title})}
+      if(!dlList.length){if(item){item.querySelector('.dl-icon').textContent='❌';item.querySelector('.dl-progress').textContent='未找到可下载文件'};fail++;continue}
+      // 3. 逐个下载
+      let localOk=0;
+      for(let di=0;di<dlList.length;di++){
+        const dlFile=dlList[di];
+        const dlUrl=dlFile.url;
+        // 大小检查（0 或未设置 = 无限制）
+        if(cfg.dlMaxSize&&dlFile.size&&dlFile.size>cfg.dlMaxSize*1048576){if(item){item.querySelector('.dl-progress').textContent='⏭️ 超过容量限制跳过';}continue}
+        // 文件名：优先原始文件名，否则用标题+序号
+        let fn=(dlFile.filename||title).replace(/[\\/:*?"<>|]/g,'_').substring(0,80);
+        const ext=getExt(dlUrl)||(dlFile.type==='image'?'.jpg':'.mp4');
+        if(!fn.toLowerCase().endsWith(ext.toLowerCase()))fn+=ext;
+        if(dlList.length>1&&item){item.querySelector('.dl-progress').textContent='下载中 '+(di+1)+'/'+dlList.length+'…';item.querySelector('.dl-bar i').style.width=Math.round(20+70*di/dlList.length)+'%';}
+        const saved=await downloadToFolder(dlUrl,fn);
+        if(saved){localOk++;if(item){item.querySelector('.dl-progress').textContent='已下载：'+saved;item.querySelector('.dl-bar i').style.width=Math.round(20+80*(di+1)/dlList.length)+'%';}}
       }
+      if(item){item.querySelector('.dl-icon').textContent='✅';item.querySelector('.dl-bar i').style.width='100%';}
       ok++;
     }catch(e){
       console.error('下载失败',url,e);
@@ -1085,8 +1121,8 @@ function saveSettings(){
   cfg.recentNameLimit=Math.max(1,Math.min(10,nl));
   const di=parseInt(document.getElementById('setDlInterval').value)||3000;
   cfg.dlInterval=Math.max(500,Math.min(60000,di));
-  const ms=parseInt(document.getElementById('setDlMaxSize').value)||100;
-  cfg.dlMaxSize=Math.max(1,Math.min(1024,ms));
+  const ms=parseInt(document.getElementById('setDlMaxSize').value)||0;
+  cfg.dlMaxSize=Math.max(0,Math.min(1024,ms));
   localStorage.setItem('ff_settings_v34',JSON.stringify(cfg));
   document.getElementById('setMaxCountVal').textContent=cfg.maxCount;
   // 根据下载方式显示/隐藏相关配置
@@ -1110,7 +1146,7 @@ function loadSettingsForm(){
   document.getElementById('setDlSite').value=cfg.dlSite||'https://downloader.bhwa233.com/zh';
   document.getElementById('setNameLimit').value=cfg.recentNameLimit||5;
   document.getElementById('setDlInterval').value=cfg.dlInterval||3000;
-  document.getElementById('setDlMaxSize').value=cfg.dlMaxSize||100;
+  document.getElementById('setDlMaxSize').value=cfg.dlMaxSize===undefined?0:cfg.dlMaxSize;
   const siteItem=document.getElementById('setDlSiteItem');
   const serverItem=document.getElementById('setDlServerItem');
   if(siteItem&&serverItem){
@@ -1268,10 +1304,11 @@ function reorderDragItems(type,fromEl,toEl){
     const fromName=fromEl.dataset.name;
     const toName=toEl.dataset.name;
     if(!fromName||!toName||fromName===toName)return;
-    const fromIdx=recentNames.indexOf(fromName);
-    const toIdx=recentNames.indexOf(toName);
+    let fromIdx=recentNames.indexOf(fromName);
+    let toIdx=recentNames.indexOf(toName);
     if(fromIdx<0||toIdx<0)return;
     recentNames.splice(fromIdx,1);
+    if(fromIdx<toIdx)toIdx--;
     recentNames.splice(toIdx,0,fromName);
     if(recentNames.length>10)recentNames.length=10;
     localStorage.setItem('recent_names_v34',JSON.stringify(recentNames));
@@ -1280,10 +1317,11 @@ function reorderDragItems(type,fromEl,toEl){
     const fromTag=fromEl.dataset.tag;
     const toTag=toEl.dataset.tag;
     if(!fromTag||!toTag||fromTag===toTag)return;
-    const fromIdx=detailTagOrder.indexOf(fromTag);
-    const toIdx=detailTagOrder.indexOf(toTag);
+    let fromIdx=detailTagOrder.indexOf(fromTag);
+    let toIdx=detailTagOrder.indexOf(toTag);
     if(fromIdx<0||toIdx<0)return;
     detailTagOrder.splice(fromIdx,1);
+    if(fromIdx<toIdx)toIdx--;
     detailTagOrder.splice(toIdx,0,fromTag);
   }
   if(_dragCallback)_dragCallback();
