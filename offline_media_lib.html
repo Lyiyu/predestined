@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
-<title>离线媒体库 v3.5.1</title>
+<title>离线媒体库 v3.5.3</title>
 <style>
 *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 :root{
@@ -109,31 +109,28 @@ body{font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei
 .detail-top{display:flex;align-items:center;gap:10px;padding:calc(10px + var(--safe-t)) 12px 10px;background:rgba(0,0,0,.3)}
 .detail-top .dt-title{flex:1;color:#fff;font-size:14px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .detail-top .dt-close{color:#fff;font-size:24px;cursor:pointer;width:36px;height:36px;display:flex;align-items:center;justify-content:center;flex:0 0 auto;background:rgba(255,255,255,.15);border-radius:50%}
-.detail-img{flex:1;overflow:hidden;display:flex;align-items:center;justify-content:center;padding:8px}
+.detail-img{flex:1 1 0;min-height:0;overflow:hidden;display:flex;align-items:center;justify-content:center;padding:6px}
 .detail-img img{max-width:100%;max-height:100%;border-radius:8px;object-fit:contain}
-.detail-panel{background:#1a1a2e;color:#fff;padding:16px 16px calc(16px + var(--safe-b));border-radius:18px 18px 0 0;max-height:55vh;overflow-y:auto;-webkit-overflow-scrolling:touch}
-.detail-panel .step-label{font-size:13px;color:#9aa0b5;margin-bottom:10px;margin-top:18px}
+.detail-panel{background:#1a1a2e;color:#fff;padding:12px 16px calc(12px + var(--safe-b));border-radius:18px 18px 0 0;max-height:62vh;overflow-y:auto;-webkit-overflow-scrolling:touch}
+.detail-panel .step-label{font-size:12.5px;color:#9aa0b5;margin-bottom:8px;margin-top:12px}
 .detail-panel .step-label:first-child{margin-top:0}
-.name-chips{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:6px}
-.name-chips .nchip{padding:10px 16px;border-radius:10px;background:rgba(255,255,255,.1);color:#fff;font-size:14px;cursor:pointer;border:2px solid transparent;transition:.15s}
+.name-chips{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:4px}
+.name-chips .nchip{padding:8px 13px;border-radius:10px;background:rgba(255,255,255,.1);color:#fff;font-size:13.5px;cursor:pointer;border:2px solid transparent;transition:.15s}
 .name-chips .nchip.on{background:var(--primary);border-color:#fff;font-weight:700}
 .name-chips .nchip:active{transform:scale(.95)}
 .name-chips .nchip.add{background:rgba(255,255,255,.05);border:2px dashed rgba(255,255,255,.3)}
 .name-chips .nchip.add input{background:transparent;border:none;color:#fff;font-size:14px;outline:none;width:80px}
 .name-chips .nchip.add input::placeholder{color:rgba(255,255,255,.4)}
-.tag-chips{display:flex;flex-wrap:wrap;gap:8px}
-.tag-chips .tchip{padding:8px 14px;border-radius:20px;background:rgba(255,255,255,.08);color:#ccc;font-size:13px;cursor:pointer;border:1.5px solid transparent;transition:.15s}
+.tag-chips{display:flex;flex-wrap:wrap;gap:6px}
+.tag-chips .tchip{padding:6px 12px;border-radius:20px;background:rgba(255,255,255,.08);color:#ccc;font-size:12.5px;cursor:pointer;border:1.5px solid transparent;transition:.15s}
 .tag-chips .tchip.on{background:var(--primary);color:#fff;border-color:#fff}
 .tag-chips .tchip:active{transform:scale(.92)}
 .tag-chips.light .tchip{background:#f0f1f7;color:#5a5f75;border:1.5px solid var(--line)}
 .tag-chips.light .tchip.on{background:var(--primary);color:#fff;border-color:var(--primary)}
-.date-row{display:flex;gap:10px;align-items:center}
-.date-row input[type=date]{flex:1;padding:10px;border:1px solid rgba(255,255,255,.2);border-radius:10px;background:rgba(255,255,255,.08);color:#fff;font-size:14px}
+.date-row{display:flex;gap:10px;align-items:center;margin-top:4px}
+.date-row input[type=date]{flex:1;padding:8px;border:1px solid rgba(255,255,255,.2);border-radius:10px;background:rgba(255,255,255,.08);color:#fff;font-size:14px}
 .date-row input[type=date]::-webkit-calendar-picker-indicator{filter:invert(1)}
-.preview-name{background:rgba(255,255,255,.06);border-radius:10px;padding:12px;margin-top:14px;text-align:center;border:1px solid rgba(255,255,255,.12)}
-.preview-name .pl{font-size:11px;color:#9aa0b5;margin-bottom:6px}
-.preview-name .pn{font-size:16px;font-weight:700;color:#fff;word-break:break-all;line-height:1.5}
-.confirm-bar{display:flex;gap:8px;margin-top:16px}
+.confirm-bar{display:flex;gap:8px;margin-top:12px}
 .confirm-bar button{flex:1;padding:12px 6px;border:none;border-radius:12px;font-size:14px;font-weight:700;cursor:pointer;white-space:nowrap;min-width:0;overflow:hidden;text-overflow:ellipsis;transition:transform .15s}
 .confirm-bar button.skip{background:rgba(255,255,255,.08);color:#999;flex:0 0 auto;width:80px}
 .confirm-bar button.confirm{background:var(--primary);color:#fff;flex:2 1 0}
@@ -205,7 +202,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei
 .drag-item.drag-over{border-color:var(--primary)!important;background:#eef1ff!important}
 .detail-tag-order{font-size:11px;color:#9aa0b5;margin-top:6px;line-height:1.5}
 /* 确认弹窗 */
-.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:450;display:none;align-items:center;justify-content:center}
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:550;display:none;align-items:center;justify-content:center}
 .modal-overlay.show{display:flex}
 .modal-box{background:#fff;border-radius:16px;width:90%;max-width:420px;max-height:80vh;overflow-y:auto;padding:20px;box-shadow:0 8px 32px rgba(0,0,0,.2)}
 .modal-box h3{font-size:16px;font-weight:700;margin-bottom:12px}
@@ -259,7 +256,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei
 <div class="topbar">
   <h1>📁 离线媒体库</h1>
   <button class="topbar-btn" onclick="location.reload()" title="刷新页面（用于重新授权文件夹）">🔄</button>
-  <span class="tag">v3.5.1</span>
+  <span class="tag">v3.5.3</span>
 </div>
 
 <div class="progress-bar" id="progressBar"><i id="progressFill"></i></div>
@@ -480,10 +477,6 @@ body{font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei
     <div class="date-row">
       <input type="date" id="detailDate">
     </div>
-    <div class="preview-name">
-      <div class="pl">预览文件名</div>
-      <div class="pn" id="previewName">—</div>
-    </div>
     <div class="confirm-bar">
       <button class="skip" onclick="detailNext()">⏭️ 跳过</button>
       <button class="confirm" id="detailConfirm" onclick="detailConfirm()">✅ 确认</button>
@@ -544,7 +537,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei
 
 <script>
 // ==================== 状态 ====================
-const VERSION='3.5.1';
+const VERSION='3.5.3';
 const DB_NAME='offline_media_lib_v34',DB_VERSION=5;
 const STORE_MEDIA='media',STORE_THUMB='thumbs',STORE_SESSION='session';
 let cfg={rule:'person_seq',tags:['长靴','多人','常服'],dateFormat:'YYYYMMDD',compress:true,maxCount:2000,showHidden:false,dlServer:'http://localhost:8766',dlSubdir:'下载',recentNameLimit:5,dlSite:'https://downloader.bhwa233.com/zh',dlMode:'site',dlIntervalMin:3,dlIntervalMax:8,dlMaxSize:0};
@@ -1238,7 +1231,7 @@ function batchManual(){const list=getSelectedItems();const nn=[];for(let i=0;i<l
 async function batchToJpg(){
   const list=getSelectedItems().filter(i=>i.type==='image');
   if(!list.length){showToast('没有可转换的图片');return}
-  showProgress(10);let ok=0,fail=0,skip=0;
+  showProgress(10);let ok=0,fail=0,skip=0;const errs=[];
   for(let i=0;i<list.length;i++){
     const item=list[i];
     const ext=getExt(item.name).toLowerCase();
@@ -1247,29 +1240,49 @@ async function batchToJpg(){
       const file=await item.handle.getFile();
       const img=new Image();
       const url=URL.createObjectURL(file);
-      const data=await new Promise(res=>{
-        img.onload=()=>{try{const c=document.createElement('canvas');c.width=img.width;c.height=img.height;c.getContext('2d').drawImage(img,0,0);const d=c.toDataURL('image/jpeg',.92);URL.revokeObjectURL(url);res(d)}catch(e){URL.revokeObjectURL(url);res(null)}};
-        img.onerror=()=>{URL.revokeObjectURL(url);res(null)};
+      const blob=await new Promise(res=>{
+        img.onload=()=>{
+          try{
+            const c=document.createElement('canvas');
+            c.width=img.width;c.height=img.height;
+            c.getContext('2d').drawImage(img,0,0);
+            c.toBlob(b=>{URL.revokeObjectURL(url);res(b)},'image/jpeg',.92);
+          }catch(e){URL.revokeObjectURL(url);res(null)}
+        };
+        img.onerror=e=>{URL.revokeObjectURL(url);res(null)};
         img.src=url;
       });
-      if(!data){fail++;continue}
+      if(!blob){errs.push(item.name+': 图片解码失败（可能不是有效图片格式）');fail++;continue}
       // 写回原文件（转 jpg 后删除原文件）
-      const parent=await item.handle.getParent();
+      // getParent 在 Chrome 中不受支持，改为根据 item.path 逐级定位父目录，失败退回 curDir
+      let parent=null;
+      try{
+        const pp=(item.path||'').split('/');
+        pp.pop(); // 去掉文件名，剩下的就是父目录相对路径
+        let d=curDir;
+        for(const seg of pp){if(seg)d=await d.getDirectoryHandle(seg)}
+        parent=d;
+      }catch(e){parent=null}
+      if(!parent)parent=curDir;
       const newName=getBaseName(item.name)+'.jpg';
       const newHandle=await parent.getFileHandle(newName,{create:true});
       const w=await newHandle.createWritable();
-      // dataURL 转 Blob
-      const res=await fetch(data);const blob=await res.blob();
       await w.write(blob);await w.close();
       await item.handle.remove();
       thumbCache.delete(item.name);
       item.name=newName;item.handle=newHandle;
+      // 同步更新 path（父目录路径 + 新文件名）
+      const pp=(item.path||'').split('/');
+      pp[pp.length-1]=newName;
+      item.path=pp.join('/');
       ok++;
-    }catch(e){console.error('转JPG失败',item.name,e);fail++}
+    }catch(e){console.error('转JPG失败',item.name,e);errs.push(item.name+': '+(e.message||e));fail++}
     showProgress(10+Math.round((i+1)/list.length*80));
   }
   selected=[];await saveSession();closeToolsModal();showProgress(100);setTimeout(hideProgress,500);
-  showToast('转换完成：成功 '+ok+' 个'+(fail?'，失败 '+fail+' 个':'')+(skip?'，跳过 '+skip+' 个':''));
+  let msg='转换完成：成功 '+ok+' 个'+(fail?'，失败 '+fail+' 个':'')+(skip?'，跳过 '+skip+' 个':'');
+  if(errs.length){msg+='；失败原因：'+errs.slice(0,3).join('；')}
+  showToast(msg);console.log('批量转JPG明细:',errs);
 }
 
 // ==================== 删除文件 ====================
@@ -2028,7 +2041,7 @@ async function restoreHandles(){
   const fileMap=new Map(allFiles.map(f=>[f.name,f]));
   items.forEach(it=>{
     const found=fileMap.get(it.name);
-    if(found){it.handle=found.handle;it.size=found.size||it.size;it.lastModified=found.lastModified||it.lastModified}
+    if(found){it.handle=found.handle;it.size=found.size||it.size;it.lastModified=found.lastModified||it.lastModified;it.path=found.path||it.path||it.name}
   });
 }
 
@@ -2104,12 +2117,8 @@ async function detailConfirm(){
 // ---- 重写 updatePreviewName 使用 v3.2 buildName ----
 function updatePreviewName(){
   const item=items[detailIdx];if(!item)return;
-  // v3.3: 按 detailTagOrder 排序，第一个标签写入文件名
-  const tags=detailTagOrder.filter(t=>detailTags.has(t));
-  const ext=getExt(item.name);
-  const base=buildName(detailPerson,tags,detailDateStr,0);
-  const previewExt=getExt(item.name);
-  document.getElementById('previewName').textContent=(cfg.rule==='person_seq'||cfg.rule==='person_tag_seq'?base+'_1':base)+previewExt;
-  document.getElementById('detailConfirm').disabled=!detailPerson;
+  // v3.5.3: 已移除预览文件名区块，仅维护确认按钮可用状态
+  const btn=document.getElementById('detailConfirm');
+  if(btn)btn.disabled=!detailPerson;
 }
 </script>
