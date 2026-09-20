@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
-<title>离线媒体库 v3.5.3</title>
+<title>离线媒体库 v3.6</title>
 <style>
 *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 :root{
@@ -237,7 +237,60 @@ body{font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei
   .filters{flex-wrap:nowrap}
   .filters .action-row{flex-wrap:nowrap}
 }
-/* v3.5.1: 手机端按钮防孤行 */
+/* v3.6: 阅读器样式 */
+.rd-toolbar{display:flex;align-items:center;gap:6px;padding:8px 12px;background:var(--card);border-bottom:1px solid var(--line);flex:0 0 auto;box-shadow:var(--shadow);z-index:10;flex-wrap:wrap}
+.rd-btn{border:none;background:#f0f1f7;color:#5a5f75;font-size:12px;padding:6px 10px;border-radius:8px;cursor:pointer;white-space:nowrap;flex:0 0 auto;transition:background .15s}
+.rd-btn:active{transform:scale(.93)}
+.rd-btn:disabled{opacity:.4;cursor:not-allowed}
+.rd-btn-active{background:var(--primary)!important;color:#fff!important}
+.rd-btn-sm{border:none;background:#f0f1f7;color:#5a5f75;font-size:13px;padding:4px 8px;border-radius:6px;cursor:pointer;flex:0 0 auto}
+.rd-btn-sm:active{transform:scale(.93)}
+.rd-font-ctrl{display:flex;align-items:center;gap:4px;flex:0 0 auto}
+.rd-font-val{font-size:12px;font-weight:700;min-width:22px;text-align:center;color:var(--primary)}
+.rd-content{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:20px 18px calc(var(--safe-b) + 20px);max-width:680px;margin:0 auto;width:100%}
+.rd-content .rd-text{font-size:17px;line-height:1.85;letter-spacing:.02em;word-break:break-all;overflow-wrap:anywhere;text-align:justify}
+.rd-content .rd-text p{margin:0 0 1.2em;text-indent:2em}
+.rd-content .rd-text h1,.rd-content .rd-text h2,.rd-content .rd-text h3{font-weight:700;margin:1.5em 0 .8em;text-indent:0}
+.rd-content .rd-text h1{font-size:1.5em;text-align:center}
+.rd-content .rd-text h2{font-size:1.3em}
+.rd-content .rd-text h3{font-size:1.15em}
+.rd-content .rd-text .rd-chapter-title{text-align:center;font-size:1.3em;font-weight:700;margin:1.5em 0 1em;text-indent:0}
+.rd-content.dark{background:#1a1a2e;color:#c8c8d8}
+.rd-content.dark .rd-text{color:#d0d0e0}
+/* 章节目录弹窗 */
+.rd-toc-overlay{position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:480;display:flex;align-items:flex-start;justify-content:center;padding-top:60px}
+.rd-toc-panel{background:var(--card);border-radius:14px;width:90%;max-width:400px;max-height:65vh;overflow:hidden;display:flex;flex-direction:column;box-shadow:var(--shadow-lg)}
+.rd-toc-header{display:flex;align-items:center;justify-content:space-between;padding:14px 16px;border-bottom:1px solid var(--line);font-size:15px;font-weight:700}
+.rd-toc-close{border:none;background:none;font-size:22px;cursor:pointer;color:#999;padding:0 4px;line-height:1}
+.rd-toc-list{overflow-y:auto;padding:8px;flex:1;-webkit-overflow-scrolling:touch}
+.rd-toc-item{padding:10px 12px;border-radius:8px;font-size:14px;cursor:pointer;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;transition:background .15s}
+.rd-toc-item:hover,.rd-toc-item:active{background:#f0f1f7}
+.rd-toc-item.rd-toc-active{color:var(--primary);font-weight:600;background:#e8eaf6}
+/* 错别字标记 */
+.rd-typo{background:#fff3cd;border-bottom:2px dotted #f59e0b;cursor:help;position:relative;border-radius:2px}
+.rd-typo:hover::after{content:attr(title);position:absolute;bottom:100%;left:0;background:#1a1a2e;color:#ffd166;padding:4px 8px;border-radius:6px;font-size:12px;white-space:nowrap;z-index:100;box-shadow:var(--shadow)}
+.rd-content.dark .rd-typo{background:#3d3520;border-bottom-color:#ffd166}
+/* 广告屏蔽 */
+.rd-ad{opacity:.35;text-decoration:line-through;cursor:pointer;transition:opacity .2s;background:#ffe0e0;border-radius:2px}
+.rd-ad:hover{opacity:.7}
+.rd-ad-hidden{display:none}
+/* 空状态 */
+.rd-empty{text-align:center;padding:60px 20px;color:var(--sub)}
+.rd-empty .rd-empty-ic{font-size:52px;margin-bottom:12px}
+.rd-empty .rd-empty-sub{font-size:12px;color:#bbb;margin-top:6px}
+/* 进度提示 */
+.rd-progress{font-size:11px;color:#888;flex:1;text-align:right;white-space:nowrap;min-width:0;overflow:hidden;text-overflow:ellipsis}
+/* 暗色模式 - 工具栏也变暗 */
+.rd-content.dark ~ .rd-toolbar,.rd-toolbar.rd-dark{background:#252538!important;border-bottom-color:#333}
+.rd-toolbar.rd-dark .rd-btn,.rd-toolbar.rd-dark .rd-btn-sm{background:#33334a;color:#a0a0c0}
+.rd-toolbar.rd-dark .rd-font-val{color:#8a8aff}
+.rd-settings label{display:block;font-size:13px;color:#555;margin-bottom:6px;font-weight:500}
+.rd-settings select,.rd-settings input[type=range]{width:100%;padding:8px 10px;border:1px solid var(--line);border-radius:8px;font-size:14px;background:#fff}
+@media(min-width:700px){
+  .rd-content{padding:30px 24px calc(var(--safe-b) + 24px)}
+  .rd-content .rd-text{font-size:18px}
+}
+
 .btn-main,.btn-ghost,.btn-danger{word-break:keep-all;overflow-wrap:anywhere;line-height:1.5}
 .tool-card h4{word-break:keep-all;overflow-wrap:anywhere}
 .tool-card .desc{word-break:keep-all;overflow-wrap:break-word}
@@ -256,7 +309,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei
 <div class="topbar">
   <h1>📁 离线媒体库</h1>
   <button class="topbar-btn" onclick="location.reload()" title="刷新页面（用于重新授权文件夹）">🔄</button>
-  <span class="tag">v3.5.3</span>
+  <span class="tag">v3.6</span>
 </div>
 
 <div class="progress-bar" id="progressBar"><i id="progressFill"></i></div>
@@ -320,6 +373,44 @@ body{font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei
   <div class="dl-card" id="dlStatusCard" style="display:none">
     <h3>📊 下载状态</h3>
     <div class="dl-status" id="dlStatus"></div>
+  </div>
+</div>
+
+<!-- 阅读页 -->
+<div class="page" id="pageRd">
+  <!-- 阅读工具栏 -->
+  <div class="rd-toolbar" id="rdToolbar">
+    <button class="rd-btn" onclick="rdOpenFile()">📂 打开</button>
+    <button class="rd-btn" id="rdTocBtn" onclick="rdToggleToc()" disabled>📑 目录</button>
+    <button class="rd-btn" id="rdDarkBtn" onclick="rdToggleDark()">🌙 暗色</button>
+    <div class="rd-font-ctrl">
+      <button class="rd-btn-sm" onclick="rdFontDelta(-1)">A−</button>
+      <span id="rdFontSize" class="rd-font-val">18</span>
+      <button class="rd-btn-sm" onclick="rdFontDelta(1)">A+</button>
+    </div>
+    <button class="rd-btn" id="rdTypoBtn" onclick="rdToggleTypo()">✏️ 错字</button>
+    <button class="rd-btn" id="rdAdBtn" onclick="rdToggleAd()">🚫 广告</button>
+    <span class="rd-progress" id="rdProgress"></span>
+    <input type="file" id="rdFileInput" accept=".txt,text/plain" style="display:none" onchange="rdLoadFile(event)">
+  </div>
+  <!-- 阅读内容区 -->
+  <div class="rd-content" id="rdContent">
+    <div class="rd-empty" id="rdEmpty">
+      <div class="rd-empty-ic">📖</div>
+      <p>点击「打开」选择 txt 小说文件</p>
+      <p class="rd-empty-sub">支持章节目录、排版优化、错别字提示、广告屏蔽</p>
+    </div>
+    <div class="rd-text" id="rdText" style="display:none"></div>
+  </div>
+  <!-- 章节目录弹窗 -->
+  <div class="rd-toc-overlay" id="rdTocOverlay" style="display:none">
+    <div class="rd-toc-panel">
+      <div class="rd-toc-header">
+        <span>📑 章节目录</span>
+        <button class="rd-toc-close" onclick="rdToggleToc()">×</button>
+      </div>
+      <div class="rd-toc-list" id="rdTocList"></div>
+    </div>
   </div>
 </div>
 
@@ -455,6 +546,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei
 <div class="tabbar" id="tabbar">
   <button class="tab active" id="tabLib" onclick="switchTab('lib')"><span class="ic">🗂️</span>媒体库</button>
   <button class="tab" id="tabDl" onclick="switchTab('dl')"><span class="ic">📥</span>下载</button>
+  <button class="tab" id="tabRd" onclick="switchTab('rd')"><span class="ic">📖</span>阅读</button>
   <button class="tab" id="tabSet" onclick="switchTab('set')"><span class="ic">⚙️</span>设置</button>
 </div>
 
@@ -537,7 +629,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei
 
 <script>
 // ==================== 状态 ====================
-const VERSION='3.5.3';
+const VERSION='3.6';
 const DB_NAME='offline_media_lib_v34',DB_VERSION=5;
 const STORE_MEDIA='media',STORE_THUMB='thumbs',STORE_SESSION='session';
 let cfg={rule:'person_seq',tags:['长靴','多人','常服'],dateFormat:'YYYYMMDD',compress:true,maxCount:2000,showHidden:false,dlServer:'http://localhost:8766',dlSubdir:'下载',recentNameLimit:5,dlSite:'https://downloader.bhwa233.com/zh',dlMode:'site',dlIntervalMin:3,dlIntervalMax:8,dlMaxSize:0};
@@ -1371,9 +1463,10 @@ async function doDeleteFromDisk(item){
 // ==================== Tab ====================
 function switchTab(t){
   currentTab=t;
-  ['lib','dl','set'].forEach(n=>{const pg=document.getElementById('page'+n.charAt(0).toUpperCase()+n.slice(1));const tb=document.getElementById('tab'+n.charAt(0).toUpperCase()+n.slice(1));if(pg)pg.classList.toggle('show',n===t);if(tb)tb.classList.toggle('active',n===t)});
+  ['lib','dl','rd','set'].forEach(n=>{const pg=document.getElementById('page'+n.charAt(0).toUpperCase()+n.slice(1));const tb=document.getElementById('tab'+n.charAt(0).toUpperCase()+n.slice(1));if(pg)pg.classList.toggle('show',n===t);if(tb)tb.classList.toggle('active',n===t)});
   if(t==='lib')renderLib();
   if(t==='set'){loadSettingsForm();renderSetStats();updateQuota()}
+  if(t==='rd'){rdOnTabShow()}
   if(t==='dl'){
     const tip=document.getElementById('dlModeTip');
     if(tip)tip.textContent=cfg.dlMode==='site'?'当前模式：第三方网站（'+(cfg.dlSite||'downloader.bhwa233.com')+'）。粘贴抖音/小红书/B站等链接，每行一个。':'当前模式：本地下载服务（'+cfg.dlServer+'）。';
@@ -2121,4 +2214,664 @@ function updatePreviewName(){
   const btn=document.getElementById('detailConfirm');
   if(btn)btn.disabled=!detailPerson;
 }
+
+// ==================== v3.6 离线阅读器 ====================
+
+// ---- 阅读器状态 ----
+let rdState={
+  rawText:'',        // 原始文本
+  chapters:[],       // [{title, startOffset}]
+  curChapter:-1,     // 当前章节索引
+  fileName:'',       // 当前文件名
+  dark:false,        // 暗色模式
+  fontSize:18,       // 字号
+  typoOn:false,      // 错别字检查开关
+  adOn:false,        // 广告屏蔽开关
+  adHidden:false,    // 广告是否全局隐藏
+  scrollTimer:null,  // 滚动节流 timer
+};
+
+// ---- 错别字词库 ----
+const RD_TYPO_DICT={
+  // 的/地/得 混淆
+  '的':'地|得','地':'的|得','得':'的|地',
+  // 做/作
+  '做':'作','作':'做',
+  // 在/再
+  '在':'再','再':'在',
+  // 里/裡(里)
+  '裡':'里','里':'裡',
+  // 它/他/她
+  '它':'他|她','他':'它|她','她':'它|他',
+  // 代/带
+  '代':'带','带':'代',
+  // 须/需
+  '须':'需','需':'须',
+  // 即/既
+  '即':'既','既':'即',
+  // 至/致
+  '至':'致','致':'至',
+  // 布/部
+  '布':'部','部':'布',
+  // 拔/拨
+  '拔':'拨','拨':'拔',
+  // 崇/祟
+  '崇':'祟','祟':'崇',
+  // 暴/爆
+  '暴':'爆','爆':'暴',
+  // 采/彩
+  '采':'彩','彩':'采',
+  // 度/渡
+  '度':'渡','渡':'度',
+  // 象/像
+  '象':'像','像':'象',
+  // 荡/宕
+  '荡':'宕','宕':'荡',
+  // 付/副
+  '付':'副','副':'付',
+  // 覆/复
+  '覆':'复','复':'覆',
+  // 载/栽
+  '载':'栽','栽':'载',
+  // 乾/干
+  '乾':'干','干':'乾',
+  // 历/厉
+  '历':'厉','厉':'历',
+  // 迹/绩
+  '迹':'绩','绩':'迹',
+  // 竭/极
+  '竭':'极','极':'竭',
+  // 竟/竞
+  '竟':'竞','竞':'竟',
+  // 练/炼
+  '练':'炼','炼':'练',
+  // 蜜/密
+  '蜜':'密','密':'蜜',
+  // 磨/摩
+  '磨':'摩','摩':'磨',
+  // 蔓/漫
+  '蔓':'漫','漫':'蔓',
+  // 飘/漂
+  '飘':'漂','漂':'飘',
+  // 署/暑
+  '署':'暑','暑':'署',
+  // 嘘/虚
+  '嘘':'虚','虚':'嘘',
+  // 旋/弦
+  '旋':'弦','弦':'旋',
+  // 歪/弯
+  '歪':'弯','弯':'歪',
+  // 悠/忧
+  '悠':'忧','忧':'悠',
+  // 招/召
+  '招':'召','召':'招',
+  // 粘/粘
+  '粘':'粘','粘':'粘',
+};
+
+// 的/地/得 上下文规则
+const RD_DE_RULES=[
+  // 地：动词+地+动词/形容词 → 应为"地"
+  {pattern:/([\u4e00-\u9fa5])地([\u4e00-\u9fa5])/g,suggest:'地',check:'de_type'},
+  // 的：名词/代词+的+名词 → 应为"的"
+  {pattern:/([\u4e00-\u9fa5])的([\u4e00-\u9fa5])/g,suggest:'的',check:'de_type'},
+  // 得：动词+得+补语 → 应为"得"
+  {pattern:/([\u4e00-\u9fa5])得([\u4e00-\u9fa5])/g,suggest:'得',check:'de_type'},
+];
+
+// 常见错词对（固定搭配错误）
+const RD_TYPO_PAIRS=[
+  ['一如既往','一如即往'],
+  ['迫不及待','迫不急待'],
+  ['一筹莫展','一愁莫展'],
+  ['莫名其妙','明其妙'],
+  ['流连忘返','留连忘返'],
+  ['融会贯通','融汇贯通'],
+  ['各抒己见','各抒已见'],
+  ['莫名其妙','莫明其妙'],
+  ['掩耳盗铃','掩耳盗零'],
+  ['破釜沉舟','破斧沉舟'],
+  ['川流不息','穿流不息'],
+  ['惹是生非','惹事生非'],
+  ['旁征博引','旁证博引'],
+  ['巧夺天工','巧夺天功'],
+  ['黄粱美梦','黄梁美梦'],
+  ['墨守成规','默守成规'],
+  ['默默无闻','默默无文'],
+  ['无理取闹','无理取闹'],
+  ['蜂拥而至','蜂涌而至'],
+  ['按部就班','按步就班'],
+  ['黯然失色','暗然失色'],
+  ['跋山涉水','爬山涉水'],
+  ['百感交集','百感交加'],
+  ['班门弄斧','搬门弄斧'],
+  ['变本加厉','变本加利'],
+  ['不假思索','不加思索'],
+  ['不省人事','不醒人事'],
+  ['残缺不全','残缺不齐'],
+  ['畅所欲言','畅所欲言'],
+  ['趁火打劫','乘火打劫'],
+  ['出类拔萃','出类拔翠'],
+  ['唇亡齿寒','唇亡齿寒'],
+  ['大发雷霆','大发雷庭'],
+  ['掉以轻心','掉以轻心'],
+  ['短小精悍','短小精干'],
+  ['发扬光大','发扬光大'],
+  ['沸沸扬扬','费费扬扬'],
+  ['奋不顾身','愤不顾身'],
+  ['功亏一篑','功亏一溃'],
+  ['鬼斧神工','鬼斧神工'],
+  ['海市蜃楼','海市唇楼'],
+  ['汗流浃背','汗流夹背'],
+  ['和蔼可亲','和霭可亲'],
+  ['浑然一体','混然一体'],
+  ['积劳成疾','积劳成疾'],
+  ['坚不可摧','坚不可催'],
+  ['见义勇为','见义勇为'],
+  ['刻不容缓','刻不容缓'],
+  ['苦口婆心','苦口婆心'],
+  ['理直气壮','理直气状'],
+  ['历历在目','厉厉在目'],
+  ['妙笔生花','妙笔生花'],
+  ['名不虚传','名不虚传'],
+  ['莫名其妙','莫名其妙'],
+  ['名列前茅','名列前茅'],
+  ['披荆斩棘','披荆斩棘'],
+  ['萍水相逢','萍水相逢'],
+  ['气势磅礴','气势磅礴'],
+  ['千钧一发','千钧一发'],
+  ['潜移默化','潜移默化'],
+  ['巧言令色','巧言令色'],
+  ['日积月累','日积月累'],
+  ['如火如荼','如火如茶'],
+  ['三顾茅庐','三顾茅芦'],
+  ['舍生取义','舍身取义'],
+  ['声名鹊起','声名雀起'],
+  ['实事求是','实事求是'],
+  ['谈笑风生','谈笑风声'],
+  ['亡羊补牢','亡羊补牢'],
+  ['惟妙惟肖','唯妙唯肖'],
+  ['无孔不入','无孔不入'],
+  ['虚位以待','虚位以待'],
+  ['鸦雀无声','鸦鹊无声'],
+  ['言简意赅','言简意咳'],
+  ['一鸣惊人','一鸣惊人'],
+  ['勇往直前','勇往之前'],
+  ['语重心长','语重心长'],
+  ['源远流长','渊远流长'],
+  ['再接再厉','再接再励'],
+  ['真知灼见','真知卓见'],
+  ['中流砥柱','中流抵柱'],
+  ['蛛丝马迹','蛛丝马迹'],
+  ['走投无路','走头无路'],
+  ['坐收渔利','坐收鱼利'],
+];
+
+// ---- 广告关键词库 ----
+const RD_AD_KEYWORDS=[
+  '关注公众号','微信公众号','扫码关注','扫码加群','扫码进群',
+  '添加微信','加微信','微信号','加群','进群',
+  '扫一扫','长按识别','识别二维码','二维码关注',
+  '更多精彩','更多内容','持续更新','求订阅','求收藏','求推荐',
+  '本章完毕','本章完','全本完结','本书完',
+  '百度搜','google搜','搜索关键词',
+  '起点中文网','创世中文网','纵横中文网','17k小说网',
+  '本书来自','本书首发','首发于','转载自',
+  '手机用户请浏览','m.\u003C','wap.\u003C',
+  '阅读模式','小说阅读','敬请收藏',
+  '打赏作者','投推荐票','月票','推荐票',
+  '请记住本书','记住网址','书海阁','笔趣阁',
+  '无弹窗','txt下载','全文字体','电子书下载',
+  '最新章节','章节错误','章节举报','内容举报',
+  'www.','http://','https://',
+  'VIP章节','付费章节','订阅读者',
+  '评论区','留言板','书友群','粉丝群',
+  '本书正版','正版阅读','支持正版',
+  '更新时间','更新日期','更新字数',
+  '作者的话','作者感言','上架感言',
+];
+
+// ---- 打开文件 ----
+function rdOpenFile(){
+  document.getElementById('rdFileInput').click();
+}
+
+// ---- 加载 txt 文件 ----
+function rdLoadFile(event){
+  const file=event.target.files[0];
+  if(!file)return;
+  rdState.fileName=file.name;
+  const reader=new FileReader();
+  reader.onload=function(e){
+    rdState.rawText=e.target.result;
+    rdParseChapters();
+    rdRender();
+    rdSaveProgress();
+    showToast('已加载：'+file.name+'（'+rdState.chapters.length+'章）');
+  };
+  reader.onerror=function(){
+    showToast('文件读取失败');
+  };
+  reader.readAsText(file,'utf-8');
+  // 重置 input 以便重复选同一文件
+  event.target.value='';
+}
+
+// ---- 章节正则切分 ----
+function rdParseChapters(){
+  const text=rdState.rawText;
+  rdState.chapters=[];
+  // 支持的章节标题模式（行首允许多余空格，用 [ \t]* 而非 \s* 避免匹配换行符）
+  const patterns=[
+    /^[ \t]*第[一二三四五六七八九十百千万零]+[章节回卷折篇集部](?:[：:·\-\s].*)?$/m,
+    /^[ \t]*第\d+[章节回卷折篇集部](?:[：:·\-\s].*)?$/m,
+    /^[ \t]*[正序终末]文\s*$/m,
+    /^[ \t]*序[章言]\s*$/m,
+    /^[ \t]*楔子\s*$/m,
+    /^[ \t]*引子\s*$/m,
+    /^[ \t]*尾声\s*$/m,
+    /^[ \t]*后记\s*$/m,
+    /^[ \t]*番外[篇章]?\s*.*/m,
+    /^[ \t]*Chapter\s+\d+/im,
+    /^[ \t]*章节\s*\d+/m,
+  ];
+  // 合并为一个正则
+  const combined=new RegExp('('+patterns.map(p=>p.source).join(')|(')+')','gm');
+  let match;
+  while((match=combined.exec(text))!==null){
+    // 找到这一行的换行符位置（标题行结束）
+    let titleEnd=text.indexOf('\n',match.index);
+    if(titleEnd===-1)titleEnd=text.length;
+    const title=text.substring(match.index,titleEnd).trim();
+    rdState.chapters.push({title:title,startOffset:match.index,endOffset:0});
+    // 防止零宽匹配导致死循环
+    if(match.index===combined.lastIndex)combined.lastIndex++;
+  }
+  // 计算每章结束位置
+  for(let i=0;i<rdState.chapters.length;i++){
+    rdState.chapters[i].endOffset=(i+1<rdState.chapters.length)?rdState.chapters[i+1].startOffset:text.length;
+  }
+  // 如果没有章节，整体作为一个章节
+  if(rdState.chapters.length===0){
+    rdState.chapters.push({title:'全文',startOffset:0,endOffset:text.length});
+  }
+  rdState.curChapter=0;
+}
+
+// ---- 转义 HTML ----
+function rdEscapeHtml(s){
+  return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+// ---- 排版渲染 ----
+function rdRender(){
+  const container=document.getElementById('rdText');
+  const empty=document.getElementById('rdEmpty');
+  if(!rdState.rawText){
+    empty.style.display='flex';
+    container.style.display='none';
+    return;
+  }
+  empty.style.display='none';
+  container.style.display='block';
+  container.style.fontSize=rdState.fontSize+'px';
+  const contentEl=document.getElementById('rdContent');
+  if(contentEl)contentEl.classList.toggle('dark',rdState.dark);
+  const toolbarEl=document.getElementById('rdToolbar');
+  if(toolbarEl)toolbarEl.classList.toggle('rd-dark',rdState.dark);
+
+  // 获取当前章节文本
+  const ch=rdState.chapters[rdState.curChapter];
+  if(!ch)return;
+  const sectionText=rdState.rawText.substring(ch.startOffset,ch.endOffset);
+  // 按行分割
+  const lines=sectionText.split('\n');
+  let html='';
+  let isFirstLine=true;
+  for(let line of lines){
+    const trimmed=line.trim();
+    if(!trimmed)continue;
+    // 章节标题
+    if(rdIsChapterTitle(trimmed)){
+      html+='<h2 class="rd-chapter-title">'+rdEscapeHtml(trimmed)+'</h2>';
+      continue;
+    }
+    // 正文段落
+    let para=rdEscapeHtml(trimmed);
+    // 错别字标记
+    if(rdState.typoOn){
+      para=rdMarkTypos(para,trimmed);
+    }
+    // 广告屏蔽
+    if(rdState.adOn){
+      para=rdMarkAds(para,trimmed);
+    }
+    // 首行缩进
+    html+='<p class="rd-para" style="text-indent:'+(isFirstLine?2:2)+'em">'+para+'</p>';
+    isFirstLine=false;
+  }
+  container.innerHTML=html;
+
+  // 更新目录高亮
+  rdUpdateTocHighlight();
+  // 更新进度
+  rdUpdateProgress();
+  // 启用目录按钮
+  const tocBtn=document.getElementById('rdTocBtn');
+  if(tocBtn)tocBtn.disabled=rdState.chapters.length<=1;
+  // 恢复滚动位置
+  rdRestoreScroll();
+}
+
+// ---- 判断是否章节标题 ----
+function rdIsChapterTitle(line){
+  if(line.length>50)return false;
+  return /^第[一二三四五六七八九十百千万零]+[章节回卷折篇集部]/.test(line)
+    ||/^第\d+[章节回卷折篇集部]/.test(line)
+    ||/^[正序终末]文$/.test(line)
+    ||/^序[章言]$/.test(line)
+    ||/^楔子$/.test(line)
+    ||/^引子$/.test(line)
+    ||/^尾声$/.test(line)
+    ||/^后记$/.test(line)
+    ||/^番外[篇章]?/.test(line)
+    ||/^Chapter\s+\d+/i.test(line)
+    ||/^章节\s*\d+/.test(line);
+}
+
+// ---- 错别字标记 ----
+function rdMarkTypos(htmlEscaped,rawLine){
+  // 1. 固定错词对检查
+  let result=htmlEscaped;
+  const typoMarks=[];
+  for(const [correct,wrong] of RD_TYPO_PAIRS){
+    if(correct===wrong)continue;
+    const idx=rawLine.indexOf(wrong);
+    if(idx>=0 && rawLine.indexOf(correct)<0){
+      // 行中存在错误写法且不存在正确写法
+      const wrongEsc=rdEscapeHtml(wrong);
+      const correctEsc=rdEscapeHtml(correct);
+      result=result.replace(wrongEsc,'<span class="rd-typo" title="应为：'+correctEsc+'">'+wrongEsc+'</span>');
+    }
+  }
+  // 2. 的/地/得 - 使用简化方案：正则匹配常见错误模式
+  const dePatterns=[
+    {re:/([\u4e00-\u9fa5])的(说|笑|走|跑|看|想|听|吃|喝|打|买|卖|来|去|进|出|起|坐|站|躺|哭|喊|叫|唱|跳|飞|爬|追|逃|躲|挡|推|拉|抱|举|放|拿|捡|丢|扔|抓|握|敲|拍|摸|擦|洗|穿|脱|戴|摘|盖|揭|关|开|锁|砸|砍|劈|刺|射|杀|写|读|画|弹|下|上|左|右|前|后|内|外)/g,correct:'地',wrong:'的',reason:'动词后应用地'},
+    {re:/(觉得|认得|记得|懂得|晓得|获得|显得)/g,correct:'得',wrong:'的',reason:'此处应用得'},
+    {re:/(真的的)/g,correct:'的',wrong:'的',reason:'冗余'},
+  ];
+  for(const dp of dePatterns){
+    let m;
+    while((m=dp.re.exec(htmlEscaped))!==null){
+      const wrongPart=m[0];
+      const correctPart=wrongPart.replace(new RegExp(dp.wrong,'g'),dp.correct);
+      if(wrongPart!==correctPart){
+        const suggest='应为：'+rdEscapeHtml(correctPart)+'（'+dp.reason+'）';
+        result=result.replace(wrongPart,'<span class="rd-typo" title=\''+suggest+'\'>'+rdEscapeHtml(wrongPart)+'</span>');
+      }
+    }
+  }
+  return result;
+}
+
+// 简化的 的/地/得 上下文判断
+function rdCheckDe(prev,ch,next){
+  if(!prev||!next)return null;
+  // 简单规则：
+  // 动词+地+动词/形容词 → 地
+  // 名词+的+名词 → 的
+  // 动词+得+补语 → 得
+  // 这里只做最基础的判断
+  const verbs='说笑走跑看想听吃喝打买卖来去进出起坐站躺哭喊叫唱跳飞爬追逃躲挡推拉抱举放拿捡丢扔抓握敲拍摸擦洗穿脱戴摘盖揭关开锁砸砍劈刺杀写读画唱弹下上左右前后内外';
+  if(verbs.includes(prev)&&verbs.includes(next)&&ch==='的'){
+    return '地';
+  }
+  return null;
+}
+
+// 在转义后的 HTML 中找到第 n 次出现某个中文字的位置（简化版，暂不用）
+function rdFindCharPos(html,ch,n){
+  let count=0;
+  for(let i=0;i<html.length;i++){
+    if(html[i]===ch){
+      if(count===n)return i;
+      count++;
+    }
+  }
+  return -1;
+}
+
+// ---- 广告屏蔽 ----
+function rdMarkAds(htmlEscaped,rawLine){
+  let isAd=false;
+  let adType='';
+  // 关键词匹配
+  for(const kw of RD_AD_KEYWORDS){
+    if(rawLine.includes(kw)){
+      isAd=true;
+      adType='关键词「'+kw+'」';
+      break;
+    }
+  }
+  // URL 检测
+  if(/https?:\/\/\S+/.test(rawLine)){
+    isAd=true;
+    adType='含链接';
+  }
+  // 短行+特定特征
+  if(rawLine.length<15 && /[www\.|http|群|号|票|赏|藏|推|订|阅]/.test(rawLine)){
+    isAd=true;
+    adType='短行广告特征';
+  }
+  // 纯符号行或特殊格式行
+  if(/^[★☆◆◇■□●○※＊▼▽△▲]+$/.test(rawLine.trim())){
+    isAd=true;
+    adType='装饰行';
+  }
+  if(isAd){
+    if(rdState.adHidden){
+      return '<p class="rd-ad-hidden" title="广告内容（已隐藏）">'+htmlEscaped+'</p>';
+    }
+    return '<span class="rd-ad" title="疑似广告：'+adType+'">'+htmlEscaped+'</span>';
+  }
+  return htmlEscaped;
+}
+
+// ---- 目录弹窗 ----
+function rdToggleToc(){
+  const overlay=document.getElementById('rdTocOverlay');
+  if(overlay.style.display==='none'||!overlay.style.display){
+    // 生成目录列表
+    const list=document.getElementById('rdTocList');
+    list.innerHTML=rdState.chapters.map((ch,i)=>{
+      const active=i===rdState.curChapter?'rd-toc-active':'';
+      return '<div class="rd-toc-item '+active+'" onclick="rdJumpChapter('+i+')">'+rdEscapeHtml(ch.title)+'</div>';
+    }).join('');
+    overlay.style.display='flex';
+  }else{
+    overlay.style.display='none';
+  }
+}
+
+// ---- 跳转章节 ----
+function rdJumpChapter(idx){
+  if(idx<0||idx>=rdState.chapters.length)return;
+  rdState.curChapter=idx;
+  rdRender();
+  rdSaveProgress();
+  // 滚动到内容区顶部
+  const content=document.getElementById('rdContent');
+  if(content)content.scrollTop=0;
+  // 关闭目录
+  document.getElementById('rdTocOverlay').style.display='none';
+}
+
+// ---- 目录高亮 ----
+function rdUpdateTocHighlight(){
+  const items=document.querySelectorAll('.rd-toc-item');
+  items.forEach((el,i)=>{
+    el.classList.toggle('rd-toc-active',i===rdState.curChapter);
+  });
+}
+
+// ---- 暗色模式 ----
+function rdToggleDark(){
+  rdState.dark=!rdState.dark;
+  const btn=document.getElementById('rdDarkBtn');
+  if(btn)btn.textContent=rdState.dark?'☀️ 亮色':'🌙 暗色';
+  const contentEl=document.getElementById('rdContent');
+  if(contentEl)contentEl.classList.toggle('dark',rdState.dark);
+  const toolbarEl=document.getElementById('rdToolbar');
+  if(toolbarEl)toolbarEl.classList.toggle('rd-dark',rdState.dark);
+  rdSaveSettings();
+  showToast(rdState.dark?'已切换暗色模式':'已切换亮色模式');
+}
+
+// ---- 字号 ----
+function rdFontDelta(delta){
+  rdState.fontSize=Math.max(12,Math.min(32,rdState.fontSize+delta));
+  const span=document.getElementById('rdFontSize');
+  if(span)span.textContent=rdState.fontSize;
+  const container=document.getElementById('rdText');
+  if(container)container.style.fontSize=rdState.fontSize+'px';
+  rdSaveSettings();
+}
+
+// ---- 错字开关 ----
+function rdToggleTypo(){
+  rdState.typoOn=!rdState.typoOn;
+  const btn=document.getElementById('rdTypoBtn');
+  if(btn){
+    btn.textContent=rdState.typoOn?'✏️ 错字✓':'✏️ 错字';
+    btn.classList.toggle('rd-btn-active',rdState.typoOn);
+  }
+  if(rdState.rawText)rdRender();
+  rdSaveSettings();
+}
+
+// ---- 广告屏蔽开关 ----
+function rdToggleAd(){
+  rdState.adOn=!rdState.adOn;
+  var btn=document.getElementById('rdAdBtn');
+  if(btn){
+    btn.textContent=rdState.adOn?'🚫 广告✓':'🚫 广告';
+    btn.classList.toggle('rd-btn-active',rdState.adOn);
+  }
+  if(!rdState.adOn)rdState.adHidden=false;
+  if(rdState.rawText)rdRender();
+  rdSaveSettings();
+}
+
+// ---- 广告全局隐藏切换 ----
+function rdToggleAdHide(){
+  rdState.adHidden=!rdState.adHidden;
+  if(rdState.rawText)rdRender();
+}
+
+// ---- 阅读进度 ----
+function rdUpdateProgress(){
+  var total=rdState.chapters.length;
+  var cur=rdState.curChapter+1;
+  var pct=total>0?Math.round(cur/total*100):0;
+  var el=document.getElementById('rdProgress');
+  if(el)el.textContent=cur+'/'+total+' ('+pct+'%)';
+}
+
+// ---- 滚动监听（节流保存进度）----
+function rdOnScroll(){
+  if(rdState.scrollTimer)clearTimeout(rdState.scrollTimer);
+  rdState.scrollTimer=setTimeout(function(){
+    rdSaveProgress();
+  },500);
+}
+
+// ---- 保存进度到 localStorage ----
+function rdSaveProgress(){
+  if(!rdState.fileName)return;
+  var key='rd_progress_'+rdState.fileName;
+  var content=document.getElementById('rdContent');
+  var scrollTop=content?content.scrollTop:0;
+  var data={
+    chapter:rdState.curChapter,
+    scrollTop:scrollTop,
+    timestamp:Date.now()
+  };
+  try{localStorage.setItem(key,JSON.stringify(data))}catch(e){}
+}
+
+// ---- 恢复进度 ----
+function rdRestoreProgress(){
+  if(!rdState.fileName)return;
+  var key='rd_progress_'+rdState.fileName;
+  try{
+    var raw=localStorage.getItem(key);
+    if(!raw)return;
+    var data=JSON.parse(raw);
+    if(data.chapter!==undefined&&data.chapter>=0&&data.chapter<rdState.chapters.length){
+      rdState.curChapter=data.chapter;
+    }
+    rdState._pendingScrollTop=data.scrollTop||0;
+  }catch(e){}
+}
+
+// ---- 恢复滚动位置 ----
+function rdRestoreScroll(){
+  if(rdState._pendingScrollTop!==undefined){
+    var content=document.getElementById('rdContent');
+    if(content){
+      content.scrollTop=rdState._pendingScrollTop;
+    }
+    rdState._pendingScrollTop=undefined;
+  }
+}
+
+// ---- 保存阅读器设置 ----
+function rdSaveSettings(){
+  try{
+    localStorage.setItem('rd_settings',JSON.stringify({
+      dark:rdState.dark,
+      fontSize:rdState.fontSize,
+      typoOn:rdState.typoOn,
+      adOn:rdState.adOn
+    }));
+  }catch(e){}
+}
+
+// ---- 加载阅读器设置 ----
+function rdLoadSettings(){
+  try{
+    var raw=localStorage.getItem('rd_settings');
+    if(!raw)return;
+    var s=JSON.parse(raw);
+    rdState.dark=!!s.dark;
+    rdState.fontSize=s.fontSize||18;
+    rdState.typoOn=!!s.typoOn;
+    rdState.adOn=!!s.adOn;
+    // 更新 UI
+    var db=document.getElementById('rdDarkBtn');
+    if(db)db.textContent=rdState.dark?'☀️ 亮色':'🌙 暗色';
+    var fs=document.getElementById('rdFontSize');
+    if(fs)fs.textContent=rdState.fontSize;
+    var tb=document.getElementById('rdTypoBtn');
+    if(tb){tb.textContent=rdState.typoOn?'✏️ 错字✓':'✏️ 错字';tb.classList.toggle('rd-btn-active',rdState.typoOn)}
+    var ab=document.getElementById('rdAdBtn');
+    if(ab){ab.textContent=rdState.adOn?'🚫 广告✓':'🚫 广告';ab.classList.toggle('rd-btn-active',rdState.adOn)}
+  }catch(e){}
+}
+
+// ---- Tab 切换到阅读页时 ----
+function rdOnTabShow(){
+  // 绑定滚动事件
+  var content=document.getElementById('rdContent');
+  if(content&&!content._rdScrollBound){
+    content.addEventListener('scroll',rdOnScroll);
+    content._rdScrollBound=true;
+  }
+}
+
+// ---- 初始化时加载阅读器设置 ----
+(function rdInit(){
+  rdLoadSettings();
+})();
+
 </script>
