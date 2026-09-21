@@ -659,7 +659,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei
 
 <script>
 // ==================== 状态 ====================
-const VERSION='3.6.1';
+const VERSION='3.6.2';
 const DB_NAME='offline_media_lib_v34',DB_VERSION=5;
 const STORE_MEDIA='media',STORE_THUMB='thumbs',STORE_SESSION='session';
 let cfg={rule:'person_seq',tags:['长靴','多人','常服'],dateFormat:'YYYYMMDD',compress:true,maxCount:2000,showHidden:false,dlServer:'http://localhost:8766',dlSubdir:'下载',recentNameLimit:5,dlSite:'https://downloader.bhwa233.com/zh',dlMode:'site',dlIntervalMin:3,dlIntervalMax:8,dlMaxSize:0};
@@ -1336,8 +1336,11 @@ function closeToolsModal(e){if(e&&e.target!==e.currentTarget)return;document.get
 function renderManualList(){const list=getSelectedItems();document.getElementById('manualList').innerHTML=list.map((item,idx)=>{const base=getBaseName(item.name),ext=getExt(item.name);return '<div class="manual-item"><span class="idx">'+(idx+1)+'</span><input type="text" id="manual_'+idx+'" value="'+escapeHtml(base)+'"><span class="ext">'+escapeHtml(ext)+'</span></div>'}).join('')}
 async function applyBatchRename(newNames){
   if(!newNames.length){showToast('没有可处理的文件');return}
+  if(!batchPrecheck(newNames.map(n=>n.item),'批量重命名'))return; // v3.6.2: 前置校验
   showProgress(10);let ok=0,fail=0,skip=0;const usedNames=new Set();
-  for(let i=0;i<newNames.length;i++){const{item,newName}=newNames[i];if(newName===item.name){skip++;continue}let fn=newName;if(usedNames.has(fn)){const ext=getExt(fn),base=getBaseName(fn);let n=1;while(usedNames.has(base+'_'+n+ext))n++;fn=base+'_'+n+ext}usedNames.add(fn);try{const parent=item.handle.getParent?await item.handle.getParent():null;await item.handle.move(fn);thumbCache.delete(item.name);item.name=fn;if(parent){try{item.handle=await parent.getFileHandle(fn)}catch(e){}}ok++}catch(e){fail++}showProgress(10+Math.round((i+1)/newNames.length*80))}
+  for(let i=0;i<newNames.length;i++){const{item,newName}=newNames[i];if(newName===item.name){skip++;continue}
+    if(!item.handle){fail++;showProgress(10+Math.round((i+1)/newNames.length*80));continue} // v3.6.2: null 防护
+    let fn=newName;if(usedNames.has(fn)){const ext=getExt(fn),base=getBaseName(fn);let n=1;while(usedNames.has(base+'_'+n+ext))n++;fn=base+'_'+n+ext}usedNames.add(fn);try{const parent=item.handle.getParent?await item.handle.getParent():null;await item.handle.move(fn);thumbCache.delete(item.name);item.name=fn;if(parent){try{item.handle=await parent.getFileHandle(fn)}catch(e){}}ok++}catch(e){fail++}showProgress(10+Math.round((i+1)/newNames.length*80))}
   selected=[];await saveSession();closeToolsModal();showProgress(100);setTimeout(hideProgress,500);
   showToast('完成：成功 '+ok+' 个'+(fail?'，失败 '+fail+' 个':'')+(skip?'，跳过 '+skip+' 个':''));
 }
@@ -1350,14 +1353,26 @@ function batchRegex(){const p=document.getElementById('regexPattern').value,r=do
 function batchManual(){const list=getSelectedItems();const nn=[];for(let i=0;i<list.length;i++){const inp=document.getElementById('manual_'+i);if(!inp)continue;nn.push({item:list[i],newName:inp.value.trim()+getExt(list[i].name)})}applyBatchRename(nn)}
 
 // ---- v3.4: 批量转 JPG ----
+// v3.6.2: 统一的前置校验——文件夹句柄为空或选中项缺 handle 时提前中止，避免逐个报 getFile null 错
+function batchPrecheck(list,label){
+  if(!curDir){showToast('请先点击「恢复授权」或重新选择文件夹，再执行'+(label||'批量操作'));return false}
+  const noHandle=list.filter(i=>!i.handle);
+  if(noHandle.length){
+    showToast((label||'批量操作')+'需要文件夹授权：请先点击「恢复授权」按钮'+(noHandle.length<list.length?'（'+(list.length-noHandle.length)+' 个文件可直接处理，本次已中止全部操作）':''));
+    return false;
+  }
+  return true;
+}
 async function batchToJpg(){
   const list=getSelectedItems().filter(i=>i.type==='image');
   if(!list.length){showToast('没有可转换的图片');return}
+  if(!batchPrecheck(list,'批量转JPG'))return;
   showProgress(10);let ok=0,fail=0,skip=0;const errs=[];
   for(let i=0;i<list.length;i++){
     const item=list[i];
     const ext=getExt(item.name).toLowerCase();
     if(ext==='.jpg'||ext==='.jpeg'){skip++;showProgress(10+Math.round((i+1)/list.length*80));continue}
+    if(!item.handle){errs.push(item.name+': 文件句柄缺失，请先恢复授权');fail++;showProgress(10+Math.round((i+1)/list.length*80));continue}
     try{
       const file=await item.handle.getFile();
       const img=new Image();
@@ -1817,7 +1832,9 @@ let modalCallback=null;
 let modalState={};
 function organizeByPerson(){
   if(!curDir){showToast('请先选择文件夹');return}
-  const tagged=items.filter(i=>i.renamed&&i.person&&i.handle);
+  const allTagged=items.filter(i=>i.renamed&&i.person);
+  const tagged=allTagged.filter(i=>i.handle);
+  if(allTagged.length>tagged.length){showToast('提示：'+(allTagged.length-tagged.length)+' 个文件因未恢复授权暂不能整理，点击「恢复授权」后可全部处理')}
   if(!tagged.length){showToast('没有已标记人名的文件可整理');return}
   const persons=[...new Set(tagged.map(i=>i.person))];
   const personCounts={};
@@ -1893,7 +1910,9 @@ async function doOrganizeByPerson(tagged,selectedPersons){
 // ---- v3.4: 按人名聚合到「人名/照片或视频」目录 ----
 function organizeByPersonMedia(){
   if(!curDir){showToast('请先选择文件夹');return}
-  const tagged=items.filter(i=>i.renamed&&i.person&&i.handle);
+  const allTagged=items.filter(i=>i.renamed&&i.person);
+  const tagged=allTagged.filter(i=>i.handle);
+  if(allTagged.length>tagged.length){showToast('提示：'+(allTagged.length-tagged.length)+' 个文件因未恢复授权暂不能聚合，点击「恢复授权」后可全部处理')}
   if(!tagged.length){showToast('没有已标记人名的文件可整理');return}
   const persons=[...new Set(tagged.map(i=>i.person))];
   const personCounts={};
