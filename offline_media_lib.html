@@ -1,11 +1,11 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="zh-CN">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
-<title>离线媒体库 v3.6</title>
+<title>离线媒体库 v3.7</title>
 <style>
 *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 :root{
@@ -237,77 +237,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei
   .filters{flex-wrap:nowrap}
   .filters .action-row{flex-wrap:nowrap}
 }
-/* v3.6: 阅读器样式 */
-.rd-toolbar{display:flex;align-items:center;gap:6px;padding:8px 12px;background:var(--card);border-bottom:1px solid var(--line);flex:0 0 auto;box-shadow:var(--shadow);z-index:10;flex-wrap:wrap}
-.rd-btn{border:none;background:#f0f1f7;color:#5a5f75;font-size:12px;padding:6px 10px;border-radius:8px;cursor:pointer;white-space:nowrap;flex:0 0 auto;transition:background .15s}
-.rd-btn:active{transform:scale(.93)}
-.rd-btn:disabled{opacity:.4;cursor:not-allowed}
-.rd-btn-active{background:var(--primary)!important;color:#fff!important}
-.rd-btn-sm{border:none;background:#f0f1f7;color:#5a5f75;font-size:13px;padding:4px 8px;border-radius:6px;cursor:pointer;flex:0 0 auto}
-.rd-btn-sm:active{transform:scale(.93)}
-.rd-font-ctrl{display:flex;align-items:center;gap:4px;flex:0 0 auto}
-.rd-font-val{font-size:12px;font-weight:700;min-width:22px;text-align:center;color:var(--primary)}
-.rd-content{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:20px 18px calc(var(--safe-b) + 20px);max-width:680px;margin:0 auto;width:100%}
-.rd-content .rd-text{font-size:17px;line-height:1.85;letter-spacing:.02em;word-break:break-all;overflow-wrap:anywhere;text-align:justify}
-.rd-content .rd-text p{margin:0 0 1.2em;text-indent:2em}
-.rd-content .rd-text h1,.rd-content .rd-text h2,.rd-content .rd-text h3{font-weight:700;margin:1.5em 0 .8em;text-indent:0}
-.rd-content .rd-text h1{font-size:1.5em;text-align:center}
-.rd-content .rd-text h2{font-size:1.3em}
-.rd-content .rd-text h3{font-size:1.15em}
-.rd-content .rd-text .rd-chapter-title{text-align:center;font-size:1.3em;font-weight:700;margin:1.5em 0 1em;text-indent:0}
-.rd-content.dark{background:#1a1a2e;color:#c8c8d8}
-.rd-content.dark .rd-text{color:#d0d0e0}
-/* 章节目录弹窗 */
-.rd-toc-overlay{position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:480;display:flex;align-items:flex-start;justify-content:center;padding-top:60px}
-.rd-toc-panel{background:var(--card);border-radius:14px;width:90%;max-width:400px;max-height:65vh;overflow:hidden;display:flex;flex-direction:column;box-shadow:var(--shadow-lg)}
-.rd-toc-header{display:flex;align-items:center;justify-content:space-between;padding:14px 16px;border-bottom:1px solid var(--line);font-size:15px;font-weight:700}
-.rd-toc-close{border:none;background:none;font-size:22px;cursor:pointer;color:#999;padding:0 4px;line-height:1}
-.rd-toc-list{overflow-y:auto;padding:8px;flex:1;-webkit-overflow-scrolling:touch}
-.rd-toc-item{padding:10px 12px;border-radius:8px;font-size:14px;cursor:pointer;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;transition:background .15s}
-.rd-toc-item:hover,.rd-toc-item:active{background:#f0f1f7}
-.rd-toc-item.rd-toc-active{color:var(--primary);font-weight:600;background:#e8eaf6}
-/* 错别字标记 */
-.rd-typo{background:#fff3cd;border-bottom:2px dotted #f59e0b;cursor:pointer;position:relative;border-radius:2px;transition:background .2s}
-.rd-typo:hover::after{content:attr(title);position:absolute;bottom:100%;left:0;background:#1a1a2e;color:#ffd166;padding:4px 8px;border-radius:6px;font-size:12px;white-space:nowrap;z-index:100;box-shadow:var(--shadow)}
-.rd-typo.rd-typo-fixed{background:#d4edda;border-bottom-color:#28a745;text-decoration:none}
-.rd-content.dark .rd-typo{background:#3d3520;border-bottom-color:#ffd166}
-/* 错字替换操作弹窗 */
-.rd-typo-popup{position:absolute;background:var(--card);border:1px solid var(--line);border-radius:10px;box-shadow:var(--shadow-lg);padding:10px;z-index:200;font-size:13px;min-width:200px;max-width:300px}
-.rd-typo-popup .rd-typo-suggest{color:var(--primary);font-weight:600;margin-bottom:6px}
-.rd-typo-popup button{border:none;border-radius:6px;padding:6px 12px;font-size:12px;cursor:pointer;margin-right:6px}
-.rd-typo-popup .rd-typo-yes{background:#28a745;color:#fff}
-.rd-typo-popup .rd-typo-no{background:#f0f1f7;color:#5a5f75}
-/* 广告屏蔽 */
-.rd-ad{opacity:.35;text-decoration:line-through;cursor:pointer;transition:opacity .2s;background:#ffe0e0;border-radius:2px}
-.rd-ad:hover{opacity:.7}
-.rd-ad-hidden{display:none}
-.rd-ad-deleted{opacity:.15;text-decoration:line-through;background:#f5c6c6;border-radius:2px;pointer-events:none}
-/* 文件夹选择弹窗 */
-.rd-folder-overlay{position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:480;display:flex;align-items:flex-start;justify-content:center;padding-top:60px}
-.rd-folder-panel{background:var(--card);border-radius:14px;width:90%;max-width:400px;max-height:65vh;overflow:hidden;display:flex;flex-direction:column;box-shadow:var(--shadow-lg)}
-.rd-folder-header{display:flex;align-items:center;justify-content:space-between;padding:14px 16px;border-bottom:1px solid var(--line);font-size:15px;font-weight:700}
-.rd-folder-list{overflow-y:auto;padding:8px;flex:1;-webkit-overflow-scrolling:touch}
-.rd-folder-item{padding:10px 12px;border-radius:8px;font-size:14px;cursor:pointer;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;transition:background .15s}
-.rd-folder-item:hover,.rd-folder-item:active{background:#f0f1f7}
-.rd-folder-item.rd-folder-active{color:var(--primary);font-weight:600;background:#e8eaf6}
-.rd-folder-empty{text-align:center;padding:30px;color:var(--sub);font-size:13px}
-/* 空状态 */
-.rd-empty{text-align:center;padding:60px 20px;color:var(--sub)}
-.rd-empty .rd-empty-ic{font-size:52px;margin-bottom:12px}
-.rd-empty .rd-empty-sub{font-size:12px;color:#bbb;margin-top:6px}
-/* 进度提示 */
-.rd-progress{font-size:11px;color:#888;flex:1;text-align:right;white-space:nowrap;min-width:0;overflow:hidden;text-overflow:ellipsis}
-/* 暗色模式 - 工具栏也变暗 */
-.rd-content.dark ~ .rd-toolbar,.rd-toolbar.rd-dark{background:#252538!important;border-bottom-color:#333}
-.rd-toolbar.rd-dark .rd-btn,.rd-toolbar.rd-dark .rd-btn-sm{background:#33334a;color:#a0a0c0}
-.rd-toolbar.rd-dark .rd-font-val{color:#8a8aff}
-.rd-settings label{display:block;font-size:13px;color:#555;margin-bottom:6px;font-weight:500}
-.rd-settings select,.rd-settings input[type=range]{width:100%;padding:8px 10px;border:1px solid var(--line);border-radius:8px;font-size:14px;background:#fff}
-@media(min-width:700px){
-  .rd-content{padding:30px 24px calc(var(--safe-b) + 24px)}
-  .rd-content .rd-text{font-size:18px}
-}
-
+/* 阅读器已移除 */
 .btn-main,.btn-ghost,.btn-danger{word-break:keep-all;overflow-wrap:anywhere;line-height:1.5}
 .tool-card h4{word-break:keep-all;overflow-wrap:anywhere}
 .tool-card .desc{word-break:keep-all;overflow-wrap:break-word}
@@ -326,7 +256,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei
 <div class="topbar">
   <h1>📁 离线媒体库</h1>
   <button class="topbar-btn" onclick="location.reload()" title="刷新页面（用于重新授权文件夹）">🔄</button>
-  <span class="tag">v3.6</span>
+  <span class="tag">v3.7</span>
 </div>
 
 <div class="progress-bar" id="progressBar"><i id="progressFill"></i></div>
@@ -381,66 +311,15 @@ body{font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei
 <!-- 下载页 -->
 <div class="page" id="pageDl">
   <div class="dl-card">
-    <h3>📥 无水印下载</h3>
-    <div id="dlModeTip" class="tip" style="margin-bottom:10px;line-height:1.6">当前模式：第三方网站。粘贴链接，每行一个。</div>
-    <textarea id="dlUrls" placeholder="粘贴抖音/小红书/B站/视频号分享链接，每行一个&#10;示例：&#10;https://v.douyin.com/xxx/&#10;https://www.xiaohongshu.com/explore/xxx"></textarea>
-    <button class="btn-main" onclick="startDownload()">📥 开始解析下载</button>
-    <div class="sub" style="text-align:center;color:#9aa0b5;font-size:11px;line-height:1.6">第三方模式：自动解析并下载到媒体库文件夹<br>本地模式：需启动下载服务</div>
+    <h3>📥 按主页批量下载</h3>
+    <div id="dlModeTip" class="tip" style="margin-bottom:10px;line-height:1.6">粘贴抖音或小红书用户主页链接，自动下载该主页全部内容。</div>
+    <textarea id="dlUrls" placeholder="粘贴抖音/小红书用户主页链接，每行一个&#10;示例：&#10;https://www.douyin.com/user/xxx&#10;https://www.xiaohongshu.com/user/profile/xxx"></textarea>
+    <button class="btn-main" onclick="startDownload()">📥 开始批量下载</button>
+    <div class="sub" style="text-align:center;color:#9aa0b5;font-size:11px;line-height:1.6">本地模式：需启动下载服务（yt-dlp + cookies）<br>第三方模式：通过解析站下载</div>
   </div>
   <div class="dl-card" id="dlStatusCard" style="display:none">
     <h3>📊 下载状态</h3>
     <div class="dl-status" id="dlStatus"></div>
-  </div>
-</div>
-
-<!-- 阅读页 -->
-<div class="page" id="pageRd">
-  <!-- 阅读工具栏 -->
-  <div class="rd-toolbar" id="rdToolbar">
-    <button class="rd-btn" onclick="rdOpenFile()">📂 打开</button>
-    <button class="rd-btn" onclick="rdOpenFolder()">📁 文件夹</button>
-    <button class="rd-btn" id="rdTocBtn" onclick="rdToggleToc()" disabled>📑 目录</button>
-    <button class="rd-btn" id="rdDarkBtn" onclick="rdToggleDark()">🌙 暗色</button>
-    <div class="rd-font-ctrl">
-      <button class="rd-btn-sm" onclick="rdFontDelta(-1)">A−</button>
-      <span id="rdFontSize" class="rd-font-val">18</span>
-      <button class="rd-btn-sm" onclick="rdFontDelta(1)">A+</button>
-    </div>
-    <button class="rd-btn" id="rdTypoBtn" onclick="rdToggleTypo()">✏️ 错字</button>
-    <button class="rd-btn" id="rdTypoFixBtn" onclick="rdTypoFixAll()" style="display:none">✅ 全部替换</button>
-    <button class="rd-btn" id="rdAdBtn" onclick="rdToggleAd()">🚫 广告</button>
-    <button class="rd-btn" id="rdAdDelBtn" onclick="rdAdDeleteAll()" style="display:none">🗑️ 全删广告</button>
-    <span class="rd-progress" id="rdProgress"></span>
-    <input type="file" id="rdFileInput" accept=".txt,text/plain" style="display:none" onchange="rdLoadFile(event)">
-  </div>
-  <!-- 阅读内容区 -->
-  <div class="rd-content" id="rdContent">
-    <div class="rd-empty" id="rdEmpty">
-      <div class="rd-empty-ic">📖</div>
-      <p>点击「打开」选择 txt 小说文件</p>
-      <p class="rd-empty-sub">支持章节目录、排版优化、错别字提示、广告屏蔽</p>
-    </div>
-    <div class="rd-text" id="rdText" style="display:none"></div>
-  </div>
-  <!-- 章节目录弹窗 -->
-  <div class="rd-toc-overlay" id="rdTocOverlay" style="display:none">
-    <div class="rd-toc-panel">
-      <div class="rd-toc-header">
-        <span>📑 章节目录</span>
-        <button class="rd-toc-close" onclick="rdToggleToc()">×</button>
-      </div>
-      <div class="rd-toc-list" id="rdTocList"></div>
-    </div>
-  </div>
-  <!-- 文件夹选择弹窗 -->
-  <div class="rd-folder-overlay" id="rdFolderOverlay" style="display:none">
-    <div class="rd-folder-panel">
-      <div class="rd-folder-header">
-        <span>📁 选择文件</span>
-        <button class="rd-toc-close" onclick="rdCloseFolder()">×</button>
-      </div>
-      <div class="rd-folder-list" id="rdFolderList"></div>
-    </div>
   </div>
 </div>
 
@@ -567,7 +446,6 @@ body{font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei
 <div class="actionbar" id="actionBar">
   <div class="row">
     <span class="count" id="selCount">已选 0 项</span>
-    <button onclick="openTools()">🔧 批量工具</button>
     <button class="ghost" onclick="clearSel()">取消</button>
   </div>
 </div>
@@ -576,7 +454,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei
 <div class="tabbar" id="tabbar">
   <button class="tab active" id="tabLib" onclick="switchTab('lib')"><span class="ic">🗂️</span>媒体库</button>
   <button class="tab" id="tabDl" onclick="switchTab('dl')"><span class="ic">📥</span>下载</button>
-  <button class="tab" id="tabRd" onclick="switchTab('rd')"><span class="ic">📖</span>阅读</button>
+
   <button class="tab" id="tabSet" onclick="switchTab('set')"><span class="ic">⚙️</span>设置</button>
 </div>
 
@@ -603,28 +481,6 @@ body{font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei
       <button class="skip" onclick="detailNext()">⏭️ 跳过</button>
       <button class="confirm" id="detailConfirm" onclick="detailConfirm()">✅ 确认</button>
       <button class="del" onclick="askDeleteCurrent()">🗑️ 删除</button>
-    </div>
-  </div>
-</div>
-
-<!-- 批量工具弹窗 -->
-<div class="tools-overlay" id="toolsModal" onclick="closeToolsModal(event)">
-  <div class="tools-panel" onclick="event.stopPropagation()">
-    <div class="tools-header">
-      <h2>🔧 批量重命名工具</h2>
-      <span class="count" id="toolsCount">已选 0 项</span>
-      <div class="close" onclick="closeToolsModal()">×</div>
-    </div>
-    <div class="tools-body">
-      <div class="tool-card"><h4>🔄 替换字符</h4><div class="desc">将文件名中的旧字符替换为新字符</div><div class="inputs"><input type="text" id="replaceOld" placeholder="旧字符"><span class="arrow">→</span><input type="text" id="replaceNew" placeholder="新字符"></div><button class="tool-btn" onclick="batchReplace()">应用替换</button></div>
-      <div class="tool-card"><h4>📎 修改后缀名</h4><div class="desc">批量更改文件扩展名</div><div class="inputs"><input type="text" id="newExt" placeholder=".png"></div><button class="tool-btn" onclick="batchChangeExt()">应用后缀</button></div>
-      <div class="tool-card"><h4>🖼️ 批量转 JPG</h4><div class="desc">将选中的图片批量转换为 JPG 格式（视频/已是 jpg 跳过）</div><button class="tool-btn" onclick="batchToJpg()">转换为 JPG</button></div>
-      <div class="tool-card"><h4>➕ 添加前缀/后缀</h4><div class="desc">为所有选中文件添加统一的前缀或后缀</div><div class="inputs"><input type="text" id="addPrefix" placeholder="前缀"><input type="text" id="addSuffix" placeholder="后缀"></div><button class="tool-btn" onclick="batchPrefixSuffix()">应用</button></div>
-      <div class="tool-card"><h4>🔤 转换大小写</h4><div class="desc">批量转换字母大小写</div><div class="inputs"><select id="caseMode"><option value="upper">全大写</option><option value="lower">全小写</option><option value="title">首字母大写</option></select></div><button class="tool-btn" onclick="batchCase()">应用</button></div>
-      <div class="tool-card"><h4>🗑️ 删除字符</h4><div class="desc">从文件名中删除指定字符</div><div class="inputs"><input type="text" id="delChars" placeholder="要删除的字符"></div><button class="tool-btn" onclick="batchDelete()">应用</button></div>
-      <div class="tool-card"><h4>📐 正则替换</h4><div class="desc">使用正则表达式进行复杂规则替换</div><div class="inputs"><input type="text" id="regexPattern" placeholder="正则表达式"><input type="text" id="regexRepl" placeholder="替换为"></div><button class="tool-btn" onclick="batchRegex()">应用</button></div>
-      <div class="tool-card"><h4>✍️ 手动修改</h4><div class="desc">逐个编辑文件名（不含扩展名）</div><div class="manual-list" id="manualList"></div><button class="tool-btn" onclick="batchManual()">应用</button></div>
-      <div class="tool-card" style="border-color:#fecdd3"><h4>🗑️ 删除选中文件</h4><div class="desc">将选中的文件从本地文件夹中永久删除（不可恢复，请谨慎操作）</div><button class="tool-btn" style="background:var(--danger,#e5484d)" onclick="askDeleteSelected()">🗑️ 删除选中</button></div>
     </div>
   </div>
 </div>
@@ -659,7 +515,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei
 
 <script>
 // ==================== 状态 ====================
-const VERSION='3.6.2';
+const VERSION='3.7';
 const DB_NAME='offline_media_lib_v34',DB_VERSION=5;
 const STORE_MEDIA='media',STORE_THUMB='thumbs',STORE_SESSION='session';
 let cfg={rule:'person_seq',tags:['长靴','多人','常服'],dateFormat:'YYYYMMDD',compress:true,maxCount:2000,showHidden:false,dlServer:'http://localhost:8766',dlSubdir:'下载',recentNameLimit:5,dlSite:'https://downloader.bhwa233.com/zh',dlMode:'site',dlIntervalMin:3,dlIntervalMax:8,dlMaxSize:0};
@@ -1016,32 +872,49 @@ function compressImage(file,maxSide){
   });
 }
 
-// ==================== 下载功能 ====================
+// ==================== 下载功能（v3.7: 按主页批量下载） ====================
+// 检测是否为主页链接
+function isProfileUrl(url){
+  try{
+    const u=new URL(url);
+    const h=u.hostname.replace('www.','');
+    // 抖音主页：douyin.com/user/xxx
+    if(h==='douyin.com'||h==='iesdouyin.com'){
+      return /\/user\//.test(u.pathname);
+    }
+    // 小红书主页：xiaohongshu.com/user/profile/xxx
+    if(h==='xiaohongshu.com'){
+      return /\/user\/profile\//.test(u.pathname);
+    }
+    return false;
+  }catch(e){return false}
+}
 async function startDownload(){
   const urls=document.getElementById('dlUrls').value.split('\n').map(s=>s.trim()).filter(Boolean);
-  if(!urls.length){showToast('请输入至少一个链接');return}
+  if(!urls.length){showToast('请输入至少一个主页链接');return}
+  // 校验：必须是抖音/小红书主页链接
+  const invalid=urls.filter(u=>!isProfileUrl(u));
+  if(invalid.length){
+    showToast('仅支持抖音/小红书用户主页链接，请检查格式');
+    return;
+  }
   if(cfg.dlMode==='local'){
-    // 本地服务模式（保留原逻辑）
     if(!cfg.dlServer){showToast('请先在设置中配置下载服务地址');return}
-    await startDownloadLocal(urls);
+    await startDownloadProfileLocal(urls);
   }else{
-    // 第三方网站模式
-    await startDownloadSite(urls);
+    showToast('第三方模式不支持主页批量下载，请在设置中切换为「本地下载服务」模式');
   }
 }
-// 简化 URL 显示：域名+ID，避免长链接撑爆布局
+// 简化 URL 显示：域名+ID
 function shortUrl(u){
   try{
     const p=new URL(u);
-    let id=(p.pathname.split('/').filter(Boolean).pop()||'')+(p.searchParams.get('modal_id')?'':'');
-    if(p.searchParams.get('modal_id'))id=p.searchParams.get('modal_id');
-    if(p.searchParams.get('bvid'))id=p.searchParams.get('bvid');
-    if(p.hostname==='v.douyin.com')id=p.pathname.split('/').filter(Boolean).pop()||id;
+    let id=p.pathname.split('/').filter(Boolean).pop()||'';
     return p.hostname.replace('www.','')+(id?' / '+id:'');
   }catch(e){return u.substring(0,40)}
 }
-// 本地服务模式（v3.3 逻辑）
-async function startDownloadLocal(urls){
+// 本地服务模式：按主页批量下载
+async function startDownloadProfileLocal(urls){
   const statusCard=document.getElementById('dlStatusCard');
   const statusEl=document.getElementById('dlStatus');
   statusCard.style.display='block';
@@ -1049,20 +922,65 @@ async function startDownloadLocal(urls){
   let ok=0,fail=0;
   for(let i=0;i<urls.length;i++){
     const url=urls[i];
-    const itemHtml='<div class="dl-item" id="dlItem_'+i+'"><div class="dl-icon">⏳</div><div class="dl-info"><div class="dl-name" title="'+escapeHtml(url)+'">'+escapeHtml(shortUrl(url))+'</div><div class="dl-progress">解析中…</div><div class="dl-bar"><i style="width:0%"></i></div></div></div>';
+    const itemHtml='<div class="dl-item" id="dlItem_'+i+'"><div class="dl-icon">⏳</div><div class="dl-info"><div class="dl-name" title="'+escapeHtml(url)+'">'+escapeHtml(shortUrl(url))+'</div><div class="dl-progress">正在获取主页内容列表…</div><div class="dl-bar"><i style="width:0%"></i></div></div></div>';
     statusEl.insertAdjacentHTML('beforeend',itemHtml);
     const item=document.getElementById('dlItem_'+i);
-    if(item){item.querySelector('.dl-progress').textContent='下载中 50%';item.querySelector('.dl-bar i').style.width='50%';}
     try{
-      const resp=await fetch(cfg.dlServer+'/download',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({url,subdir:cfg.dlSubdir||''})});
+      // 使用 SSE 流式获取进度（服务端逐个下载并推送进度）
+      const resp=await fetch(cfg.dlServer+'/download_profile',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({url,subdir:cfg.dlSubdir||''})});
       if(!resp.ok)throw new Error('HTTP '+resp.status);
-      const data=await resp.json();
-      if(item){
-        item.querySelector('.dl-icon').textContent='✅';
-        item.querySelector('.dl-progress').textContent='已下载：'+(data.filename||'完成')+' 100%';
-        item.querySelector('.dl-bar i').style.width='100%';
+      // 尝试读取流式响应
+      const reader=resp.body?resp.body.getReader():null;
+      if(reader){
+        // 流式读取
+        let buffer='';
+        let total=0,done=0;
+        while(true){
+          const{value,done:done2}=await reader.read();
+          if(done2)break;
+          buffer+=new TextDecoder().decode(value);
+          // 解析 SSE 行
+          const lines=buffer.split('\n');
+          buffer=lines.pop()||'';
+          for(const line of lines){
+            if(!line.startsWith('data: '))continue;
+            try{
+              const evt=JSON.parse(line.slice(6));
+              if(evt.type==='progress'&&item){
+                if(evt.total)total=evt.total;
+                if(evt.done)done=evt.done;
+                const pct=total?Math.round(done/total*100):0;
+                item.querySelector('.dl-progress').textContent=evt.message||('下载中 '+done+'/'+total+' '+pct+'%');
+                item.querySelector('.dl-bar i').style.width=pct+'%';
+              }else if(evt.type==='file'&&item){
+                done++;
+                const pct=total?Math.round(done/total*100):Math.min(99,done*10);
+                item.querySelector('.dl-progress').textContent='已下载：'+evt.filename+' ('+done+(total?'/'+total:'')+')';
+                item.querySelector('.dl-bar i').style.width=pct+'%';
+              }else if(evt.type==='done'&&item){
+                item.querySelector('.dl-icon').textContent='✅';
+                item.querySelector('.dl-progress').textContent='完成：共下载 '+(evt.count||done)+' 个文件';
+                item.querySelector('.dl-bar i').style.width='100%';
+                ok=evt.count||done;
+              }else if(evt.type==='error'&&item){
+                item.querySelector('.dl-icon').textContent='❌';
+                item.querySelector('.dl-progress').textContent='失败：'+(evt.message||'未知错误');
+                item.querySelector('.dl-bar i').style.width='0%';
+                fail++;
+              }
+            }catch(e){}
+          }
+        }
+      }else{
+        // 非流式：直接读 JSON
+        const data=await resp.json();
+        if(item){
+          item.querySelector('.dl-icon').textContent='✅';
+          item.querySelector('.dl-progress').textContent='完成：共下载 '+(data.count||0)+' 个文件';
+          item.querySelector('.dl-bar i').style.width='100%';
+        }
+        ok=data.count||0;
       }
-      ok++;
     }catch(e){
       if(item){
         item.querySelector('.dl-icon').textContent='❌';
@@ -1071,118 +989,10 @@ async function startDownloadLocal(urls){
       }
       fail++;
     }
-    // 间隔（随机秒数）
+    // 间隔
     if(i<urls.length-1){const mn=(cfg.dlIntervalMin||3)*1000,mx=(cfg.dlIntervalMax||8)*1000;const wait=mn+Math.round(Math.random()*(mx-mn));await new Promise(r=>setTimeout(r,wait));}
   }
-  showToast('下载完成：成功 '+ok+' 个'+(fail?'，失败 '+fail+' 个':''));
-  if(ok>0&&curDir){
-    // 自动重新扫描以显示新文件
-    await rescanDir(true);
-  }
-}
-
-// ---- v3.4: 第三方网站模式 ----
-function getDlApiBase(){
-  // 从配置的网站地址推导 API 域名：如 https://downloader.bhwa233.com/zh -> https://downloader-api.bhwa233.com
-  const site=(cfg.dlSite||'https://downloader.bhwa233.com/zh').trim();
-  try{
-    const u=new URL(site);
-    const host=u.hostname;
-    if(host==='downloader.bhwa233.com')return 'https://downloader-api.bhwa233.com';
-    // 其他网站尝试同域 api 前缀
-    return u.origin;
-  }catch(e){return 'https://downloader-api.bhwa233.com'}
-}
-async function startDownloadSite(urls){
-  const statusCard=document.getElementById('dlStatusCard');
-  const statusEl=document.getElementById('dlStatus');
-  statusCard.style.display='block';
-  statusEl.innerHTML='';
-  const apiBase=getDlApiBase();
-  let ok=0,fail=0;
-  for(let i=0;i<urls.length;i++){
-    const url=urls[i];
-    const itemHtml='<div class="dl-item" id="dlItem_'+i+'"><div class="dl-icon">⏳</div><div class="dl-info"><div class="dl-name" title="'+escapeHtml(url)+'">'+escapeHtml(shortUrl(url))+'</div><div class="dl-progress">解析中…</div><div class="dl-bar"><i style="width:0%"></i></div></div></div>';
-    statusEl.insertAdjacentHTML('beforeend',itemHtml);
-    const item=document.getElementById('dlItem_'+i);
-    try{
-      // 1. 解析链接
-      const parseResp=await fetch(apiBase+'/api/parse?url='+encodeURIComponent(url),{method:'GET',cache:'no-store'});
-      if(!parseResp.ok)throw new Error('解析失败 HTTP '+parseResp.status);
-      const parseData=await parseResp.json();
-      if(!parseData.success||!parseData.data)throw new Error(parseData.error||parseData.message||'解析失败');
-      const data=parseData.data;
-      const title=(data.title||data.filename||'内容');
-      if(item){item.querySelector('.dl-progress').textContent='解析成功，准备下载'+(dlList.length>1?'（'+dlList.length+'个文件）':'…');item.querySelector('.dl-bar i').style.width='10%';}
-      // 2. 构建可下载文件列表
-      const dlList=[];
-      // 2a. files/media/videos 数组（兼容旧结构）
-      const arrFiles=data.files||data.media||data.videos||[];
-      arrFiles.forEach(f=>{
-        const u=f.url||f.src||f.downloadUrl||'';
-        if(u)dlList.push({url:u,type:f.type==='image'?'image':'video',filename:f.filename||f.name||''});
-      });
-      // 2b. 单视频/单图：优先构造标准 raw 下载 URL（&raw=1&type=xxx 才会返回真实文件流；
-      //     解析接口返回的 downloadUrl 尾部常为无值 &raw，fetch 会拿到 JSON 导致下载失败）
-      const kind=(data.kind||data.type||'').toLowerCase();
-      const isImg=/image|^img|picture/.test(kind)||(data.images&&data.images.length>0);
-      const baseUrl=(data.url||data.originUrl||url).trim();
-      let rawUrl='';
-      try{
-        rawUrl=apiBase+'/api/download?url='+encodeURIComponent(baseUrl)+'&raw=1&type='+(isImg?'image':'video');
-      }catch(e){rawUrl=''}
-      if(rawUrl&&!dlList.some(f=>f.url===rawUrl)){
-        dlList.push({url:rawUrl,type:isImg?'image':'video',filename:title});
-      }
-      // 2b2. 兜底：接口返回的其它单视频字段（去重，跳过与 rawUrl 相同的）
-      const singleCandidates=[
-        data.downloadUrl,data.videoDownloadUrl,data.downloadVideoUrl,data.audioDownloadUrl,data.videoUrl
-      ].filter(Boolean).filter(u=>u!==rawUrl);
-      singleCandidates.forEach((u,idx)=>{
-        if(!dlList.some(f=>f.url===u)){
-          const isImg=/image|\.(jpg|jpeg|png|gif|webp)/i.test(u);
-          dlList.push({url:u,type:isImg?'image':'video',filename:title+'_'+(idx+1)});
-        }
-      });
-      // 2c. 小红书图文：images 数组
-      if(data.images&&data.images.length){
-        data.images.forEach((im,idx)=>{
-          const u=im.url||im.downloadUrl||im.src||(typeof im==='string'?im:'');
-          if(u&&!dlList.some(f=>f.url===u))dlList.push({url:u,type:'image',filename:title+'_img'+(idx+1)});
-        });
-      }
-      // 2d. 兜底：直接下载地址
-      if(!dlList.length&&data.rawUrl){dlList.push({url:data.rawUrl,type:'video',filename:title})}
-      if(!dlList.length){if(item){item.querySelector('.dl-icon').textContent='❌';item.querySelector('.dl-progress').textContent='未找到可下载文件';item.querySelector('.dl-bar i').style.width='0%';}fail++;continue}
-      // 3. 逐个下载
-      let localOk=0;
-      for(let di=0;di<dlList.length;di++){
-        const dlFile=dlList[di];
-        const dlUrl=dlFile.url;
-        // 大小检查（0 或未设置 = 无限制）
-        if(cfg.dlMaxSize&&dlFile.size&&dlFile.size>cfg.dlMaxSize*1048576){if(item){item.querySelector('.dl-progress').textContent='⏭️ 超过容量限制跳过';item.querySelector('.dl-bar i').style.width='0%';}continue}
-        // 文件名：优先原始文件名，否则用标题+序号
-        let fn=(dlFile.filename||title).replace(/[\\/:*?"<>|]/g,'_').substring(0,80);
-        const ext=getExt(dlUrl)||(dlFile.type==='image'?'.jpg':'.mp4');
-        if(!fn.toLowerCase().endsWith(ext.toLowerCase()))fn+=ext;
-        if(item){const pct=Math.round(20+70*di/dlList.length);item.querySelector('.dl-progress').textContent=dlList.length>1?'下载中（'+(di+1)+'/'+dlList.length+'） '+pct+'%':'下载中 '+pct+'%';item.querySelector('.dl-bar i').style.width=pct+'%';}
-        const saved=await downloadToFolder(dlUrl,fn);
-        if(saved){localOk++;if(item){const pct=Math.round(20+80*(di+1)/dlList.length);item.querySelector('.dl-progress').textContent='已下载：'+saved+' '+pct+'%';item.querySelector('.dl-bar i').style.width=pct+'%';}}
-      }
-      if(item){item.querySelector('.dl-icon').textContent='✅';item.querySelector('.dl-progress').textContent='下载完成'+(localOk?' '+localOk+'个文件':'');item.querySelector('.dl-bar i').style.width='100%';}
-      ok++;
-    }catch(e){
-      console.error('下载失败',url,e);
-      if(item){
-        item.querySelector('.dl-icon').textContent='❌';
-        item.querySelector('.dl-progress').textContent='失败：'+(e.message||e);
-      }
-      fail++;
-    }
-    // 间隔（随机秒数）
-    if(i<urls.length-1){const mn=(cfg.dlIntervalMin||3)*1000,mx=(cfg.dlIntervalMax||8)*1000;const wait=mn+Math.round(Math.random()*(mx-mn));await new Promise(r=>setTimeout(r,wait));}
-  }
-  showToast('下载完成：成功 '+ok+' 个'+(fail?'，失败 '+fail+' 个':''));
+  showToast('下载完成：成功 '+ok+' 个文件'+(fail?'，失败 '+fail+' 个主页':''));
   if(ok>0&&curDir){
     await rescanDir(true);
   }
@@ -1331,96 +1141,6 @@ async function clearCache(){if(!confirm('确认清空缩略图缓存？下次打
 
 // ==================== 批量工具 ====================
 function getSelectedItems(){return selected.map(id=>items.find(x=>x.id===id)).filter(Boolean)}
-function openTools(){if(!selected.length){showToast('请先选择文件');return}if(!curDir){showToast('请先选择文件夹');return}document.getElementById('toolsCount').textContent='已选 '+selected.length+' 项';renderManualList();document.getElementById('toolsModal').classList.add('show')}
-function closeToolsModal(e){if(e&&e.target!==e.currentTarget)return;document.getElementById('toolsModal').classList.remove('show')}
-function renderManualList(){const list=getSelectedItems();document.getElementById('manualList').innerHTML=list.map((item,idx)=>{const base=getBaseName(item.name),ext=getExt(item.name);return '<div class="manual-item"><span class="idx">'+(idx+1)+'</span><input type="text" id="manual_'+idx+'" value="'+escapeHtml(base)+'"><span class="ext">'+escapeHtml(ext)+'</span></div>'}).join('')}
-async function applyBatchRename(newNames){
-  if(!newNames.length){showToast('没有可处理的文件');return}
-  if(!batchPrecheck(newNames.map(n=>n.item),'批量重命名'))return; // v3.6.2: 前置校验
-  showProgress(10);let ok=0,fail=0,skip=0;const usedNames=new Set();
-  for(let i=0;i<newNames.length;i++){const{item,newName}=newNames[i];if(newName===item.name){skip++;continue}
-    if(!item.handle){fail++;showProgress(10+Math.round((i+1)/newNames.length*80));continue} // v3.6.2: null 防护
-    let fn=newName;if(usedNames.has(fn)){const ext=getExt(fn),base=getBaseName(fn);let n=1;while(usedNames.has(base+'_'+n+ext))n++;fn=base+'_'+n+ext}usedNames.add(fn);try{const parent=item.handle.getParent?await item.handle.getParent():null;await item.handle.move(fn);thumbCache.delete(item.name);item.name=fn;if(parent){try{item.handle=await parent.getFileHandle(fn)}catch(e){}}ok++}catch(e){fail++}showProgress(10+Math.round((i+1)/newNames.length*80))}
-  selected=[];await saveSession();closeToolsModal();showProgress(100);setTimeout(hideProgress,500);
-  showToast('完成：成功 '+ok+' 个'+(fail?'，失败 '+fail+' 个':'')+(skip?'，跳过 '+skip+' 个':''));
-}
-function batchReplace(){const o=document.getElementById('replaceOld').value,n=document.getElementById('replaceNew').value;if(!o){showToast('请输入旧字符');return}applyBatchRename(getSelectedItems().map(i=>({item:i,newName:i.name.split(o).join(n)})))}
-function batchChangeExt(){let e=document.getElementById('newExt').value.trim();if(!e){showToast('请输入新后缀');return}if(!e.startsWith('.'))e='.'+e;applyBatchRename(getSelectedItems().map(i=>({item:i,newName:getBaseName(i.name)+e})))}
-function batchPrefixSuffix(){const p=document.getElementById('addPrefix').value,s=document.getElementById('addSuffix').value;if(!p&&!s){showToast('请输入前缀或后缀');return}applyBatchRename(getSelectedItems().map(i=>{const b=getBaseName(i.name),e=getExt(i.name);return{item:i,newName:p+b+s+e}}))}
-function batchCase(){const m=document.getElementById('caseMode').value;applyBatchRename(getSelectedItems().map(i=>{const b=getBaseName(i.name),e=getExt(i.name);let nb;if(m==='upper')nb=b.toUpperCase();else if(m==='lower')nb=b.toLowerCase();else nb=b.replace(/[a-zA-Z]/g,(c,j)=>j===0||b[j-1]==='_'?c.toUpperCase():c.toLowerCase());return{item:i,newName:nb+e}}))}
-function batchDelete(){const c=document.getElementById('delChars').value;if(!c){showToast('请输入要删除的字符');return}applyBatchRename(getSelectedItems().map(i=>({item:i,newName:i.name.split(c).join('')})))}
-function batchRegex(){const p=document.getElementById('regexPattern').value,r=document.getElementById('regexRepl').value;if(!p){showToast('请输入正则');return}let re;try{re=new RegExp(p,'g')}catch(e){showToast('正则无效：'+e.message);return}applyBatchRename(getSelectedItems().map(i=>({item:i,newName:i.name.replace(re,r)})))}
-function batchManual(){const list=getSelectedItems();const nn=[];for(let i=0;i<list.length;i++){const inp=document.getElementById('manual_'+i);if(!inp)continue;nn.push({item:list[i],newName:inp.value.trim()+getExt(list[i].name)})}applyBatchRename(nn)}
-
-// ---- v3.4: 批量转 JPG ----
-// v3.6.2: 统一的前置校验——文件夹句柄为空或选中项缺 handle 时提前中止，避免逐个报 getFile null 错
-function batchPrecheck(list,label){
-  if(!curDir){showToast('请先点击「恢复授权」或重新选择文件夹，再执行'+(label||'批量操作'));return false}
-  const noHandle=list.filter(i=>!i.handle);
-  if(noHandle.length){
-    showToast((label||'批量操作')+'需要文件夹授权：请先点击「恢复授权」按钮'+(noHandle.length<list.length?'（'+(list.length-noHandle.length)+' 个文件可直接处理，本次已中止全部操作）':''));
-    return false;
-  }
-  return true;
-}
-async function batchToJpg(){
-  const list=getSelectedItems().filter(i=>i.type==='image');
-  if(!list.length){showToast('没有可转换的图片');return}
-  if(!batchPrecheck(list,'批量转JPG'))return;
-  showProgress(10);let ok=0,fail=0,skip=0;const errs=[];
-  for(let i=0;i<list.length;i++){
-    const item=list[i];
-    const ext=getExt(item.name).toLowerCase();
-    if(ext==='.jpg'||ext==='.jpeg'){skip++;showProgress(10+Math.round((i+1)/list.length*80));continue}
-    if(!item.handle){errs.push(item.name+': 文件句柄缺失，请先恢复授权');fail++;showProgress(10+Math.round((i+1)/list.length*80));continue}
-    try{
-      const file=await item.handle.getFile();
-      const img=new Image();
-      const url=URL.createObjectURL(file);
-      const blob=await new Promise(res=>{
-        img.onload=()=>{
-          try{
-            const c=document.createElement('canvas');
-            c.width=img.width;c.height=img.height;
-            c.getContext('2d').drawImage(img,0,0);
-            c.toBlob(b=>{URL.revokeObjectURL(url);res(b)},'image/jpeg',.92);
-          }catch(e){URL.revokeObjectURL(url);res(null)}
-        };
-        img.onerror=e=>{URL.revokeObjectURL(url);res(null)};
-        img.src=url;
-      });
-      if(!blob){errs.push(item.name+': 图片解码失败（可能不是有效图片格式）');fail++;continue}
-      // 写回原文件（转 jpg 后删除原文件）
-      // getParent 在 Chrome 中不受支持，改为根据 item.path 逐级定位父目录，失败退回 curDir
-      let parent=null;
-      try{
-        const pp=(item.path||'').split('/');
-        pp.pop(); // 去掉文件名，剩下的就是父目录相对路径
-        let d=curDir;
-        for(const seg of pp){if(seg)d=await d.getDirectoryHandle(seg)}
-        parent=d;
-      }catch(e){parent=null}
-      if(!parent)parent=curDir;
-      const newName=getBaseName(item.name)+'.jpg';
-      const newHandle=await parent.getFileHandle(newName,{create:true});
-      const w=await newHandle.createWritable();
-      await w.write(blob);await w.close();
-      await item.handle.remove();
-      thumbCache.delete(item.name);
-      item.name=newName;item.handle=newHandle;
-      // 同步更新 path（父目录路径 + 新文件名）
-      const pp=(item.path||'').split('/');
-      pp[pp.length-1]=newName;
-      item.path=pp.join('/');
-      ok++;
-    }catch(e){console.error('转JPG失败',item.name,e);errs.push(item.name+': '+(e.message||e));fail++}
-    showProgress(10+Math.round((i+1)/list.length*80));
-  }
-  selected=[];await saveSession();closeToolsModal();showProgress(100);setTimeout(hideProgress,500);
-  let msg='转换完成：成功 '+ok+' 个'+(fail?'，失败 '+fail+' 个':'')+(skip?'，跳过 '+skip+' 个':'');
-  if(errs.length){msg+='；失败原因：'+errs.slice(0,3).join('；')}
-  showToast(msg);console.log('批量转JPG明细:',errs);
-}
 
 // ==================== 删除文件 ====================
 // 详情页：删除当前文件
@@ -1440,35 +1160,6 @@ function askDeleteCurrent(){
       await rescanDir(true);
       showToast('已删除：'+item.name);
     }
-  };
-  document.getElementById('modalOverlay').classList.add('show');
-}
-// 批量工具：删除选中文件
-function askDeleteSelected(){
-  const list=getSelectedItems();
-  if(!list.length){showToast('请先选择文件');return}
-  const list2=document.getElementById('modalList');
-  list2.innerHTML='<div class="modal-item selected" data-person="__confirm" style="background:#fef2f2;border-color:#fecdd3"><input type="checkbox" checked><div class="mi-name">确认删除 '+list.length+' 个文件</div><div class="mi-count">永久删除，不可恢复</div></div>';
-  document.getElementById('modalTitle').textContent='🗑️ 批量删除';
-  document.getElementById('modalDesc').textContent='将从本地永久删除选中的 '+list.length+' 个文件，此操作不可恢复！';
-  document.getElementById('modalConfirmBtn').textContent='确认删除';
-  document.getElementById('modalConfirmBtn').classList.add('danger');
-  modalCallback=async function(selectedPersons){
-    if(!selectedPersons||!selectedPersons.includes('__confirm')){showToast('已取消');return}
-    closeToolsModal();
-    showProgress(10);
-    let ok=0,fail=0;
-    for(let i=0;i<list.length;i++){
-      const item=list[i];
-      try{
-        await doDeleteFromDisk(item);
-        ok++;
-      }catch(e){console.error('删除失败',item.name,e);fail++}
-      showProgress(10+Math.round((i+1)/list.length*80));
-    }
-    selected=[];await saveSession();showProgress(100);setTimeout(hideProgress,500);
-    await rescanDir(true);
-    showToast('删除完成：成功 '+ok+' 个'+(fail?'，失败 '+fail+' 个':''));
   };
   document.getElementById('modalOverlay').classList.add('show');
 }
@@ -1508,13 +1199,12 @@ async function doDeleteFromDisk(item){
 // ==================== Tab ====================
 function switchTab(t){
   currentTab=t;
-  ['lib','dl','rd','set'].forEach(n=>{const pg=document.getElementById('page'+n.charAt(0).toUpperCase()+n.slice(1));const tb=document.getElementById('tab'+n.charAt(0).toUpperCase()+n.slice(1));if(pg)pg.classList.toggle('show',n===t);if(tb)tb.classList.toggle('active',n===t)});
+  ['lib','dl','set'].forEach(n=>{const pg=document.getElementById('page'+n.charAt(0).toUpperCase()+n.slice(1));const tb=document.getElementById('tab'+n.charAt(0).toUpperCase()+n.slice(1));if(pg)pg.classList.toggle('show',n===t);if(tb)tb.classList.toggle('active',n===t)});
   if(t==='lib')renderLib();
   if(t==='set'){loadSettingsForm();renderSetStats();updateQuota()}
-  if(t==='rd'){rdOnTabShow()}
   if(t==='dl'){
     const tip=document.getElementById('dlModeTip');
-    if(tip)tip.textContent=cfg.dlMode==='site'?'当前模式：第三方网站（'+(cfg.dlSite||'downloader.bhwa233.com')+'）。粘贴抖音/小红书/B站等链接，每行一个。':'当前模式：本地下载服务（'+cfg.dlServer+'）。';
+    if(tip)tip.textContent=cfg.dlMode==='local'?'当前模式：本地下载服务（'+cfg.dlServer+'）。粘贴主页链接，自动下载全部内容。':'当前模式：第三方网站。不支持主页下载，请切换为本地下载服务模式。';
   }
 }
 
@@ -1595,7 +1285,7 @@ function reorderDragItems(type,fromEl,toEl){
   const insertAt=fromIdx<toIdx?newToIdx+1:newToIdx;
   list.splice(insertAt,0,fromVal);
   if(_dragType==='name'){
-    if(recentNames.length>10)recentNames.length=10;
+    if(recentNames.length>(cfg.recentNameLimit||5))recentNames.length=(cfg.recentNameLimit||5);
     localStorage.setItem('recent_names_v34',JSON.stringify(recentNames));
   }
   if(_dragCallback)_dragCallback();
@@ -2236,6 +1926,47 @@ async function detailConfirm(){
       return; // 不产生假标记
     }
   }
+  // ---- 1.5 自动转 JPG（v3.7：重命名成功后，如果图片不是 .jpg 则自动转换） ----
+  if(renamed&&item.type==='image'){
+    const curExt=getExt(item.name).toLowerCase();
+    if(curExt&&curExt!=='.jpg'&&curExt!=='.jpeg'){
+      try{
+        const file=await item.handle.getFile();
+        const imgEl=new Image();
+        const url=URL.createObjectURL(file);
+        const blob=await new Promise(res=>{
+          imgEl.onload=()=>{
+            try{
+              const c=document.createElement('canvas');
+              c.width=imgEl.width;c.height=imgEl.height;
+              c.getContext('2d').drawImage(imgEl,0,0);
+              c.toBlob(b=>{URL.revokeObjectURL(url);res(b)},'image/jpeg',.92);
+            }catch(e){URL.revokeObjectURL(url);res(null)}
+          };
+          imgEl.onerror=()=>{URL.revokeObjectURL(url);res(null)};
+          imgEl.src=url;
+        });
+        if(blob){
+          const jpgBase=getBaseName(item.name);
+          const jpgName=jpgBase+'.jpg';
+          // 确保不重名
+          let finalName=jpgName;let n=1;
+          while(await exists(finalName)){finalName=jpgBase+'_'+n+'.jpg';n++}
+          const jpgHandle=await parent.getFileHandle(finalName,{create:true});
+          const w2=await jpgHandle.createWritable();
+          await w2.write(blob);await w2.close();
+          // 删除旧格式文件
+          await item.handle.remove();
+          thumbCache.delete(item.name);
+          item.name=finalName;
+          item.handle=jpgHandle;
+          // 更新 path
+          if(item.path){const pp=item.path.split('/');pp[pp.length-1]=finalName;item.path=pp.join('/')}
+          newName=finalName;
+        }
+      }catch(e){console.error('自动转JPG失败',item.name,e)}
+    }
+  }
   // ---- 2. 重命名成功后才保存标签标记 ----
   item.tags=orderedTags;
   item.person=detailPerson;
@@ -2269,950 +2000,5 @@ function updatePreviewName(){
   const btn=document.getElementById('detailConfirm');
   if(btn)btn.disabled=!detailPerson;
 }
-
-// ==================== v3.6 离线阅读器 ====================
-
-// ---- 阅读器状态 ----
-let rdState={
-  rawText:'',        // 原始文本（可能被错字替换/广告删除修改）
-  origText:'',       // 最初加载的原始文本（用于对比/重置）
-  chapters:[],       // [{title, startOffset}]
-  curChapter:-1,     // 当前章节索引
-  fileName:'',       // 当前文件名
-  dark:false,        // 暗色模式
-  fontSize:18,       // 字号
-  typoOn:false,      // 错别字检查开关
-  adOn:false,        // 广告屏蔽开关
-  adHidden:false,    // 广告是否全局隐藏
-  scrollTimer:null,  // 滚动节流 timer
-  typoList:[],       // 当前章节检测到的错字列表 [{wrong, correct, chIdx, lineIdx, offset, reason}]
-  typoFixed:{},      // 已替换的错字 key→true
-  adDeletedLines:[], // 全局已删除的广告行（按原始行号标识）
-};
-
-// ---- 错别字词库 ----
-const RD_TYPO_DICT={
-  // 的/地/得 混淆
-  '的':'地|得','地':'的|得','得':'的|地',
-  // 做/作
-  '做':'作','作':'做',
-  // 在/再
-  '在':'再','再':'在',
-  // 里/裡(里)
-  '裡':'里','里':'裡',
-  // 它/他/她
-  '它':'他|她','他':'它|她','她':'它|他',
-  // 代/带
-  '代':'带','带':'代',
-  // 须/需
-  '须':'需','需':'须',
-  // 即/既
-  '即':'既','既':'即',
-  // 至/致
-  '至':'致','致':'至',
-  // 布/部
-  '布':'部','部':'布',
-  // 拔/拨
-  '拔':'拨','拨':'拔',
-  // 崇/祟
-  '崇':'祟','祟':'崇',
-  // 暴/爆
-  '暴':'爆','爆':'暴',
-  // 采/彩
-  '采':'彩','彩':'采',
-  // 度/渡
-  '度':'渡','渡':'度',
-  // 象/像
-  '象':'像','像':'象',
-  // 荡/宕
-  '荡':'宕','宕':'荡',
-  // 付/副
-  '付':'副','副':'付',
-  // 覆/复
-  '覆':'复','复':'覆',
-  // 载/栽
-  '载':'栽','栽':'载',
-  // 乾/干
-  '乾':'干','干':'乾',
-  // 历/厉
-  '历':'厉','厉':'历',
-  // 迹/绩
-  '迹':'绩','绩':'迹',
-  // 竭/极
-  '竭':'极','极':'竭',
-  // 竟/竞
-  '竟':'竞','竞':'竟',
-  // 练/炼
-  '练':'炼','炼':'练',
-  // 蜜/密
-  '蜜':'密','密':'蜜',
-  // 磨/摩
-  '磨':'摩','摩':'磨',
-  // 蔓/漫
-  '蔓':'漫','漫':'蔓',
-  // 飘/漂
-  '飘':'漂','漂':'飘',
-  // 署/暑
-  '署':'暑','暑':'署',
-  // 嘘/虚
-  '嘘':'虚','虚':'嘘',
-  // 旋/弦
-  '旋':'弦','弦':'旋',
-  // 歪/弯
-  '歪':'弯','弯':'歪',
-  // 悠/忧
-  '悠':'忧','忧':'悠',
-  // 招/召
-  '招':'召','召':'招',
-  // 粘/粘
-  '粘':'粘','粘':'粘',
-};
-
-// 的/地/得 上下文规则
-const RD_DE_RULES=[
-  // 地：动词+地+动词/形容词 → 应为"地"
-  {pattern:/([\u4e00-\u9fa5])地([\u4e00-\u9fa5])/g,suggest:'地',check:'de_type'},
-  // 的：名词/代词+的+名词 → 应为"的"
-  {pattern:/([\u4e00-\u9fa5])的([\u4e00-\u9fa5])/g,suggest:'的',check:'de_type'},
-  // 得：动词+得+补语 → 应为"得"
-  {pattern:/([\u4e00-\u9fa5])得([\u4e00-\u9fa5])/g,suggest:'得',check:'de_type'},
-];
-
-// 常见错词对（固定搭配错误）
-const RD_TYPO_PAIRS=[
-  ['一如既往','一如即往'],
-  ['迫不及待','迫不急待'],
-  ['一筹莫展','一愁莫展'],
-  ['莫名其妙','明其妙'],
-  ['流连忘返','留连忘返'],
-  ['融会贯通','融汇贯通'],
-  ['各抒己见','各抒已见'],
-  ['莫名其妙','莫明其妙'],
-  ['掩耳盗铃','掩耳盗零'],
-  ['破釜沉舟','破斧沉舟'],
-  ['川流不息','穿流不息'],
-  ['惹是生非','惹事生非'],
-  ['旁征博引','旁证博引'],
-  ['巧夺天工','巧夺天功'],
-  ['黄粱美梦','黄梁美梦'],
-  ['墨守成规','默守成规'],
-  ['默默无闻','默默无文'],
-  ['无理取闹','无理取闹'],
-  ['蜂拥而至','蜂涌而至'],
-  ['按部就班','按步就班'],
-  ['黯然失色','暗然失色'],
-  ['跋山涉水','爬山涉水'],
-  ['百感交集','百感交加'],
-  ['班门弄斧','搬门弄斧'],
-  ['变本加厉','变本加利'],
-  ['不假思索','不加思索'],
-  ['不省人事','不醒人事'],
-  ['残缺不全','残缺不齐'],
-  ['畅所欲言','畅所欲言'],
-  ['趁火打劫','乘火打劫'],
-  ['出类拔萃','出类拔翠'],
-  ['唇亡齿寒','唇亡齿寒'],
-  ['大发雷霆','大发雷庭'],
-  ['掉以轻心','掉以轻心'],
-  ['短小精悍','短小精干'],
-  ['发扬光大','发扬光大'],
-  ['沸沸扬扬','费费扬扬'],
-  ['奋不顾身','愤不顾身'],
-  ['功亏一篑','功亏一溃'],
-  ['鬼斧神工','鬼斧神工'],
-  ['海市蜃楼','海市唇楼'],
-  ['汗流浃背','汗流夹背'],
-  ['和蔼可亲','和霭可亲'],
-  ['浑然一体','混然一体'],
-  ['积劳成疾','积劳成疾'],
-  ['坚不可摧','坚不可催'],
-  ['见义勇为','见义勇为'],
-  ['刻不容缓','刻不容缓'],
-  ['苦口婆心','苦口婆心'],
-  ['理直气壮','理直气状'],
-  ['历历在目','厉厉在目'],
-  ['妙笔生花','妙笔生花'],
-  ['名不虚传','名不虚传'],
-  ['莫名其妙','莫名其妙'],
-  ['名列前茅','名列前茅'],
-  ['披荆斩棘','披荆斩棘'],
-  ['萍水相逢','萍水相逢'],
-  ['气势磅礴','气势磅礴'],
-  ['千钧一发','千钧一发'],
-  ['潜移默化','潜移默化'],
-  ['巧言令色','巧言令色'],
-  ['日积月累','日积月累'],
-  ['如火如荼','如火如茶'],
-  ['三顾茅庐','三顾茅芦'],
-  ['舍生取义','舍身取义'],
-  ['声名鹊起','声名雀起'],
-  ['实事求是','实事求是'],
-  ['谈笑风生','谈笑风声'],
-  ['亡羊补牢','亡羊补牢'],
-  ['惟妙惟肖','唯妙唯肖'],
-  ['无孔不入','无孔不入'],
-  ['虚位以待','虚位以待'],
-  ['鸦雀无声','鸦鹊无声'],
-  ['言简意赅','言简意咳'],
-  ['一鸣惊人','一鸣惊人'],
-  ['勇往直前','勇往之前'],
-  ['语重心长','语重心长'],
-  ['源远流长','渊远流长'],
-  ['再接再厉','再接再励'],
-  ['真知灼见','真知卓见'],
-  ['中流砥柱','中流抵柱'],
-  ['蛛丝马迹','蛛丝马迹'],
-  ['走投无路','走头无路'],
-  ['坐收渔利','坐收鱼利'],
-];
-
-// ---- 广告关键词库 ----
-const RD_AD_KEYWORDS=[
-  '关注公众号','微信公众号','扫码关注','扫码加群','扫码进群',
-  '添加微信','加微信','微信号','加群','进群',
-  '扫一扫','长按识别','识别二维码','二维码关注',
-  '更多精彩','更多内容','持续更新','求订阅','求收藏','求推荐',
-  '本章完毕','本章完','全本完结','本书完',
-  '百度搜','google搜','搜索关键词',
-  '起点中文网','创世中文网','纵横中文网','17k小说网',
-  '本书来自','本书首发','首发于','转载自',
-  '手机用户请浏览','m.\u003C','wap.\u003C',
-  '阅读模式','小说阅读','敬请收藏',
-  '打赏作者','投推荐票','月票','推荐票',
-  '请记住本书','记住网址','书海阁','笔趣阁',
-  '无弹窗','txt下载','全文字体','电子书下载',
-  '最新章节','章节错误','章节举报','内容举报',
-  'www.','http://','https://',
-  'VIP章节','付费章节','订阅读者',
-  '评论区','留言板','书友群','粉丝群',
-  '本书正版','正版阅读','支持正版',
-  '更新时间','更新日期','更新字数',
-  '作者的话','作者感言','上架感言',
-];
-
-// ---- 打开文件 ----
-function rdOpenFile(){
-  document.getElementById('rdFileInput').click();
-}
-
-// v3.6.1: 文件夹选择功能
-var rdFolderDir=null; // 保存文件夹句柄
-var rdFolderFiles=[]; // 文件列表 [{name, file}]
-
-async function rdOpenFolder(){
-  if(!window.showDirectoryPicker){
-    // 不支持 File System Access API，回退到 input[webkitdirectory]
-    var oldInput=document.getElementById('rdFolderInput');
-    if(oldInput)oldInput.remove();
-    var input=document.createElement('input');
-    input.type='file';
-    input.id='rdFolderInput';
-    input.setAttribute('webkitdirectory','');
-    input.setAttribute('directory','');
-    input.style.display='none';
-    input.onchange=function(ev){
-      var files=Array.from(ev.target.files).filter(function(f){return f.name.toLowerCase().endsWith('.txt')});
-      if(files.length===0){showToast('该文件夹中没有 txt 文件');return;}
-      rdFolderDir=null;
-      rdFolderFiles=files.map(function(f){return {name:f.webkitRelativePath||f.name,file:f}});
-      rdShowFolderList();
-    };
-    document.body.appendChild(input);
-    input.click();
-    return;
-  }
-  try{
-    var dir=await window.showDirectoryPicker({mode:'read'});
-    rdFolderDir=dir;
-    rdFolderFiles=[];
-    // 遍历文件夹中的 txt 文件
-    for await(var entry of dir.values()){
-      if(entry.kind==='file' && entry.name.toLowerCase().endsWith('.txt')){
-        rdFolderFiles.push({name:entry.name,handle:entry});
-      }
-    }
-    if(rdFolderFiles.length===0){
-      showToast('该文件夹中没有 txt 文件');
-      return;
-    }
-    rdFolderFiles.sort(function(a,b){return a.name.localeCompare(b.name,'zh')});
-    rdShowFolderList();
-  }catch(e){
-    if(e&&e.name==='AbortError')return;
-    showToast('无法访问文件夹：'+(e.message||e));
-  }
-}
-
-function rdShowFolderList(){
-  var overlay=document.getElementById('rdFolderOverlay');
-  var list=document.getElementById('rdFolderList');
-  if(rdFolderFiles.length===0){
-    list.innerHTML='<div class="rd-folder-empty">没有找到 txt 文件</div>';
-  }else{
-    list.innerHTML=rdFolderFiles.map(function(f,i){
-      var active=f.name===rdState.fileName?'rd-folder-active':'';
-      return '<div class="rd-folder-item '+active+'" onclick="rdLoadFromFolder('+i+')">'+rdEscapeHtml(f.name)+'</div>';
-    }).join('');
-  }
-  overlay.style.display='flex';
-}
-
-function rdCloseFolder(){
-  document.getElementById('rdFolderOverlay').style.display='none';
-}
-
-async function rdLoadFromFolder(idx){
-  if(idx<0||idx>=rdFolderFiles.length)return;
-  var f=rdFolderFiles[idx];
-  var file=null;
-  if(f.file){
-    // webkitdirectory 模式，直接有 File 对象
-    file=f.file;
-  }else if(f.handle){
-    // File System Access API 模式，从句柄获取文件
-    try{
-      file=await f.handle.getFile();
-    }catch(e){
-      showToast('读取文件失败：'+(e.message||e));
-      return;
-    }
-  }
-  if(!file)return;
-  rdCloseFolder();
-  // 复用 rdLoadFile 的逻辑
-  rdState.fileName=file.name;
-  rdState.typoFixed={};
-  rdState.adDeletedLines=[];
-  var reader=new FileReader();
-  reader.onload=function(e){
-    rdState.rawText=e.target.result;
-    rdState.origText=e.target.result;
-    rdParseChapters();
-    rdRender();
-    rdSaveProgress();
-    rdRestoreProgress();
-    rdRender();
-    showToast('已加载：'+file.name+'（'+rdState.chapters.length+'章）');
-  };
-  reader.onerror=function(){showToast('文件读取失败')};
-  reader.readAsText(file,'utf-8');
-}
-
-// ---- 加载 txt 文件 ----
-function rdLoadFile(event){
-  const file=event.target.files[0];
-  if(!file)return;
-  rdState.fileName=file.name;
-  // v3.6.1: 重置修改状态
-  rdState.typoFixed={};
-  rdState.adDeletedLines=[];
-  const reader=new FileReader();
-  reader.onload=function(e){
-    rdState.rawText=e.target.result;
-    rdState.origText=e.target.result;
-    rdParseChapters();
-    rdRender();
-    rdSaveProgress();
-    showToast('已加载：'+file.name+'（'+rdState.chapters.length+'章）');
-  };
-  reader.onerror=function(){
-    showToast('文件读取失败');
-  };
-  reader.readAsText(file,'utf-8');
-  event.target.value='';
-}
-
-// ---- 章节正则切分 ----
-function rdParseChapters(){
-  const text=rdState.rawText;
-  rdState.chapters=[];
-  // 支持的章节标题模式（行首允许多余空格，用 [ \t]* 而非 \s* 避免匹配换行符）
-  const patterns=[
-    /^[ \t]*第[一二三四五六七八九十百千万零]+[章节回卷折篇集部](?:[：:·\-\s].*)?$/m,
-    /^[ \t]*第\d+[章节回卷折篇集部](?:[：:·\-\s].*)?$/m,
-    /^[ \t]*[正序终末]文\s*$/m,
-    /^[ \t]*序[章言]\s*$/m,
-    /^[ \t]*楔子\s*$/m,
-    /^[ \t]*引子\s*$/m,
-    /^[ \t]*尾声\s*$/m,
-    /^[ \t]*后记\s*$/m,
-    /^[ \t]*番外[篇章]?\s*.*/m,
-    /^[ \t]*Chapter\s+\d+/im,
-    /^[ \t]*章节\s*\d+/m,
-  ];
-  // 合并为一个正则
-  const combined=new RegExp('('+patterns.map(p=>p.source).join(')|(')+')','gm');
-  let match;
-  while((match=combined.exec(text))!==null){
-    // 找到这一行的换行符位置（标题行结束）
-    let titleEnd=text.indexOf('\n',match.index);
-    if(titleEnd===-1)titleEnd=text.length;
-    const title=text.substring(match.index,titleEnd).trim();
-    rdState.chapters.push({title:title,startOffset:match.index,endOffset:0});
-    // 防止零宽匹配导致死循环
-    if(match.index===combined.lastIndex)combined.lastIndex++;
-  }
-  // 计算每章结束位置
-  for(let i=0;i<rdState.chapters.length;i++){
-    rdState.chapters[i].endOffset=(i+1<rdState.chapters.length)?rdState.chapters[i+1].startOffset:text.length;
-  }
-  // 如果没有章节，整体作为一个章节
-  if(rdState.chapters.length===0){
-    rdState.chapters.push({title:'全文',startOffset:0,endOffset:text.length});
-  }
-  rdState.curChapter=0;
-}
-
-// ---- 转义 HTML ----
-function rdEscapeHtml(s){
-  return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
-}
-
-// ---- 排版渲染 ----
-function rdRender(){
-  const container=document.getElementById('rdText');
-  const empty=document.getElementById('rdEmpty');
-  if(!rdState.rawText){
-    empty.style.display='flex';
-    container.style.display='none';
-    return;
-  }
-  empty.style.display='none';
-  container.style.display='block';
-  container.style.fontSize=rdState.fontSize+'px';
-  const contentEl=document.getElementById('rdContent');
-  if(contentEl)contentEl.classList.toggle('dark',rdState.dark);
-  const toolbarEl=document.getElementById('rdToolbar');
-  if(toolbarEl)toolbarEl.classList.toggle('rd-dark',rdState.dark);
-
-  // 获取当前章节文本
-  const ch=rdState.chapters[rdState.curChapter];
-  if(!ch)return;
-  const sectionText=rdState.rawText.substring(ch.startOffset,ch.endOffset);
-  // 按行分割
-  const lines=sectionText.split('\n');
-  let html='';
-  let isFirstLine=true;
-  rdState.typoList=[]; // 重置错字列表
-  for(let lineIdx=0;lineIdx<lines.length;lineIdx++){
-    const line=lines[lineIdx];
-    const trimmed=line.trim();
-    if(!trimmed)continue;
-    // 章节标题
-    if(rdIsChapterTitle(trimmed)){
-      html+='<h2 class="rd-chapter-title">'+rdEscapeHtml(trimmed)+'</h2>';
-      continue;
-    }
-    // v3.6.1: 检查该行是否已被删除为广告
-    var lineKey=rdState.curChapter+'_'+lineIdx;
-    if(rdState.adOn && rdState.adDeletedLines.indexOf(lineKey)>=0){
-      continue; // 跳过已删除的广告行
-    }
-    // 正文段落
-    let para=rdEscapeHtml(trimmed);
-    // 错别字标记（带 data 属性用于点击替换）
-    if(rdState.typoOn){
-      para=rdMarkTypos(para,trimmed,rdState.curChapter,lineIdx);
-    }
-    // 广告屏蔽
-    if(rdState.adOn){
-      para=rdMarkAds(para,trimmed,rdState.curChapter,lineIdx);
-    }
-    // 首行缩进
-    html+='<p class="rd-para" style="text-indent:'+(isFirstLine?2:2)+'em">'+para+'</p>';
-    isFirstLine=false;
-  }
-  container.innerHTML=html;
-
-  // 更新目录高亮
-  rdUpdateTocHighlight();
-  // 更新进度
-  rdUpdateProgress();
-  // 启用目录按钮
-  const tocBtn=document.getElementById('rdTocBtn');
-  if(tocBtn)tocBtn.disabled=rdState.chapters.length<=1;
-  // 恢复滚动位置
-  rdRestoreScroll();
-  // v3.6.1: 更新功能按钮状态
-  rdUpdateTypoBtn();
-  rdUpdateAdBtn();
-}
-
-// ---- 判断是否章节标题 ----
-function rdIsChapterTitle(line){
-  if(line.length>50)return false;
-  return /^第[一二三四五六七八九十百千万零]+[章节回卷折篇集部]/.test(line)
-    ||/^第\d+[章节回卷折篇集部]/.test(line)
-    ||/^[正序终末]文$/.test(line)
-    ||/^序[章言]$/.test(line)
-    ||/^楔子$/.test(line)
-    ||/^引子$/.test(line)
-    ||/^尾声$/.test(line)
-    ||/^后记$/.test(line)
-    ||/^番外[篇章]?/.test(line)
-    ||/^Chapter\s+\d+/i.test(line)
-    ||/^章节\s*\d+/.test(line);
-}
-
-// ---- 错别字标记（v3.6.1: 带位置信息，支持点击替换）----
-function rdMarkTypos(htmlEscaped,rawLine,chIdx,lineIdx){
-  let result=htmlEscaped;
-  // 1. 固定错词对检查
-  for(const [correct,wrong] of RD_TYPO_PAIRS){
-    if(correct===wrong)continue;
-    const idx=rawLine.indexOf(wrong);
-    if(idx>=0 && rawLine.indexOf(correct)<0){
-      const wrongEsc=rdEscapeHtml(wrong);
-      const correctEsc=rdEscapeHtml(correct);
-      var key=chIdx+'_'+lineIdx+'_'+idx;
-      var fixed=rdState.typoFixed[key];
-      if(fixed){
-        // 已替换：显示正确文本
-        result=result.replace(wrongEsc,'<span class="rd-typo rd-typo-fixed" title="已替换：'+correctEsc+'">'+correctEsc+'</span>');
-      }else{
-        result=result.replace(wrongEsc,'<span class="rd-typo" title="应为：'+correctEsc+'" onclick="rdTypoClick(this,'+chIdx+','+lineIdx+',\''+wrong.replace(/'/g,'\\\'')+'\',\''+correct.replace(/'/g,'\\\'')+'\')">'+wrongEsc+'</span>');
-        rdState.typoList.push({wrong:wrong,correct:correct,chIdx:chIdx,lineIdx:lineIdx,offset:idx,reason:'错词'});
-      }
-    }
-  }
-  // 2. 的/地/得 - 正则匹配常见错误模式
-  const dePatterns=[
-    {re:/([\u4e00-\u9fa5])的(说|笑|走|跑|看|想|听|吃|喝|打|买|卖|来|去|进|出|起|坐|站|躺|哭|喊|叫|唱|跳|飞|爬|追|逃|躲|挡|推|拉|抱|举|放|拿|捡|丢|扔|抓|握|敲|拍|摸|擦|洗|穿|脱|戴|摘|盖|揭|关|开|锁|砸|砍|劈|刺|射|杀|写|读|画|弹|下|上|左|右|前|后|内|外)/g,correct:'地',wrong:'的',reason:'动词后应用地'},
-    {re:/(觉得|认得|记得|懂得|晓得|获得|显得)/g,correct:'得',wrong:'的',reason:'此处应用得'},
-    {re:/(真的的)/g,correct:'的',wrong:'的',reason:'冗余'},
-  ];
-  for(const dp of dePatterns){
-    let m;
-    var reCopy=new RegExp(dp.re.source,'g');
-    while((m=reCopy.exec(htmlEscaped))!==null){
-      const wrongPart=m[0];
-      const correctPart=wrongPart.replace(new RegExp(dp.wrong,'g'),dp.correct);
-      if(wrongPart!==correctPart){
-        var dKey=chIdx+'_'+lineIdx+'_'+m.index;
-        var dFixed=rdState.typoFixed[dKey];
-        var suggest='应为：'+rdEscapeHtml(correctPart)+'（'+dp.reason+'）';
-        if(dFixed){
-          result=result.replace(wrongPart,'<span class="rd-typo rd-typo-fixed" title="已替换">'+rdEscapeHtml(correctPart)+'</span>');
-        }else{
-          var safeWrong=rdEscapeHtml(wrongPart).replace(/'/g,'&#39;');
-          var safeCorrect=rdEscapeHtml(correctPart).replace(/'/g,'&#39;');
-          result=result.replace(wrongPart,'<span class="rd-typo" title=\''+suggest+'\' onclick="rdTypoClick(this,'+chIdx+','+lineIdx+',\''+safeWrong+'\',\''+safeCorrect+'\')">'+rdEscapeHtml(wrongPart)+'</span>');
-          rdState.typoList.push({wrong:wrongPart,correct:correctPart,chIdx:chIdx,lineIdx:lineIdx,offset:m.index,reason:dp.reason});
-        }
-      }
-    }
-  }
-  return result;
-}
-
-// ---- 点击错字标记 → 弹出替换确认 ----
-function rdTypoClick(el,chIdx,lineIdx,wrongText,correctText){
-  // 弹出确认弹窗
-  var rect=el.getBoundingClientRect();
-  var popup=document.createElement('div');
-  popup.className='rd-typo-popup';
-  popup.style.position='fixed';
-  popup.style.top=(rect.bottom+4)+'px';
-  popup.style.left=rect.left+'px';
-  popup.innerHTML='<div class="rd-typo-suggest">建议替换：'+rdEscapeHtml(wrongText)+' → '+rdEscapeHtml(correctText)+'</div>'
-    +'<button class="rd-typo-yes" onclick="rdTypoReplace(this,'+chIdx+','+lineIdx+',\''+wrongText.replace(/'/g,'\\\'')+'\',\''+correctText.replace(/'/g,'\\\'')+'\')">替换</button>'
-    +'<button class="rd-typo-no" onclick="this.closest(\'.rd-typo-popup\').remove()">取消</button>';
-  // 移除已有弹窗
-  document.querySelectorAll('.rd-typo-popup').forEach(function(p){p.remove()});
-  document.body.appendChild(popup);
-}
-
-// ---- 执行单个错字替换 ----
-function rdTypoReplace(btn,chIdx,lineIdx,wrongText,correctText){
-  var key=chIdx+'_'+lineIdx+'_'+rdState.typoList.filter(function(t){return t.chIdx===chIdx&&t.lineIdx===lineIdx&&t.wrong===wrongText})[0].offset;
-  rdState.typoFixed[key]=true;
-  // 修改原始文本中的错字
-  var ch=rdState.chapters[chIdx];
-  if(ch){
-    var sectionText=rdState.rawText.substring(ch.startOffset,ch.endOffset);
-    var lines=sectionText.split('\n');
-    if(lines[lineIdx]!==undefined){
-      lines[lineIdx]=lines[lineIdx].replace(wrongText,correctText);
-      rdState.rawText=rdState.rawText.substring(0,ch.startOffset)+lines.join('\n')+rdState.rawText.substring(ch.endOffset);
-      // 重新计算章节结束位置（文本长度可能变化）
-      rdParseChaptersKeepChapter(chIdx);
-    }
-  }
-  // 移除弹窗
-  var popup=btn.closest('.rd-typo-popup');
-  if(popup)popup.remove();
-  // 重新渲染
-  rdRender();
-  rdUpdateTypoBtn();
-  showToast('已替换：'+wrongText+' → '+correctText);
-}
-
-// ---- 全部替换当前章节错字 ----
-function rdTypoFixAll(){
-  if(!rdState.typoList.length){
-    showToast('当前章节未检测到错字');
-    return;
-  }
-  var count=0;
-  var ch=rdState.chapters[rdState.curChapter];
-  if(!ch)return;
-  var sectionText=rdState.rawText.substring(ch.startOffset,ch.endOffset);
-  var lines=sectionText.split('\n');
-  for(var t of rdState.typoList){
-    var key=t.chIdx+'_'+t.lineIdx+'_'+t.offset;
-    if(rdState.typoFixed[key])continue;
-    if(lines[t.lineIdx]!==undefined){
-      lines[t.lineIdx]=lines[t.lineIdx].replace(t.wrong,t.correct);
-      rdState.typoFixed[key]=true;
-      count++;
-    }
-  }
-  if(count>0){
-    rdState.rawText=rdState.rawText.substring(0,ch.startOffset)+lines.join('\n')+rdState.rawText.substring(ch.endOffset);
-    rdParseChaptersKeepChapter(rdState.curChapter);
-    rdRender();
-    showToast('已替换 '+count+' 处错字');
-  }else{
-    showToast('没有可替换的错字');
-  }
-  rdUpdateTypoBtn();
-}
-
-// ---- 重新解析章节但保持当前章节索引 ----
-function rdParseChaptersKeepChapter(keepIdx){
-  rdParseChapters();
-  if(keepIdx>=0 && keepIdx<rdState.chapters.length){
-    rdState.curChapter=keepIdx;
-  }
-}
-
-// ---- 更新错字按钮状态 ----
-function rdUpdateTypoBtn(){
-  var fixBtn=document.getElementById('rdTypoFixBtn');
-  if(fixBtn){
-    var unfixedCount=0;
-    for(var t of rdState.typoList){
-      var key=t.chIdx+'_'+t.lineIdx+'_'+t.offset;
-      if(!rdState.typoFixed[key])unfixedCount++;
-    }
-    fixBtn.style.display=(rdState.typoOn && unfixedCount>0)?'inline-block':'none';
-  }
-}
-
-// 简化的 的/地/得 上下文判断
-function rdCheckDe(prev,ch,next){
-  if(!prev||!next)return null;
-  // 简单规则：
-  // 动词+地+动词/形容词 → 地
-  // 名词+的+名词 → 的
-  // 动词+得+补语 → 得
-  // 这里只做最基础的判断
-  const verbs='说笑走跑看想听吃喝打买卖来去进出起坐站躺哭喊叫唱跳飞爬追逃躲挡推拉抱举放拿捡丢扔抓握敲拍摸擦洗穿脱戴摘盖揭关开锁砸砍劈刺杀写读画唱弹下上左右前后内外';
-  if(verbs.includes(prev)&&verbs.includes(next)&&ch==='的'){
-    return '地';
-  }
-  return null;
-}
-
-// 在转义后的 HTML 中找到第 n 次出现某个中文字的位置（简化版，暂不用）
-function rdFindCharPos(html,ch,n){
-  let count=0;
-  for(let i=0;i<html.length;i++){
-    if(html[i]===ch){
-      if(count===n)return i;
-      count++;
-    }
-  }
-  return -1;
-}
-
-// ---- 广告屏蔽（v3.6.1: 支持删除）----
-function rdMarkAds(htmlEscaped,rawLine,chIdx,lineIdx){
-  let isAd=false;
-  let adType='';
-  // 关键词匹配
-  for(const kw of RD_AD_KEYWORDS){
-    if(rawLine.includes(kw)){
-      isAd=true;
-      adType='关键词「'+kw+'」';
-      break;
-    }
-  }
-  // URL 检测
-  if(/https?:\/\/\S+/.test(rawLine)){
-    isAd=true;
-    adType='含链接';
-  }
-  // 短行+特定特征
-  if(rawLine.length<15 && /[www\.|http|群|号|票|赏|藏|推|订|阅]/.test(rawLine)){
-    isAd=true;
-    adType='短行广告特征';
-  }
-  // 纯符号行或特殊格式行
-  if(/^[★☆◆◇■□●○※＊▼▽△▲]+$/.test(rawLine.trim())){
-    isAd=true;
-    adType='装饰行';
-  }
-  if(isAd){
-    var lineKey=chIdx+'_'+lineIdx;
-    if(rdState.adHidden){
-      return '<p class="rd-ad-hidden" title="广告内容（已隐藏）">'+htmlEscaped+'</p>';
-    }
-    return '<span class="rd-ad" title="疑似广告：'+adType+'（点击删除此行）" onclick="rdAdDeleteLine('+chIdx+','+lineIdx+')">'+htmlEscaped+'</span>';
-  }
-  return htmlEscaped;
-}
-
-// ---- 删除单行广告 ----
-function rdAdDeleteLine(chIdx,lineIdx){
-  var lineKey=chIdx+'_'+lineIdx;
-  if(rdState.adDeletedLines.indexOf(lineKey)<0){
-    rdState.adDeletedLines.push(lineKey);
-  }
-  rdRender();
-  rdUpdateAdBtn();
-  showToast('已删除该广告行');
-}
-
-// ---- 全部删除广告（当前章节）----
-function rdAdDeleteAll(){
-  if(!rdState.rawText){return}
-  var ch=rdState.chapters[rdState.curChapter];
-  if(!ch)return;
-  var sectionText=rdState.rawText.substring(ch.startOffset,ch.endOffset);
-  var lines=sectionText.split('\n');
-  var count=0;
-  for(var i=0;i<lines.length;i++){
-    var trimmed=lines[i].trim();
-    if(!trimmed)continue;
-    if(rdIsChapterTitle(trimmed))continue;
-    var isAd=false;
-    for(const kw of RD_AD_KEYWORDS){
-      if(trimmed.includes(kw)){isAd=true;break;}
-    }
-    if(/https?:\/\/\S+/.test(trimmed))isAd=true;
-    if(trimmed.length<15 && /[www\.|http|群|号|票|赏|藏|推|订|阅]/.test(trimmed))isAd=true;
-    if(/^[★☆◆◇■□●○※＊▼▽△▲]+$/.test(trimmed.trim()))isAd=true;
-    if(isAd){
-      var lineKey=rdState.curChapter+'_'+i;
-      if(rdState.adDeletedLines.indexOf(lineKey)<0){
-        rdState.adDeletedLines.push(lineKey);
-        count++;
-      }
-    }
-  }
-  if(count>0){
-    rdRender();
-    showToast('已删除 '+count+' 行广告');
-  }else{
-    showToast('当前章节没有可删除的广告');
-  }
-  rdUpdateAdBtn();
-}
-
-// ---- 更新广告按钮状态 ----
-function rdUpdateAdBtn(){
-  var delBtn=document.getElementById('rdAdDelBtn');
-  if(delBtn){
-    delBtn.style.display=(rdState.adOn && rdState.adDeletedLines.length>0)?'inline-block':'none';
-  }
-}
-
-// ---- 目录弹窗 ----
-function rdToggleToc(){
-  const overlay=document.getElementById('rdTocOverlay');
-  if(overlay.style.display==='none'||!overlay.style.display){
-    // 生成目录列表
-    const list=document.getElementById('rdTocList');
-    list.innerHTML=rdState.chapters.map((ch,i)=>{
-      const active=i===rdState.curChapter?'rd-toc-active':'';
-      return '<div class="rd-toc-item '+active+'" onclick="rdJumpChapter('+i+')">'+rdEscapeHtml(ch.title)+'</div>';
-    }).join('');
-    overlay.style.display='flex';
-  }else{
-    overlay.style.display='none';
-  }
-}
-
-// ---- 跳转章节 ----
-function rdJumpChapter(idx){
-  if(idx<0||idx>=rdState.chapters.length)return;
-  rdState.curChapter=idx;
-  rdRender();
-  rdSaveProgress();
-  // 滚动到内容区顶部
-  const content=document.getElementById('rdContent');
-  if(content)content.scrollTop=0;
-  // 关闭目录
-  document.getElementById('rdTocOverlay').style.display='none';
-}
-
-// ---- 目录高亮 ----
-function rdUpdateTocHighlight(){
-  const items=document.querySelectorAll('.rd-toc-item');
-  items.forEach((el,i)=>{
-    el.classList.toggle('rd-toc-active',i===rdState.curChapter);
-  });
-}
-
-// ---- 暗色模式 ----
-function rdToggleDark(){
-  rdState.dark=!rdState.dark;
-  const btn=document.getElementById('rdDarkBtn');
-  if(btn)btn.textContent=rdState.dark?'☀️ 亮色':'🌙 暗色';
-  const contentEl=document.getElementById('rdContent');
-  if(contentEl)contentEl.classList.toggle('dark',rdState.dark);
-  const toolbarEl=document.getElementById('rdToolbar');
-  if(toolbarEl)toolbarEl.classList.toggle('rd-dark',rdState.dark);
-  rdSaveSettings();
-  showToast(rdState.dark?'已切换暗色模式':'已切换亮色模式');
-}
-
-// ---- 字号 ----
-function rdFontDelta(delta){
-  rdState.fontSize=Math.max(12,Math.min(32,rdState.fontSize+delta));
-  const span=document.getElementById('rdFontSize');
-  if(span)span.textContent=rdState.fontSize;
-  const container=document.getElementById('rdText');
-  if(container)container.style.fontSize=rdState.fontSize+'px';
-  rdSaveSettings();
-}
-
-// ---- 错字开关 ----
-function rdToggleTypo(){
-  rdState.typoOn=!rdState.typoOn;
-  const btn=document.getElementById('rdTypoBtn');
-  if(btn){
-    btn.textContent=rdState.typoOn?'✏️ 错字✓':'✏️ 错字';
-    btn.classList.toggle('rd-btn-active',rdState.typoOn);
-  }
-  if(rdState.rawText)rdRender();
-  rdSaveSettings();
-}
-
-// ---- 广告屏蔽开关 ----
-function rdToggleAd(){
-  rdState.adOn=!rdState.adOn;
-  var btn=document.getElementById('rdAdBtn');
-  if(btn){
-    btn.textContent=rdState.adOn?'🚫 广告✓':'🚫 广告';
-    btn.classList.toggle('rd-btn-active',rdState.adOn);
-  }
-  if(!rdState.adOn)rdState.adHidden=false;
-  if(rdState.rawText)rdRender();
-  rdSaveSettings();
-}
-
-// ---- 广告全局隐藏切换 ----
-function rdToggleAdHide(){
-  rdState.adHidden=!rdState.adHidden;
-  if(rdState.rawText)rdRender();
-}
-
-// ---- 阅读进度 ----
-function rdUpdateProgress(){
-  var total=rdState.chapters.length;
-  var cur=rdState.curChapter+1;
-  var pct=total>0?Math.round(cur/total*100):0;
-  var el=document.getElementById('rdProgress');
-  if(el)el.textContent=cur+'/'+total+' ('+pct+'%)';
-}
-
-// ---- 滚动监听（节流保存进度）----
-function rdOnScroll(){
-  if(rdState.scrollTimer)clearTimeout(rdState.scrollTimer);
-  rdState.scrollTimer=setTimeout(function(){
-    rdSaveProgress();
-  },500);
-}
-
-// ---- 保存进度到 localStorage ----
-function rdSaveProgress(){
-  if(!rdState.fileName)return;
-  var key='rd_progress_'+rdState.fileName;
-  var content=document.getElementById('rdContent');
-  var scrollTop=content?content.scrollTop:0;
-  var data={
-    chapter:rdState.curChapter,
-    scrollTop:scrollTop,
-    timestamp:Date.now()
-  };
-  try{localStorage.setItem(key,JSON.stringify(data))}catch(e){}
-}
-
-// ---- 恢复进度 ----
-function rdRestoreProgress(){
-  if(!rdState.fileName)return;
-  var key='rd_progress_'+rdState.fileName;
-  try{
-    var raw=localStorage.getItem(key);
-    if(!raw)return;
-    var data=JSON.parse(raw);
-    if(data.chapter!==undefined&&data.chapter>=0&&data.chapter<rdState.chapters.length){
-      rdState.curChapter=data.chapter;
-    }
-    rdState._pendingScrollTop=data.scrollTop||0;
-  }catch(e){}
-}
-
-// ---- 恢复滚动位置 ----
-function rdRestoreScroll(){
-  if(rdState._pendingScrollTop!==undefined){
-    var content=document.getElementById('rdContent');
-    if(content){
-      content.scrollTop=rdState._pendingScrollTop;
-    }
-    rdState._pendingScrollTop=undefined;
-  }
-}
-
-// ---- 保存阅读器设置 ----
-function rdSaveSettings(){
-  try{
-    localStorage.setItem('rd_settings',JSON.stringify({
-      dark:rdState.dark,
-      fontSize:rdState.fontSize,
-      typoOn:rdState.typoOn,
-      adOn:rdState.adOn
-    }));
-  }catch(e){}
-}
-
-// ---- 加载阅读器设置 ----
-function rdLoadSettings(){
-  try{
-    var raw=localStorage.getItem('rd_settings');
-    if(!raw)return;
-    var s=JSON.parse(raw);
-    rdState.dark=!!s.dark;
-    rdState.fontSize=s.fontSize||18;
-    rdState.typoOn=!!s.typoOn;
-    rdState.adOn=!!s.adOn;
-    // 更新 UI
-    var db=document.getElementById('rdDarkBtn');
-    if(db)db.textContent=rdState.dark?'☀️ 亮色':'🌙 暗色';
-    var fs=document.getElementById('rdFontSize');
-    if(fs)fs.textContent=rdState.fontSize;
-    var tb=document.getElementById('rdTypoBtn');
-    if(tb){tb.textContent=rdState.typoOn?'✏️ 错字✓':'✏️ 错字';tb.classList.toggle('rd-btn-active',rdState.typoOn)}
-    var ab=document.getElementById('rdAdBtn');
-    if(ab){ab.textContent=rdState.adOn?'🚫 广告✓':'🚫 广告';ab.classList.toggle('rd-btn-active',rdState.adOn)}
-  }catch(e){}
-}
-
-// ---- Tab 切换到阅读页时 ----
-function rdOnTabShow(){
-  // 绑定滚动事件
-  var content=document.getElementById('rdContent');
-  if(content&&!content._rdScrollBound){
-    content.addEventListener('scroll',rdOnScroll);
-    content._rdScrollBound=true;
-  }
-}
-
-// ---- 初始化时加载阅读器设置 ----
-(function rdInit(){
-  rdLoadSettings();
-})();
 
 </script>
