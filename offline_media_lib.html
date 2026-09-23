@@ -363,7 +363,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei
     </div>
     <div class="setitem">
       <label>详情页人名快捷数量（最多显示几个快捷人名）</label>
-      <input type="number" id="setNameLimit" min="1" max="10" value="5" onchange="saveSettings()">
+      <input type="number" id="setNameLimit" min="1" max="20" value="5" onchange="saveSettings()">
       <div class="sub">详情页展示的快捷人名 chips 数量，默认 5 个</div>
     </div>
   </div>
@@ -1086,7 +1086,7 @@ function saveSettings(){
   cfg.dlMode=document.getElementById('setDlMode').value;
   cfg.dlSite=document.getElementById('setDlSite').value.trim();
   const nl=parseInt(document.getElementById('setNameLimit').value)||5;
-  cfg.recentNameLimit=Math.max(1,Math.min(10,nl));
+  cfg.recentNameLimit=Math.max(1,Math.min(20,nl));
   const dim=parseInt(document.getElementById('setDlIntervalMin').value)||3;
   const dmx=parseInt(document.getElementById('setDlIntervalMax').value)||8;
   cfg.dlIntervalMin=Math.max(1,Math.min(60,Math.min(dim,dmx)));
