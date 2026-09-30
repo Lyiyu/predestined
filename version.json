@@ -1,5 +1,5 @@
 {
-  "version": "4.0.0",
-  "apkUrl": "",
-  "note": "v4.0 App化准备版：解耦个人数据、移除下载功能、新增更新检查"
+  "version": "4.1.0",
+  "apkUrl": "https://github.com/Lyiyu/predestined/releases/download/v4.1.0/medialib-v4.1.0-debug.apk",
+  "note": "v4.1 首个 App 版本：原生文件适配层 + 2Tab + 更新检查"
 }
