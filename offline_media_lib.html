@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
-<title>拾光相册 v4.4.0</title>
+<title>拾光相册 v4.5.0</title>
 <style>
 *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 :root{
@@ -17,6 +17,17 @@
 html,body{height:100%;overflow:hidden}
 body{font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei",sans-serif;background:var(--bg);color:var(--text);display:flex;flex-direction:column;overflow:hidden;word-break:keep-all;-webkit-word-break:keep-all;overflow-wrap:anywhere;text-wrap:pretty}
 .topbar{position:relative;flex:0 0 auto;z-index:100;background:linear-gradient(135deg,var(--primary),var(--primary2));color:#fff;padding:calc(10px + var(--safe-t)) 14px 10px;display:flex;align-items:center;gap:8px;box-shadow:0 2px 10px rgba(91,108,255,.25)}
+/* v4.5: 侧边栏导航（抽屉） */
+.drawer-mask{position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:600;display:none}
+.drawer-mask.show{display:block}
+.drawer{position:fixed;top:0;bottom:0;left:0;width:72vw;max-width:300px;background:#fff;z-index:610;transform:translateX(-102%);transition:transform .22s ease-out;box-shadow:4px 0 20px rgba(0,0,0,.18);display:flex;flex-direction:column;overflow-y:auto;-webkit-overflow-scrolling:touch;padding-bottom:calc(20px + var(--safe-b))}
+.drawer.show{transform:translateX(0)}
+.drawer-head{padding:calc(20px + var(--safe-t)) 18px 14px;background:linear-gradient(135deg,var(--primary),var(--primary2));color:#fff}
+.drawer-title{font-size:18px;font-weight:700}
+.drawer-sub{font-size:12px;opacity:.85;margin-top:4px}
+.drawer-group{font-size:11px;color:#999;padding:16px 18px 6px;letter-spacing:2px}
+.drawer-item{display:block;width:100%;text-align:left;background:none;border:none;font-size:15px;color:#333;padding:12px 18px;cursor:pointer;font-family:inherit}
+.drawer-item:active{background:#eeecff}
 .topbar h1{font-size:17px;font-weight:700;flex:1 1 auto;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .topbar .topbar-btn{background:rgba(255,255,255,.25);border:none;color:#fff;font-size:16px;width:34px;height:34px;border-radius:50%;cursor:pointer;display:flex;align-items:center;justify-content:center;flex:0 0 auto;padding:0;line-height:1}
 .topbar .topbar-btn:active{transform:scale(.92)}
@@ -270,9 +281,10 @@ body{font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei
 <body>
 
 <div class="topbar">
+  <button class="topbar-btn" onclick="toggleDrawer()" title="菜单" style="font-size:18px;padding:2px 10px">☰</button>
   <h1>📷 拾光相册</h1>
   <button class="topbar-btn" onclick="location.reload()" title="刷新页面（用于重新授权文件夹）">🔄</button>
-  <span class="tag">v4.4.0</span>
+  <span class="tag">v4.5.0</span>
 </div>
 
 <div class="progress-bar" id="progressBar"><i id="progressFill"></i></div>
@@ -426,6 +438,30 @@ body{font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei
   <button class="tab" id="tabSet" onclick="switchTab('set')"><span class="ic">⚙️</span>设置</button>
 </div>
 
+<!-- v4.5: 侧边栏导航（抽屉） -->
+<div class="drawer-mask" id="drawerMask" onclick="toggleDrawer(false)"></div>
+<aside class="drawer" id="drawer">
+  <div class="drawer-head">
+    <div class="drawer-title">📷 拾光相册</div>
+    <div class="drawer-sub" id="drawerVer"></div>
+  </div>
+  <nav>
+    <div class="drawer-group">导航</div>
+    <button class="drawer-item" onclick="drawerAction('lib')">🗂️ 媒体库</button>
+    <button class="drawer-item" onclick="drawerAction('set')">⚙️ 设置</button>
+    <div class="drawer-group">工具</div>
+    <button class="drawer-item" onclick="drawerAction('face')">😊 人脸识别</button>
+    <button class="drawer-item" onclick="drawerAction('dup')">🔍 查找重复</button>
+    <button class="drawer-item" onclick="drawerAction('org')">📁 按人名整理</button>
+    <button class="drawer-item" onclick="drawerAction('agg')">🗂️ 按媒体聚合</button>
+    <div class="drawer-group">数据与维护</div>
+    <button class="drawer-item" onclick="drawerAction('diag')">🔧 存储诊断</button>
+    <button class="drawer-item" onclick="drawerAction('export')">📄 导出 JSON</button>
+    <button class="drawer-item" onclick="drawerAction('import')">📥 导入 JSON</button>
+    <button class="drawer-item" onclick="drawerAction('update')">🔔 检查更新</button>
+  </nav>
+</aside>
+
 <!-- 详情页（全屏覆盖） -->
 <div class="detail-overlay" id="detailOverlay">
   <div class="detail-top">
@@ -515,7 +551,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei
 
 <script>
 // ==================== 状态 ====================
-const VERSION='4.4.0';
+const VERSION='4.5.0';
 const DB_NAME='offline_media_lib_v34',DB_VERSION=6;
 const STORE_MEDIA='media',STORE_THUMB='thumbs',STORE_SESSION='session',STORE_FACES='faces';
 let cfg={rule:'person_seq',tags:[],dateFormat:'YYYYMMDD',compress:true,maxCount:2000,showHidden:false,recentNameLimit:5};
@@ -669,7 +705,7 @@ async function walkDir(handle,pathArr,out){
         await walkDir(entry,p,out);
       }else{
         const lower=name.toLowerCase();
-        const isImg=/(\.jpg|\.jpeg|\.png|\.webp|\.heic)$/i.test(lower);
+        const isImg=/(\.jpg|\.jpeg|\.png|\.webp|\.heic|\.gif)$/i.test(lower); // v4.5: .gif 动图入库（详情页原生播放动画，缩略图取首帧）
         const isVid=VIDO_EXT_RE.test(lower); // v4.4: 扩展识别（avi/m4v/3gp/flv/wmv/ts/mpg/rmvb 等）
         if(!isImg&&!isVid)continue;
         out.push({id:'f'+Math.random().toString(36).slice(2,9),name,type:isVid?'video':'image',size:0,path:p.join('/'),handle:entry,hidden:isHidden,lastModified:0,savedAt:0,tags:[],person:'',renamed:false});
@@ -925,7 +961,11 @@ async function loadDetailImage(item){
   // 显示占位说明；标记/重命名/整理等全部功能不受影响
   if(item.type==='video'&&!VID_PREVIEW_RE.test(item.name)){
     const ext=getExt(item.name).toUpperCase();
-    set('<div style="text-align:center;padding:20px"><div style="font-size:52px">🎬</div><div style="color:#ddd;font-size:14px;margin-top:8px;word-break:break-all">'+escapeHtml(item.name)+'</div><div style="color:#999;font-size:12px;margin-top:10px;line-height:1.9">'+ext+' 格式暂不支持在 App 内播放<br>（受 WebView 解码器限制）<br>标记 / 重命名 / 整理等操作不受影响</div></div>');
+    // v4.5: App 模式提供「系统播放器」兜底（WebView 解不了的容器交给 MX Player 等系统应用）
+    const openBtn=(IS_NATIVE_APP&&nApi&&item.handle&&item.handle._rel!==undefined)
+      ?'<button class="btn-sm" style="background:var(--primary);color:#fff;border-color:var(--primary);margin-top:14px;padding:10px 22px;font-size:14px" onclick="dOpenExternal()">▶ 用系统播放器打开</button>'
+      :'';
+    set('<div style="text-align:center;padding:20px"><div style="font-size:52px">🎬</div><div style="color:#ddd;font-size:14px;margin-top:8px;word-break:break-all">'+escapeHtml(item.name)+'</div><div style="color:#999;font-size:12px;margin-top:10px;line-height:1.9">'+ext+' 格式暂不支持在 App 内播放<br>（受 WebView 解码器限制）<br>标记 / 重命名 / 整理等操作不受影响</div>'+openBtn+'</div>');
     return;
   }
   // v4.1 原生模式：<img>/<video> 直接指向本地文件 URL，零内存占用
@@ -1081,6 +1121,47 @@ window.addEventListener('keydown',ev=>{
   if(ev.key==='ArrowLeft')dNav(-1);
   else if(ev.key==='ArrowRight')dNav(1);
 });
+
+// ==================== v4.5: 侧边栏导航 + 系统播放器兜底 ====================
+function toggleDrawer(show){
+  const el=document.getElementById('drawer');
+  const s=(show===undefined)?!el.classList.contains('show'):show;
+  el.classList.toggle('show',s);
+  document.getElementById('drawerMask').classList.toggle('show',s);
+}
+function drawerAction(key){
+  toggleDrawer(false);
+  if(key==='lib'){switchTab('lib');return}
+  if(key==='set'){switchTab('set');return}
+  if(key==='diag'){runStorageDiag();return}
+  if(key==='export'){switchTab('set');exportJson();return}
+  if(key==='import'){switchTab('set');document.getElementById('importJsonFile').click();return}
+  if(key==='update'){checkUpdate();return}
+  // 工具类（face/dup/org/agg）都作用于媒体库文件，需先扫描
+  if(!items.length){switchTab('lib');showToast('请先选择文件夹并扫描');return}
+  switchTab('lib');
+  if(key==='face')openFacePanel();
+  else if(key==='dup')findDuplicates();
+  else if(key==='org')organizeByPerson();
+  else if(key==='agg')organizeByPersonMedia();
+}
+// v4.5: 不可播视频（avi/flv/wmv 等）交给系统播放器——WebView 解码不了，但系统播放器（如 MX Player）能解
+async function dOpenExternal(){
+  const it=(dNavIdx>=0&&dNavList[dNavIdx])||items[detailIdx];
+  if(!it||!it.handle){showToast('文件句柄不可用，请重新扫描');return}
+  try{
+    const r=await nApi.getUri({path:it.handle._rel,directory:'EXTERNAL_STORAGE'});
+    let abs=String(r.uri||'').replace(/^file:\/\//,'').replace(/\/+$/,'');
+    try{abs=decodeURIComponent(abs)}catch(e){} // getUri 返回 URL 编码路径，File() 需要真实路径
+    const p=(window.Capacitor.Plugins||{}).AllFilesAccess;
+    if(!p||!p.openExternal){showToast('此版本不支持，请更新 App');return}
+    await p.openExternal({path:abs});
+    showToast('已交给系统播放器');
+  }catch(e){showToast('打开失败：'+(e.message||e))}
+}
+// v4.5: 抽屉头部版本信息。注意此处位于 script 靠前位置，不能引用后部才声明的 const（RUNTIME_MODE 有 TDZ），
+// 直接用 Capacitor 检测运行环境
+document.getElementById('drawerVer').textContent='v'+VERSION+' · '+((window.Capacitor&&window.Capacitor.isNativePlatform&&window.Capacitor.isNativePlatform())?'App':'网页')+'版 · 数据仅存本机';
 function compressImage(file,maxSide){
   return new Promise(res=>{
     const url=URL.createObjectURL(file);const img=new Image();
