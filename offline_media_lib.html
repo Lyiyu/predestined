@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
-<title>拾光相册 v4.3.8</title>
+<title>拾光相册 v4.4.0</title>
 <style>
 *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 :root{
@@ -110,6 +110,13 @@ body{font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei
 .detail-top .dt-title{flex:1;color:#fff;font-size:14px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .detail-top .dt-close{color:#fff;font-size:24px;cursor:pointer;width:36px;height:36px;display:flex;align-items:center;justify-content:center;flex:0 0 auto;background:rgba(255,255,255,.15);border-radius:50%}
 .detail-img{flex:1 1 0;min-height:0;overflow:hidden;display:flex;align-items:center;justify-content:center;padding:6px}
+/* v4.4: 详情页相册化——导航按钮与序号指示 */
+.d-nav{position:fixed;top:50%;left:10px;transform:translateY(-50%);width:44px;height:44px;border-radius:50%;background:rgba(0,0,0,.45);color:#fff;font-size:28px;line-height:40px;text-align:center;z-index:510;user-select:none;-webkit-user-select:none;display:none}
+.d-nav.show{display:block}
+.d-nav-r{left:auto;right:10px}
+.d-counter{position:fixed;top:calc(56px + var(--safe-t));left:50%;transform:translateX(-50%);background:rgba(0,0,0,.45);color:#fff;font-size:12px;padding:4px 12px;border-radius:12px;z-index:510;display:none}
+.d-counter.show{display:block}
+#detailImg img{transition:transform .12s ease-out;max-width:100%;max-height:100%}
 .detail-img img{max-width:100%;max-height:100%;border-radius:8px;object-fit:contain}
 .detail-panel{background:#1a1a2e;color:#fff;padding:12px 16px calc(12px + var(--safe-b));border-radius:18px 18px 0 0;max-height:62vh;overflow-y:auto;-webkit-overflow-scrolling:touch}
 .detail-panel .step-label{font-size:12.5px;color:#9aa0b5;margin-bottom:8px;margin-top:12px}
@@ -265,7 +272,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei
 <div class="topbar">
   <h1>📷 拾光相册</h1>
   <button class="topbar-btn" onclick="location.reload()" title="刷新页面（用于重新授权文件夹）">🔄</button>
-  <span class="tag">v4.3.8</span>
+  <span class="tag">v4.4.0</span>
 </div>
 
 <div class="progress-bar" id="progressBar"><i id="progressFill"></i></div>
@@ -307,7 +314,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei
       <button class="btn-sm" onclick="selectAllFiltered()" style="background:#fff;color:var(--primary);border-color:var(--primary);white-space:nowrap">☑️ 全选</button>
       <button class="btn-sm" onclick="findDuplicates()" style="background:#fff;color:var(--primary);border-color:var(--primary)">🔍 重复</button>
       <button class="btn-sm" onclick="openFacePanel()" style="background:#fff;color:var(--primary);border-color:var(--primary)">😊 人脸</button>
-      <button class="btn-sm" onclick="organizeByPerson()" style="background:var(--primary);color:#fff;border-color:var(--primary)">📁 整理</button>
+      <button class="btn-sm" onclick="organizeByPerson()" style="background:#fff;color:var(--primary);border-color:var(--primary)">📁 整理</button>
       <button class="btn-sm" onclick="organizeByPersonMedia()" style="background:#fff;color:var(--primary);border-color:var(--primary)">🗂️ 聚合</button>
     </div>
     <div class="subdir-bar" id="subdirBar" style="display:none"></div>
@@ -426,6 +433,10 @@ body{font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei
     <div class="dt-close" onclick="closeDetail()">×</div>
   </div>
   <div class="detail-img" id="detailImg"></div>
+  <!-- v4.4: 相册化导航（前后切换按钮 + 序号指示） -->
+  <div class="d-nav" id="dPrevBtn" onclick="dNav(-1)">‹</div>
+  <div class="d-nav d-nav-r" id="dNextBtn" onclick="dNav(1)">›</div>
+  <div class="d-counter" id="dCounter"></div>
   <div class="detail-panel" id="detailPanel">
     <div class="step-label">① 选择人名（可拖动排序）</div>
     <div class="name-chips" id="nameChips"></div>
@@ -504,7 +515,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei
 
 <script>
 // ==================== 状态 ====================
-const VERSION='4.3.8';
+const VERSION='4.4.0';
 const DB_NAME='offline_media_lib_v34',DB_VERSION=6;
 const STORE_MEDIA='media',STORE_THUMB='thumbs',STORE_SESSION='session',STORE_FACES='faces';
 let cfg={rule:'person_seq',tags:[],dateFormat:'YYYYMMDD',compress:true,maxCount:2000,showHidden:false,recentNameLimit:5};
@@ -642,6 +653,10 @@ function hideProgress(){document.getElementById('progressBar').classList.remove(
 // pickDir 已移至文件末尾 v3.2 区域
 
 // 递归扫描
+// v4.4: 视频扩展名识别（入库）与 WebView 可解码容器（预览）分开——
+// AVI/FLV/WMV/TS/MPG/RMVB 可入库标记整理，但 <video> 无法解码（Chromium 容器限制），详情页降级为占位提示
+const VIDO_EXT_RE=/\.(mp4|mov|avi|mkv|webm|m4v|3gp|3g2|flv|wmv|ts|mpg|mpeg|rmvb)$/i;
+const VID_PREVIEW_RE=/\.(mp4|m4v|mov|webm|3gp|3g2|mkv)$/i;
 async function walkDir(handle,pathArr,out){
   try{
     for await(const entry of handle.values()){
@@ -655,7 +670,7 @@ async function walkDir(handle,pathArr,out){
       }else{
         const lower=name.toLowerCase();
         const isImg=/(\.jpg|\.jpeg|\.png|\.webp|\.heic)$/i.test(lower);
-        const isVid=/\.(mp4|mov|avi|mkv|webm)$/i.test(lower);
+        const isVid=VIDO_EXT_RE.test(lower); // v4.4: 扩展识别（avi/m4v/3gp/flv/wmv/ts/mpg/rmvb 等）
         if(!isImg&&!isVid)continue;
         out.push({id:'f'+Math.random().toString(36).slice(2,9),name,type:isVid?'video':'image',size:0,path:p.join('/'),handle:entry,hidden:isHidden,lastModified:0,savedAt:0,tags:[],person:'',renamed:false});
       }
@@ -869,48 +884,65 @@ function selectAllFiltered(){
 function openDetail(id){
   const idx=items.findIndex(x=>x.id===id);
   if(idx<0)return;
-  detailIdx=idx;
-  const item=items[idx];
+  // v4.4: 滑动导航跟随当前可见列表（过滤/排序后的 libFiltered）；从查重等入口打开时若不在视图内则回退全量列表
+  dNavList=(libFiltered&&libFiltered.some(p=>p.id===id))?libFiltered:items;
+  dNavIdx=dNavList.findIndex(p=>p.id===id);
+  showDetailSlide(items[idx]);
+}
+// v4.4: 展示指定文件（滑动切换/打开共用）：完整重置每文件状态（人名/标签/日期/缩放）
+function showDetailSlide(item){
+  detailIdx=items.findIndex(x=>x.id===item.id);
   detailPerson=item.person||'';
   detailTags=new Set(item.tags||[]);
   detailTagOrder=[...(item.tags||[])]; // v3.3: 拖动排序初始化
-  // 补上未在 item.tags 中但存在于 cfg.tags 的标签
   (cfg.tags||[]).forEach(t=>{if(!detailTagOrder.includes(t))detailTagOrder.push(t)});
   detailDateStr=fmtDate(new Date());
   document.getElementById('detailTitle').textContent=item.name;
   document.getElementById('detailPanel').style.display='block';
+  dResetZoom();
   loadDetailImage(item);
   renderNameChips();
   renderTagChips();
   const today=new Date();
   document.getElementById('detailDate').value=today.getFullYear()+'-'+String(today.getMonth()+1).padStart(2,'0')+'-'+String(today.getDate()).padStart(2,'0');
   updatePreviewName();
+  updateDetailCounter();
   document.getElementById('detailOverlay').classList.add('show');
 }
+let _detailLoadSeq=0; // v4.4: 快速滑动时防止旧页面的异步加载结果乱序覆盖当前页（竞态守卫）
 async function loadDetailImage(item){
+  const seq=++_detailLoadSeq;
   const el=document.getElementById('detailImg');
+  const set=(html)=>{if(seq===_detailLoadSeq)el.innerHTML=html}; // 仅当前页生效
   if(!item.handle){
     const libRec=libItems.find(i=>i.name===item.name);
-    if(libRec&&(libRec.img||libRec.thumb)){el.innerHTML='<img src="'+(libRec.img||libRec.thumb)+'" style="max-width:100%;max-height:100%">';return}
-    el.innerHTML='<div style="color:#666">🔒 需重新选择文件夹才能加载原图</div>';
+    if(libRec&&(libRec.img||libRec.thumb)){set('<img src="'+(libRec.img||libRec.thumb)+'" style="max-width:100%;max-height:100%">');return}
+    set('<div style="color:#666">🔒 需重新选择文件夹才能加载原图</div>');
     return;
   }
-  el.innerHTML='<div style="color:#666">加载中…</div>';
+  set('<div style="color:#666">加载中…</div>');
+  // v4.4: WebView 无法解码的视频容器（avi/flv/wmv/ts/mpg/rmvb 等）优雅降级——不黑屏，
+  // 显示占位说明；标记/重命名/整理等全部功能不受影响
+  if(item.type==='video'&&!VID_PREVIEW_RE.test(item.name)){
+    const ext=getExt(item.name).toUpperCase();
+    set('<div style="text-align:center;padding:20px"><div style="font-size:52px">🎬</div><div style="color:#ddd;font-size:14px;margin-top:8px;word-break:break-all">'+escapeHtml(item.name)+'</div><div style="color:#999;font-size:12px;margin-top:10px;line-height:1.9">'+ext+' 格式暂不支持在 App 内播放<br>（受 WebView 解码器限制）<br>标记 / 重命名 / 整理等操作不受影响</div></div>');
+    return;
+  }
   // v4.1 原生模式：<img>/<video> 直接指向本地文件 URL，零内存占用
   if(IS_NATIVE_APP&&nApi&&item.handle._rel!==undefined){
     try{
       const url=await nUri(item.handle._rel);
-      if(item.type==='video'){el.innerHTML='<video src="'+url+'" controls style="max-width:100%;max-height:100%;border-radius:8px"></video>'}
-      else{el.innerHTML='<img src="'+url+'">'}
-    }catch(e){el.innerHTML='<div style="color:#666">无法加载</div>'}
+      if(item.type==='video'){set('<video src="'+url+'" controls style="max-width:100%;max-height:100%;border-radius:8px"></video>')}
+      else{set('<img src="'+url+'">')}
+    }catch(e){set('<div style="color:#666">无法加载</div>')}
     return;
   }
   try{
     const file=await item.handle.getFile();
     const url=URL.createObjectURL(file);
-    if(item.type==='video'){el.innerHTML='<video src="'+url+'" controls style="max-width:100%;max-height:100%;border-radius:8px"></video>'}
-    else{el.innerHTML='<img src="'+url+'">'}
-  }catch(e){el.innerHTML='<div style="color:#666">无法加载</div>'}
+    if(item.type==='video'){set('<video src="'+url+'" controls style="max-width:100%;max-height:100%;border-radius:8px"></video>')}
+    else{set('<img src="'+url+'">')}
+  }catch(e){set('<div style="color:#666">无法加载</div>')}
 }
 function renderNameChips(){
   const el=document.getElementById('nameChips');
@@ -946,13 +978,109 @@ function renderTagChips(){
 function toggleDetailTag(t){if(detailTags.has(t))detailTags.delete(t);else detailTags.add(t);renderTagChips();updatePreviewName()}
 // updatePreviewName 和 detailConfirm 已移至文件末尾 v3.2 区域
 document.getElementById('detailDate').addEventListener('input',function(){const d=this.value?new Date(this.value):new Date();detailDateStr=fmtDate(d);updatePreviewName()});
-function closeDetail(){document.getElementById('detailOverlay').classList.remove('show');detailIdx=-1}
+function closeDetail(){document.getElementById('detailOverlay').classList.remove('show');detailIdx=-1;document.getElementById('dPrevBtn').classList.remove('show');document.getElementById('dNextBtn').classList.remove('show');document.getElementById('dCounter').classList.remove('show')}
 // detailConfirm 已移至文件末尾 v3.2 区域
 function detailNext(){
+  // v4.4: 保存并下一张跟随滑动导航列表（与滑动切换一致）
+  const nid=(dNavIdx>=0&&dNavIdx+1<dNavList.length)?dNavList[dNavIdx+1].id:null;
   closeDetail();
-  const nextIdx=detailIdx+1;
-  if(nextIdx<items.length){openDetail(items[nextIdx].id)}else{showToast('已到最后一张')}
+  if(nid){openDetail(nid)}else{showToast('已到最后一张')}
 }
+
+// ==================== v4.4: 详情页相册化（前后滑动 + 双指缩放 + 双击放大） ====================
+let dNavList=[],dNavIdx=-1;
+let dZoom=1,dPx=0,dPy=0,dPinch0=0,dZoom0=1,dPan0X=0,dPan0Y=0,dT0=null,dLastTap=0,dLastTapX=0,dLastTapY=0;
+function dApplyZoom(){
+  const im=document.querySelector('#detailImg img');
+  if(im){im.style.transform='translate('+dPx+'px,'+dPy+'px) scale('+dZoom+')';im.style.transformOrigin='center center'}
+}
+function dResetZoom(){dZoom=1;dPx=0;dPy=0;dApplyZoom()}
+function dClampPan(){
+  const box=document.getElementById('detailImg');
+  const lim=Math.max(0,(dZoom-1)*Math.min(box.clientWidth,box.clientHeight)/2)+40;
+  dPx=Math.max(-lim,Math.min(lim,dPx));dPy=Math.max(-lim,Math.min(lim,dPy));
+}
+function dNav(dir){
+  if(dNavList.length<2){showToast('没有其他文件');return}
+  const ni=dNavIdx+dir;
+  if(ni<0||ni>=dNavList.length){showToast(dir<0?'已是第一张':'已是最后一张');return}
+  dNavIdx=ni;
+  showDetailSlide(dNavList[ni]);
+}
+function updateDetailCounter(){
+  const multi=dNavList.length>1;
+  document.getElementById('dCounter').textContent=(dNavIdx+1)+' / '+dNavList.length;
+  document.getElementById('dCounter').classList.toggle('show',multi);
+  document.getElementById('dPrevBtn').classList.toggle('show',multi&&dNavIdx>0);
+  document.getElementById('dNextBtn').classList.toggle('show',multi&&dNavIdx<dNavList.length-1);
+}
+function dBindGestures(){
+  const box=document.getElementById('detailImg');
+  box.addEventListener('touchstart',ev=>{
+    if(ev.touches.length===2){
+      dT0=null; // 取消单击/滑动追踪，避免捏合收指误触
+      if(!box.querySelector('img'))return;
+      dPinch0=Math.hypot(ev.touches[0].clientX-ev.touches[1].clientX,ev.touches[0].clientY-ev.touches[1].clientY);
+      dZoom0=dZoom;
+      ev.preventDefault();
+    }else if(ev.touches.length===1){
+      const t=ev.touches[0];
+      dT0={x:t.clientX,y:t.clientY,t:Date.now(),moved:false,video:(ev.target&&ev.target.tagName==='VIDEO')};
+      dPan0X=dPx;dPan0Y=dPy;
+    }
+  },{passive:false});
+  box.addEventListener('touchmove',ev=>{
+    if(ev.touches.length===2){
+      const im=box.querySelector('img');if(!im)return;
+      const d=Math.hypot(ev.touches[0].clientX-ev.touches[1].clientX,ev.touches[0].clientY-ev.touches[1].clientY);
+      dZoom=Math.max(1,Math.min(6,dZoom0*((d/dPinch0)||1)));
+      dApplyZoom();ev.preventDefault();
+    }else if(ev.touches.length===1&&dT0){
+      const t=ev.touches[0];
+      const dx=t.clientX-dT0.x,dy=t.clientY-dT0.y;
+      if(Math.abs(dx)>10||Math.abs(dy)>10)dT0.moved=true;
+      if(dZoom>1.05){ // 放大后单指平移
+        dPx=dPan0X+dx;dPy=dPan0Y+dy;dClampPan();dApplyZoom();
+      }
+      if(dZoom>1.05||!dT0.video)ev.preventDefault(); // 视频未放大时不拦截（进度条拖动需原生处理）
+    }
+  },{passive:false});
+  box.addEventListener('touchend',ev=>{
+    if(dZoom>1.05&&dZoom<1.15)dResetZoom(); // 捏合回弹
+    if(ev.changedTouches.length===1&&dT0&&!dT0.moved){
+      const t=ev.changedTouches[0];
+      const now=Date.now();
+      if(now-dLastTap<300&&Math.abs(t.clientX-dLastTapX)<40&&Math.abs(t.clientY-dLastTapY)<40){
+        // 双击：1x ↔ 2.5x（以点击点为中心）
+        dLastTap=0;
+        const im=box.querySelector('img');
+        if(im){
+          if(dZoom>1.05){dResetZoom()}
+          else{
+            dZoom=2.5;
+            const r=im.getBoundingClientRect();
+            dPx=(r.left+r.width/2-t.clientX)*dZoom*0.6;dPy=(r.top+r.height/2-t.clientY)*dZoom*0.6;
+            dClampPan();dApplyZoom();
+          }
+        }
+      }else{dLastTap=now;dLastTapX=t.clientX;dLastTapY=t.clientY}
+    }else if(dT0&&dZoom<=1.05&&ev.changedTouches.length===1){
+      // 滑动切换（未放大、水平位移>60、水平明显大于垂直；视频上要求快速轻扫以免与进度条拖动冲突）
+      const t=ev.changedTouches[0];
+      const dx=t.clientX-dT0.x,dy=t.clientY-dT0.y;
+      const quick=(Date.now()-dT0.t)<450;
+      if(Math.abs(dx)>60&&Math.abs(dx)>Math.abs(dy)*1.3&&(!dT0.video||quick)){dNav(dx<0?1:-1)}
+    }
+    if(ev.touches.length===0)dT0=null;
+  });
+}
+dBindGestures();
+// v4.4: 网页版键盘导航
+window.addEventListener('keydown',ev=>{
+  if(!document.getElementById('detailOverlay').classList.contains('show'))return;
+  if(ev.key==='ArrowLeft')dNav(-1);
+  else if(ev.key==='ArrowRight')dNav(1);
+});
 function compressImage(file,maxSide){
   return new Promise(res=>{
     const url=URL.createObjectURL(file);const img=new Image();
@@ -2321,7 +2449,7 @@ if(nApi){
   const nJoin=(...a)=>a.filter(p=>p!==''&&p!==null&&p!==undefined).join('/');
   const nParent=rel=>{const p=rel.split('/');p.pop();return p.join('/')};
   const nName=rel=>rel.split('/').pop();
-  function nMime(name){const e=getExt(name).toLowerCase();return{'.jpg':'image/jpeg','.jpeg':'image/jpeg','.png':'image/png','.webp':'image/webp','.heic':'image/heic','.gif':'image/gif','.mp4':'video/mp4','.mov':'video/quicktime','.mkv':'video/x-matroska','.avi':'video/x-msvideo','.webm':'video/webm'}[e]||'application/octet-stream'}
+  function nMime(name){const e=getExt(name).toLowerCase();return{'.jpg':'image/jpeg','.jpeg':'image/jpeg','.png':'image/png','.webp':'image/webp','.heic':'image/heic','.gif':'image/gif','.mp4':'video/mp4','.m4v':'video/mp4','.mov':'video/quicktime','.mkv':'video/x-matroska','.avi':'video/x-msvideo','.webm':'video/webm','.3gp':'video/3gpp','.3g2':'video/3g2','.flv':'video/x-flv','.wmv':'video/x-ms-wmv','.ts':'video/mp2t','.mpg':'video/mpeg','.mpeg':'video/mpeg','.rmvb':'application/vnd.rn-realmedia'}[e]||'application/octet-stream'}
 
   // -------- 底层操作 --------
   async function nReaddir(rel){
