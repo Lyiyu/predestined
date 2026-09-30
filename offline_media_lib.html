@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
-<title>离线媒体库 v4.1</title>
+<title>拾光相册 v4.3</title>
 <style>
 *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 :root{
@@ -236,14 +236,36 @@ body{font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei
 .tool-btn{word-break:keep-all;overflow-wrap:anywhere}
 /* v3.5.1: 确认弹窗按钮 */
 .modal-box .modal-actions button{word-break:keep-all;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+/* v4.2: 开发者模式测试反馈面板 */
+.dev-overlay{position:fixed;inset:0;background:#f5f6fa;z-index:1200;display:none;flex-direction:column}
+.dev-overlay.show{display:flex}
+.dev-top{display:flex;align-items:center;justify-content:space-between;padding:14px 16px;background:#fff;border-bottom:1px solid var(--line)}
+.dev-top .dt-title{font-weight:700;font-size:16px}
+.dev-top .dt-close{font-size:26px;cursor:pointer;color:#999;padding:0 6px;line-height:1}
+.dev-tip{font-size:12px;color:#8a6d1a;padding:10px 16px;background:#fffbe8;border-bottom:1px solid #f5e9b8;line-height:1.7}
+.dev-stats{display:flex;gap:6px;padding:10px 14px;font-size:12px;background:#fff;border-bottom:1px solid var(--line);flex-wrap:wrap}
+.dev-stats .ds{padding:4px 10px;border-radius:12px;background:#f0f2f8;font-weight:600}
+.dev-list{flex:1;overflow-y:auto;padding:12px 14px}
+.dev-case{background:#fff;border-radius:12px;padding:12px;margin-bottom:10px;box-shadow:var(--shadow)}
+.dev-case .dc-id{font-size:11px;color:#999;font-weight:700}
+.dev-case .dc-name{font-weight:700;font-size:14px;margin:2px 0 4px}
+.dev-case .dc-expect{font-size:12px;color:var(--sub);line-height:1.6;margin-bottom:8px}
+.dev-case .dc-btns{display:flex;gap:6px;margin-bottom:8px}
+.dev-case .sbtn{flex:1;padding:7px 0;border-radius:8px;border:1px solid var(--line);background:#fff;font-size:13px;cursor:pointer}
+.dev-case .sbtn.on.pass{background:#e6f6ec;border-color:#30a46c;color:#1a7f37;font-weight:700}
+.dev-case .sbtn.on.fail{background:#fdeeec;border-color:#d64545;color:#c53030;font-weight:700}
+.dev-case .sbtn.on.todo{background:#eef0f6;border-color:#8a8fa3;color:#555;font-weight:700}
+.dev-case textarea{width:100%;min-height:44px;border:1px solid var(--line);border-radius:8px;padding:8px;font-size:13px;font-family:inherit;resize:vertical;box-sizing:border-box}
+.dev-actions{display:flex;gap:10px;padding:12px 16px;background:#fff;border-top:1px solid var(--line)}
+.dev-actions button{flex:1}
 </style>
 </head>
 <body>
 
 <div class="topbar">
-  <h1>📁 离线媒体库</h1>
+  <h1>📷 拾光相册</h1>
   <button class="topbar-btn" onclick="location.reload()" title="刷新页面（用于重新授权文件夹）">🔄</button>
-  <span class="tag">v4.1</span>
+  <span class="tag">v4.3</span>
 </div>
 
 <div class="progress-bar" id="progressBar"><i id="progressFill"></i></div>
@@ -284,6 +306,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei
     <div class="filters" style="margin-top:0">
       <button class="btn-sm" onclick="selectAllFiltered()" style="background:#fff;color:var(--primary);border-color:var(--primary);white-space:nowrap">☑️ 全选</button>
       <button class="btn-sm" onclick="findDuplicates()" style="background:#fff;color:var(--primary);border-color:var(--primary)">🔍 重复</button>
+      <button class="btn-sm" onclick="openFacePanel()" style="background:#fff;color:var(--primary);border-color:var(--primary)">😊 人脸</button>
       <button class="btn-sm" onclick="organizeByPerson()" style="background:var(--primary);color:#fff;border-color:var(--primary)">📁 整理</button>
       <button class="btn-sm" onclick="organizeByPersonMedia()" style="background:#fff;color:var(--primary);border-color:var(--primary)">🗂️ 聚合</button>
     </div>
@@ -424,6 +447,34 @@ body{font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei
 
 <div class="toast" id="toast"></div>
 
+<!-- v4.3 人脸识别面板（复用 dev-overlay 样式） -->
+<div class="dev-overlay" id="faceOverlay">
+  <div class="dev-top">
+    <div class="dt-title">😊 人脸分组（实验性）</div>
+    <div class="dt-close" onclick="closeFacePanel()">×</div>
+  </div>
+  <div class="dev-tip" id="faceTip">点击「🔍 扫描人脸」自动检测照片中的人脸并按相似度分组：同一人的照片会归为一组，点组可一键标记人名。扫描在本机完成，不上传。图片多时耗时几分钟，过程中可关闭面板。</div>
+  <div class="dev-stats" id="faceStats"></div>
+  <div class="dev-list" id="faceList"></div>
+  <div class="dev-actions">
+    <button class="btn-main" id="faceScanBtn" onclick="startFaceScan()">🔍 扫描人脸</button>
+    <button class="btn-ghost" onclick="clearFaceData()">🗑️ 清空人脸库</button>
+  </div>
+</div>
+<div class="dev-overlay" id="devOverlay">
+  <div class="dev-top">
+    <div class="dt-title">🧪 测试反馈面板</div>
+    <div class="dt-close" onclick="closeDevPanel()">×</div>
+  </div>
+  <div class="dev-tip">手机上边测边填：每项选「通过 / 不通过」，可写备注（问题现象、建议）。全部填完后点底部「📋 复制反馈」，粘贴到微信发给助手即可，不用再发文件。</div>
+  <div class="dev-stats" id="devStats"></div>
+  <div class="dev-list" id="devList"></div>
+  <div class="dev-actions">
+    <button class="btn-main" onclick="devCopy()">📋 复制反馈</button>
+    <button class="btn-ghost" onclick="devClear()">🗑️ 清空重填</button>
+  </div>
+</div>
+
 <!-- 去重面板 -->
 <div class="dup-overlay" id="dupOverlay" onclick="closeDupOverlay(event)">
   <div class="dup-panel" onclick="event.stopPropagation()">
@@ -452,9 +503,9 @@ body{font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei
 
 <script>
 // ==================== 状态 ====================
-const VERSION='4.1.0';
-const DB_NAME='offline_media_lib_v34',DB_VERSION=5;
-const STORE_MEDIA='media',STORE_THUMB='thumbs',STORE_SESSION='session';
+const VERSION='4.3.0';
+const DB_NAME='offline_media_lib_v34',DB_VERSION=6;
+const STORE_MEDIA='media',STORE_THUMB='thumbs',STORE_SESSION='session',STORE_FACES='faces';
 let cfg={rule:'person_seq',tags:[],dateFormat:'YYYYMMDD',compress:true,maxCount:2000,showHidden:false,recentNameLimit:5};
 // v4.0 解耦：默认配置零个人数据（标签为空，无下载服务地址）；配置仅存于本机 localStorage，云端不存任何用户数据
 let _firstRun=false; // v4.0：首次运行检测（无任何历史配置时为 true）
@@ -481,6 +532,7 @@ function openDB(){
       if(!db.objectStoreNames.contains(STORE_MEDIA))db.createObjectStore(STORE_MEDIA,{keyPath:'id'});
       if(!db.objectStoreNames.contains(STORE_THUMB))db.createObjectStore(STORE_THUMB,{keyPath:'key'});
       if(!db.objectStoreNames.contains(STORE_SESSION))db.createObjectStore(STORE_SESSION,{keyPath:'k'});
+      if(!db.objectStoreNames.contains(STORE_FACES))db.createObjectStore(STORE_FACES,{keyPath:'name'}); // v4.3: 人脸描述子库
     };
     req.onsuccess=e=>res(e.target.result);
     req.onerror=e=>rej(e.target.error);
@@ -496,6 +548,11 @@ async function dbClearThumbs(){const db=await openDB();return new Promise((res)=
 async function dbSaveSession(data){const db=await openDB();return new Promise((res)=>{const tx=db.transaction(STORE_SESSION,'readwrite');tx.objectStore(STORE_SESSION).put({k:'session',...data});tx.oncomplete=res;tx.onerror=()=>res()})}
 async function dbLoadSession(){const db=await openDB();return new Promise((res)=>{const req=db.transaction(STORE_SESSION).objectStore(STORE_SESSION).get('session');req.onsuccess=()=>res(req.result||null);req.onerror=()=>res(null)})}
 async function dbClearSession(){const db=await openDB();return new Promise((res)=>{const tx=db.transaction(STORE_SESSION,'readwrite');tx.objectStore(STORE_SESSION).delete('session');tx.oncomplete=res;tx.onerror=()=>res()})}
+// v4.3: 人脸库读写
+async function dbPutFace(rec){try{const db=await openDB();return new Promise((res)=>{const tx=db.transaction(STORE_FACES,'readwrite');tx.objectStore(STORE_FACES).put(rec);tx.oncomplete=res;tx.onerror=()=>res()})}catch(e){}}
+async function dbAllFaces(){try{const db=await openDB();return new Promise((res)=>{const req=db.transaction(STORE_FACES).objectStore(STORE_FACES).getAll();req.onsuccess=()=>res(req.result||[]);req.onerror=()=>res([])})}catch(e){return[]}}
+async function dbDeleteFace(name){try{const db=await openDB();return new Promise((res)=>{const tx=db.transaction(STORE_FACES,'readwrite');tx.objectStore(STORE_FACES).delete(name);tx.oncomplete=res;tx.onerror=()=>res()})}catch(e){}}
+async function dbClearFaces(){try{const db=await openDB();return new Promise((res)=>{const tx=db.transaction(STORE_FACES,'readwrite');tx.objectStore(STORE_FACES).clear();tx.oncomplete=res;tx.onerror=()=>res()})}catch(e){}}
 
 // ==================== 存储配额 ====================
 async function quotaInfo(){try{if(!navigator.storage||!navigator.storage.estimate)return null;const est=await navigator.storage.estimate();return{usage:est.usage||0,quota:est.quota||0}}catch(e){return null}}
@@ -629,14 +686,86 @@ async function rescanDir(forceFull){
 }
 
 // 同步标签状态：文件名在媒体库记录中存在则恢复 tags/person/renamed
+// v4.3: 标签关联多级匹配（文件在系统文件管理器中移动/重命名后自动恢复标记）
+// 第1级：文件名精确匹配（原有）；第2级：人名前缀+文件大小；第3级：大小相等+缩略图像素相似度
+// 匹配成功后自愈：更新媒体库记录为新文件名，下次直接精确命中
 function syncTaggedStatus(){
   const libMap=new Map();
   libItems.forEach(i=>libMap.set(i.name,i));
+  const unmatchedItems=[];
   items.forEach(it=>{
     const rec=libMap.get(it.name);
-    if(rec){it.tags=rec.tags||[];it.person=rec.person||'';it.renamed=true;if(rec.savedAt)it.savedAt=rec.savedAt}
+    if(rec){it.tags=rec.tags||[];it.person=rec.person||'';it.renamed=true;if(rec.savedAt)it.savedAt=rec.savedAt;libMap.delete(it.name)}
+    else unmatchedItems.push(it);
   });
+  if(!unmatchedItems.length||!libMap.size){
+    if(unmatchedItems.length){unmatchedItems.forEach(it=>{it.tags=[];it.person='';it.renamed=false})}
+    return;
+  }
+  syncTaggedFuzzy(unmatchedItems,libMap); // 二/三级异步补充匹配
 }
+async function applyRecoveredTag(it,rec){
+  it.tags=rec.tags||[];it.person=rec.person||'';it.renamed=true;if(rec.savedAt)it.savedAt=rec.savedAt;
+  // 自愈：更新库记录指向新文件名与新路径
+  rec.name=it.name;rec.origPath=it.path||it.name;
+  try{await dbSaveMedia([rec])}catch(e){}
+  libItems.forEach((i,idx)=>{if(i.id===rec.id)libItems[idx]=rec});
+}
+async function syncTaggedFuzzy(unmatchedItems,libMap){
+  try{
+    const left=[];
+    // 第2级：人名前缀 + 文件大小（用户改名但保留人名前缀，如 张三_1.jpg → 张三_海滩.jpg）
+    for(const it of unmatchedItems){
+      let hit=null;
+      const base=getBaseName(it.name);
+      const prefix=base.split('_')[0];
+      if(prefix){
+        for(const rec of libMap.values()){ if((rec.person||'')===prefix&&Number(rec.size)===Number(it.size)){hit=rec;break} }
+      }
+      if(hit){await applyRecoveredTag(it,hit);libMap.delete(hit.name)}else left.push(it);
+    }
+    // 第3级：大小相等 + 缩略图像素相似（完全改名的文件，内容未变即能认回）
+    if(left.length&&libMap.size){
+      const bySize=new Map();
+      for(const rec of libMap.values()){const k=String(rec.size||0);if(!bySize.has(k))bySize.set(k,[]);bySize.get(k).push(rec)}
+      const stillLeft=[];
+      for(const it of left){
+        const cands=bySize.get(String(it.size||0));
+        if(!cands||!cands.length||!it.handle||it.type!=='image'){stillLeft.push(it);continue}
+        let best=null,bestScore=1e9;
+        let curPix=null;
+        for(const rec of cands){
+          if(!rec.thumb&&!(rec.img))continue;
+          if(curPix===null)curPix=await readGray64(it.handle);
+          if(!curPix){break}
+          const recPix=await dataUrlGray64(rec.thumb||rec.img);
+          if(!recPix)continue;
+          const d=grayDistance(curPix,recPix);
+          if(d<bestScore){bestScore=d;best=rec}
+        }
+        if(best&&bestScore<18){ // 阈值：平均灰度差<18/255 视为同一张图
+          await applyRecoveredTag(it,best);libMap.delete(best.name);
+        }else stillLeft.push(it);
+      }
+    }
+    renderLib();renderSetStats();
+  }catch(e){console.warn('fuzzy match error',e)}
+}
+async function readGray64(handle){
+  try{
+    const file=await handle.getFile();
+    const url=URL.createObjectURL(file);
+    try{const dataUrl=await imgToMiniDataUrl(url);return await dataUrlGray64(dataUrl)}
+    finally{URL.revokeObjectURL(url)}
+  }catch(e){return null}
+}
+async function imgToMiniDataUrl(url){
+  return new Promise(res=>{const img=new Image();img.onload=()=>{const c=document.createElement('canvas');c.width=64;c.height=64;c.getContext('2d').drawImage(img,0,0,64,64);res(c.toDataURL('image/jpeg',.5))};img.onerror=()=>res(null);img.src=url});
+}
+async function dataUrlGray64(dataUrl){
+  return new Promise(res=>{const img=new Image();img.onload=()=>{const c=document.createElement('canvas');c.width=64;c.height=64;const g=c.getContext('2d');g.drawImage(img,0,0,64,64);const d=g.getImageData(0,0,64,64).data;const out=new Uint8Array(64*64);for(let i=0;i<4096;i++){out[i]=(d[i*4]*299+d[i*4+1]*587+d[i*4+2]*114)/1000|0}res(out)};img.onerror=()=>res(null);img.src=dataUrl});
+}
+function grayDistance(a,b){let s=0;for(let i=0;i<4096;i++)s+=Math.abs(a[i]-b[i]);return s/4096}
 
 // 保存会话
 async function saveSession(){
@@ -1011,7 +1140,8 @@ function switchTab(t){
   if(_firstRun)showToast('欢迎使用离线媒体库！首次使用：① 选择照片文件夹 ② 在设置页添加你的标签');
   // v4.0：关于信息（版本+运行模式）
   const aboutEl=document.getElementById('aboutMode');
-  if(aboutEl)aboutEl.textContent='离线媒体库 v'+VERSION+'（'+(RUNTIME_MODE==='app'?'App 模式':'网页版')+'）';
+  if(aboutEl)aboutEl.textContent='拾光相册 v'+VERSION+'（'+(RUNTIME_MODE==='app'?'App 模式':'网页版')+'）';
+  bindDevEntry(); // v4.2: 版本文字连点7次进入测试反馈面板
   document.getElementById('showHidden').checked=cfg.showHidden;
   try{await loadLibrary()}catch(e){}
   await updateQuota();
@@ -1338,7 +1468,15 @@ function organizeByPerson(){
   document.getElementById('modalConfirmBtn').textContent='确认移动';
   modalCallback=async function(selectedPersons){
     if(!selectedPersons.length){showToast('未选择任何人名');return}
-    await doOrganizeByPerson(tagged.filter(i=>selectedPersons.includes(i.person)),selectedPersons);
+    const toMove=tagged.filter(i=>selectedPersons.includes(i.person));
+    // v4.2: 移动前二次确认（显示明细，可取消）
+    const willMove=toMove.filter(i=>((i.path||'').split('/')[0])!==i.person);
+    const skipCnt=toMove.length-willMove.length;
+    if(!willMove.length){showToast('所选文件均已在目标位置，无需移动');return}
+    showMoveConfirm('确认移动文件',
+      '即将把 '+willMove.length+' 个文件真实移入对应人名文件夹'+(skipCnt?'（另 '+skipCnt+' 个已在目标位置将跳过）':'')+'。如不确定请点「取消」先检查文件。',
+      selectedPersons.map(p=>{const cnt=willMove.filter(i=>i.person===p).length;return '<div class="modal-item" style="cursor:default"><div class="mi-name">📁 '+escapeHtml(p)+'/</div><div class="mi-count">'+cnt+' 个</div></div>'}).join(''),
+      async function(){await doOrganizeByPerson(toMove,selectedPersons)});
   };
   document.getElementById('modalOverlay').classList.add('show');
 }
@@ -1348,6 +1486,17 @@ function toggleModalItem(el){
   el.classList.toggle('selected',cb.checked);
 }
 function closeModal(){document.getElementById('modalOverlay').classList.remove('show');modalCallback=null;var btn=document.getElementById('modalConfirmBtn');if(btn)btn.classList.remove('danger')}
+// v4.2: 通用二次确认弹窗（复用 modalOverlay，用于移动前确认）
+function showMoveConfirm(title,desc,listHtml,onOk,okText){
+  document.getElementById('modalList').innerHTML=listHtml;
+  document.getElementById('modalTitle').textContent=title;
+  document.getElementById('modalDesc').textContent=desc;
+  const btn=document.getElementById('modalConfirmBtn');
+  btn.textContent=okText||'确认移动';
+  btn.classList.remove('danger');
+  modalCallback=onOk;
+  document.getElementById('modalOverlay').classList.add('show');
+}
 async function modalConfirm(){
   const selected=[...document.querySelectorAll('.modal-item.selected')].map(el=>el.dataset.person);
   const cb=modalCallback;
@@ -1416,7 +1565,15 @@ function organizeByPersonMedia(){
   document.getElementById('modalConfirmBtn').textContent='确认聚合';
   modalCallback=async function(selectedPersons){
     if(!selectedPersons.length){showToast('未选择任何人名');return}
-    await doOrganizeByPersonMedia(tagged.filter(i=>selectedPersons.includes(i.person)),selectedPersons);
+    const toMove=tagged.filter(i=>selectedPersons.includes(i.person));
+    // v4.2: 移动前二次确认（显示明细，可取消）；聚合目标是 人名/照片|视频 两层，顶层为人名即视为已聚合
+    const realWill=toMove.filter(i=>((i.path||'').split('/')[0])!==i.person);
+    const skipCnt=toMove.length-realWill.length;
+    if(!realWill.length){showToast('所选文件均已在目标位置，无需移动');return}
+    showMoveConfirm('确认聚合文件',
+      '即将把 '+realWill.length+' 个文件真实移入「人名/照片」「人名/视频」目录'+(skipCnt?'（另 '+skipCnt+' 个已在目标位置将跳过）':'')+'。如不确定请点「取消」先检查文件。',
+      selectedPersons.map(p=>{const ph=realWill.filter(i=>i.person===p&&i.type!=='video').length,vd=realWill.filter(i=>i.person===p&&i.type==='video').length;return '<div class="modal-item" style="cursor:default"><div class="mi-name">📁 '+escapeHtml(p)+'/</div><div class="mi-count">照片 '+ph+' · 视频 '+vd+'</div></div>'}).join(''),
+      async function(){await doOrganizeByPersonMedia(toMove,selectedPersons)},'确认聚合');
   };
   document.getElementById('modalOverlay').classList.add('show');
 }
@@ -1801,6 +1958,280 @@ function updatePreviewName(){
   const btn=document.getElementById('detailConfirm');
   if(btn)btn.disabled=!detailPerson;
 }
+// ==================== v4.3: 人脸识别（实验性：face-api.js 本地检测+聚类+组标记） ====================
+let faceModelsReady=false,faceScanning=false;
+function loadScriptOnce(src){return new Promise((res,rej)=>{if(window.faceapi)return res();const s=document.createElement('script');s.src=src;s.onload=()=>res();s.onerror=()=>rej(new Error('脚本加载失败：'+src));document.head.appendChild(s)})}
+async function ensureFaceModels(){
+  if(faceModelsReady)return true;
+  document.getElementById('faceTip').textContent='正在加载人脸模型（首次约 7MB，已内置在 App 内）…';
+  try{
+    await loadScriptOnce('face-api.min.js');
+    await Promise.all([
+      faceapi.nets.tinyFaceDetector.loadFromUri('models'),
+      faceapi.nets.faceLandmark68Net.loadFromUri('models'),
+      faceapi.nets.faceRecognitionNet.loadFromUri('models')
+    ]);
+    faceModelsReady=true;
+    document.getElementById('faceTip').textContent='模型就绪。点「🔍 扫描人脸」开始检测。';
+    return true;
+  }catch(e){
+    document.getElementById('faceTip').textContent='模型加载失败：'+(e.message||e)+'。请检查网络后重试。';
+    return false;
+  }
+}
+function openFacePanel(){
+  document.getElementById('faceOverlay').classList.add('show');
+  renderFaceGroups();
+  ensureFaceModels();
+}
+function closeFacePanel(){document.getElementById('faceOverlay').classList.remove('show')}
+async function startFaceScan(){
+  if(faceScanning)return;
+  if(!await ensureFaceModels())return;
+  const targets=items.filter(i=>i.type==='image'&&i.handle);
+  if(!targets.length){showToast('请先选择文件夹并扫描出图片');return}
+  faceScanning=true;
+  const btn=document.getElementById('faceScanBtn');btn.disabled=true;btn.textContent='⏳ 扫描中…';
+  let done=0,hit=0;
+  for(const item of targets){
+    try{
+      const htmlImg=await itemToHtmlImage(item);
+      if(htmlImg){
+        const det=await faceapi.detectSingleFace(htmlImg,new faceapi.TinyFaceDetectorOptions({inputSize:320,scoreThreshold:.5})).withFaceLandmarks().withFaceDescriptor();
+        if(det){
+          // 裁脸部小图做组展示
+          const box=det.detection.box;
+          const c=document.createElement('canvas');const s=Math.max(box.width,box.height)*1.35;
+          c.width=Math.max(32,Math.round(s));c.height=c.width;
+          const g=c.getContext('2d');
+          g.drawImage(htmlImg,box.x-s/3,box.y-s/4.6,s,s,0,0,c.width,c.height);
+          await dbPutFace({name:item.name,descriptor:Array.from(det.descriptor),faceThumb:c.toDataURL('image/jpeg',.7),path:item.path||item.name});
+          hit++;
+        }else{
+          await dbPutFace({name:item.name,descriptor:null,faceThumb:'',path:item.path||item.name});
+        }
+      }
+    }catch(e){console.warn('face detect fail',item.name,e)}
+    done++;showProgress(Math.round(done/targets.length*100));
+    document.getElementById('faceTip').textContent='扫描中 '+done+'/'+targets.length+'（检出人脸 '+hit+' 张）…';
+    if(done%8===0)await new Promise(r=>setTimeout(r,0)); // 让出主线程，页面不冻死
+  }
+  hideProgress();faceScanning=false;btn.disabled=false;btn.textContent='🔍 重新扫描';
+  showToast('扫描完成：'+hit+' 张照片检出人脸');
+  renderFaceGroups();
+}
+async function itemToHtmlImage(item){
+  try{
+    let url;
+    if(IS_NATIVE_APP&&nApi&&item.handle._rel!==undefined){url=await nUri(item.handle._rel);if(!url)return null}
+    else{const f=await item.handle.getFile();url=URL.createObjectURL(f)}
+    if(!/^(blob:|https?:|data:)/.test(url))url='https://localhost/'+url.replace(/^\/+/, ''); // App 内 capacitor-asset 协议需 https
+    return await new Promise(res=>{const img=new Image();img.onload=()=>res(img);img.onerror=()=>res(null);img.src=url});
+  }catch(e){return null}
+}
+function faceGroupsFromRecords(records){
+  const groups=[];
+  for(const rec of records){
+    if(!rec.descriptor)continue;
+    const d=rec.descriptor;
+    let best=-1,bestDist=0.48; // 欧氏距离阈值
+    for(let i=0;i<groups.length;i++){
+      for(const rep of groups[i].reps){
+        let s=0;for(let k=0;k<d.length;k++)s+=(d[k]-rep[k])*(d[k]-rep[k]);
+        const dist=Math.sqrt(s);
+        if(dist<bestDist){bestDist=dist;best=i;break}
+      }
+    }
+    if(best>=0)groups[best].members.push(rec);
+    else groups.push({reps:[d],members:[rec]});
+  }
+  // 按组大小降序
+  groups.sort((a,b)=>b.members.length-a.members.length);
+  return groups;
+}
+async function renderFaceGroups(){
+  const list=document.getElementById('faceList');
+  const stats=document.getElementById('faceStats');
+  const records=await dbAllFaces();
+  const groups=faceGroupsFromRecords(records);
+  const withFace=records.filter(r=>r.descriptor).length;
+  stats.innerHTML='<span class="ds">已扫 '+records.length+' 张</span><span class="ds" style="color:#1a7f37">检出人脸 '+withFace+' 张</span><span class="ds">分为 '+groups.length+' 组</span>';
+  if(!records.length){list.innerHTML='<div style="text-align:center;color:var(--sub);padding:36px 16px;font-size:13px;line-height:2">还没有人脸数据<br>点底部「🔍 扫描人脸」开始</div>';return}
+  if(!groups.length){list.innerHTML='<div style="text-align:center;color:var(--sub);padding:36px 16px;font-size:13px">已扫描但未检出人脸</div>';return}
+  list.innerHTML=groups.map((g,i)=>{
+    const known=g.members.map(m=>{const it=items.find(x=>x.name===m.name);return it&&it.person}).filter(Boolean);
+    const knownStr=known.length?'<span style="color:#1a7f37;font-size:12px">（含已标记：'+[...new Set(known)].join('、')+'）</span>':'';
+    return '<div class="dev-case" style="display:flex;gap:12px;align-items:center;cursor:pointer" onclick="applyFaceGroup('+i+')">'+
+      '<img src="'+g.members[0].faceThumb+'" style="width:64px;height:64px;border-radius:12px;object-fit:cover;flex:0 0 auto">'+
+      '<div style="flex:1"><div style="font-weight:700">第 '+(i+1)+' 组 · '+g.members.length+' 张'+knownStr+'</div>'+
+      '<div style="font-size:12px;color:var(--sub);margin-top:3px">点击本组 → 输入人名批量标记为 人名_序号</div></div>'+
+      '<div style="color:#bbb">›</div></div>';
+  }).join('');
+  window._faceGroups=groups;
+}
+function applyFaceGroup(gi){
+  const groups=window._faceGroups||[];
+  const g=groups[gi];
+  if(!g)return;
+  const list=document.getElementById('modalList');
+  list.innerHTML='<div class="modal-item" style="cursor:default;padding:4px 0"><input type="text" id="facePersonInput" placeholder="输入人名" style="width:100%;border:1px solid var(--line);border-radius:8px;padding:10px;font-size:15px"></div><div style="font-size:12px;color:var(--sub);margin-top:8px">将对本组 '+g.members.length+' 张照片批量重命名为 人名_序号 并保存标记</div>';
+  document.getElementById('modalTitle').textContent='标记第 '+(gi+1)+' 组';
+  document.getElementById('modalDesc').textContent='';
+  document.getElementById('modalConfirmBtn').textContent='✅ 应用到全组';
+  modalCallback=async function(){
+    const v=document.getElementById('facePersonInput').value.trim();
+    if(!v){showToast('请输入人名');return}
+    await doApplyFaceGroup(g,v);
+  };
+  document.getElementById('modalOverlay').classList.add('show');
+}
+async function doApplyFaceGroup(g,person){
+  showProgress(2);
+  let ok=0,fail=0;
+  const personFiles=g.members.map(m=>m.name);
+  for(let i=0;i<personFiles.length;i++){
+    const item=items.find(x=>x.name===personFiles[i]);
+    if(!item||!item.handle)continue;
+    try{
+      // 在父目录找一个不重名的人名_序号
+      let parent=curDir;
+      try{const p=await item.handle.getParent();if(p)parent=p}catch(e){}
+      const ext=getExt(item.name);
+      const needsSeq=(cfg.rule==='person_seq'||cfg.rule==='person_tag_seq');
+      const exists=async n=>{try{await parent.getFileHandle(n,{create:false});return true}catch(e){return false}};
+      let newName;
+      if(needsSeq){let n=1;while(await exists(person+'_'+n+ext))n++;newName=person+'_'+n+ext}
+      else{let n=1;while(true){newName=person+(n>1?'_'+n:'')+ext;if(!(await exists(newName)))break;n++}}
+      try{await item.handle.move(newName)}catch(e2){
+        const file=await item.handle.getFile();
+        const nh=await parent.getFileHandle(newName,{create:true});
+        const w=await nh.createWritable();await w.write(file);await w.close();await item.handle.remove();item.handle=nh;
+      }
+      thumbCache.delete(item.name);
+      item.name=newName;
+      item.person=person;item.tags=[];item.renamed=true;item.savedAt=Date.now();
+      try{item.handle=await parent.getFileHandle(newName)}catch(e){}
+      if(item.path){const pp=item.path.split('/');pp[pp.length-1]=newName;item.path=pp.join('/')}
+      const idx=recentNames.indexOf(person);if(idx>=0)recentNames.splice(idx,1);
+      recentNames.unshift(person);if(recentNames.length>(cfg.recentNameLimit||5))recentNames.length=(cfg.recentNameLimit||5);
+      localStorage.setItem('recent_names_v34',JSON.stringify(recentNames));
+      const libRec={id:'lib'+Date.now()+'_'+Math.random().toString(36).slice(2,6),name:item.name,person,tags:[],date:'',type:item.type,size:item.size,img:'',thumb:'',origPath:item.path,renamed:true,savedAt:item.savedAt};
+      await dbSaveMedia([libRec]);
+      const ei=libItems.findIndex(x=>x.name===item.name);if(ei>=0)libItems[ei]=libRec;else libItems.push(libRec);
+      // 人脸库记录同步到新名（先删旧名再写新名，避免残留）
+      try{const recs=await dbAllFaces();const fr=recs.find(r=>r.name===personFiles[i]);if(fr){const oldName=fr.name;fr.name=item.name;await dbPutFace(fr);await dbDeleteFace(oldName)}}catch(e){}
+      ok++;
+    }catch(e){console.warn('face apply fail',personFiles[i],e);fail++}
+    showProgress(Math.round(2+(i+1)/personFiles.length*96));
+  }
+  await saveSession();hideProgress();
+  renderLib();renderSetStats();renderFaceGroups();
+  showToast('已标记 '+ok+' 张为「'+person+'」'+(fail?'，失败 '+fail+' 张':''));
+}
+async function clearFaceData(){
+  await dbClearFaces();renderFaceGroups();showToast('已清空人脸库');
+}
+
+// ==================== v4.2: 开发者模式（测试反馈面板，替代 Excel 回填） ====================
+const DEV_TEST_CASES=[
+ {id:'A01',mod:'安装',name:'APK安装',expect:'安装成功，桌面出现「离线媒体库」图标，打开为全屏App（无浏览器地址栏）'},
+ {id:'A02',mod:'首次使用',name:'权限引导',expect:'选文件夹时弹照片/视频权限→允许；若提示「所有文件访问」按引导到系统设置开启后重试通过'},
+ {id:'A03',mod:'目录选择',name:'App版目录选择器',expect:'出现相册/图片/视频/下载快捷入口+目录导航+面包屑，可选到子文件夹'},
+ {id:'A04',mod:'扫描',name:'扫描媒体',expect:'进度条正常，扫描完成提示N个文件，图片/视频缩略图正常显示'},
+ {id:'D01',mod:'图片预览',name:'详情页大图',expect:'大图秒开；选人名→标签→确认后提示「已重命名：人名-N.jpg」'},
+ {id:'D02',mod:'重命名',name:'标记重命名+自动转JPG',expect:'webp/png图片确认后变成 人名_1.jpg，文件管理器中可见新文件名'},
+ {id:'D03',mod:'视频',name:'视频详情播放',expect:'视频可直接播放不卡顿；视频标记重命名后正常'},
+ {id:'D04',mod:'整理',name:'移动前确认弹窗',expect:'按整理→勾选人名→确认→出现「即将移动N个文件」预览；点【取消】文件不移动；重新执行点【确认】后才真正移动到 人名/ 目录'},
+ {id:'D05',mod:'聚合',name:'照片视频聚合（含确认）',expect:'同样先弹确认（显示照片/视频数量）；确认后移动到 人名/照片 和 人名/视频 目录'},
+ {id:'D06',mod:'删除',name:'删除文件',expect:'详情页🗑️删除→确认后文件真实消失，媒体库同步刷新'},
+ {id:'S01',mod:'会话恢复',name:'杀进程重开',expect:'完全退出App重开，自动恢复上次文件夹和标记状态，无需重新授权'},
+ {id:'S02',mod:'数据迁移',name:'JSON导出导入',expect:'设置页导出JSON→清空媒体库→导入后标签人名全部恢复'},
+ {id:'S03',mod:'新用户纯净',name:'新装状态',expect:'无任何预置标签/人名，显示欢迎提示'},
+ {id:'U01',mod:'更新检查',name:'App内检查更新',expect:'设置页点「🔔检查更新」显示当前版本状态（或新版下载链接）'},
+ {id:'U02',mod:'手机兼容',name:'布局适配',expect:'2Tab（媒体库/设置）布局无错位、无文字遮挡'},
+ {id:'F01',mod:'反馈面板',name:'本面板-复制功能',expect:'点「📋复制反馈」提示已复制；粘贴到微信能发出完整汇总文本'},
+ {id:'W01',mod:'网页版回归',name:'Chrome网页版',expect:'https://lyiyu.github.io/predestined/offline_media_lib.html 功能正常，旧标签人名保留'}
+];
+const DEV_STATE_KEY='dev_test_feedback_v42';
+function devGetState(){try{const s=JSON.parse(localStorage.getItem(DEV_STATE_KEY));if(s&&s.cases)return s}catch(e){}return{cases:{}}}
+function devSetCase(id,status,note){
+  const s=devGetState();
+  if(!s.cases[id])s.cases[id]={status:'todo',note:''};
+  if(status!==undefined)s.cases[id].status=status;
+  if(note!==undefined)s.cases[id].note=note;
+  s.updatedAt=Date.now();
+  localStorage.setItem(DEV_STATE_KEY,JSON.stringify(s));
+  devRenderStats();
+}
+function openDevPanel(){renderDevPanel();document.getElementById('devOverlay').classList.add('show')}
+function closeDevPanel(){document.getElementById('devOverlay').classList.remove('show')}
+function renderDevPanel(){
+  const s=devGetState();
+  document.getElementById('devList').innerHTML=DEV_TEST_CASES.map(c=>{
+    const rec=s.cases[c.id]||{status:'todo',note:''};
+    const btn=(st,lbl)=>'<button class="sbtn '+st+(rec.status===st?' on':'')+'" onclick="devSetCase(\''+c.id+'\',\''+st+'\');renderDevPanel()">'+lbl+'</button>';
+    return '<div class="dev-case">'+
+      '<div class="dc-id">'+c.id+' · '+c.mod+'</div>'+
+      '<div class="dc-name">'+c.name+'</div>'+
+      '<div class="dc-expect">预期：'+c.expect+'</div>'+
+      '<div class="dc-btns">'+btn('pass','✅ 通过')+btn('fail','❌ 不通过')+btn('todo','⏳ 未测')+'</div>'+
+      '<textarea placeholder="备注（可选）：问题现象 / 建议" onchange="devSetCase(\''+c.id+'\',undefined,this.value)">'+escapeHtml(rec.note||'')+'</textarea>'+
+    '</div>';
+  }).join('');
+  devRenderStats();
+}
+function devRenderStats(){
+  const s=devGetState();
+  let pass=0,fail=0,todo=0;
+  DEV_TEST_CASES.forEach(c=>{const st=(s.cases[c.id]&&s.cases[c.id].status)||'todo';if(st==='pass')pass++;else if(st==='fail')fail++;else todo++});
+  document.getElementById('devStats').innerHTML='<span class="ds" style="color:#1a7f37">✅ 通过 '+pass+'</span><span class="ds" style="color:#c53030">❌ 不通过 '+fail+'</span><span class="ds">⏳ 未测 '+todo+'</span><span class="ds" style="color:#555">共 '+DEV_TEST_CASES.length+' 项</span>';
+}
+function devClear(){if(confirm('清空全部测试记录？')){localStorage.removeItem(DEV_STATE_KEY);renderDevPanel();showToast('已清空')}}
+function devBuildSummary(){
+  const s=devGetState();
+  let pass=0,fail=0,todo=0;
+  DEV_TEST_CASES.forEach(c=>{const st=(s.cases[c.id]&&s.cases[c.id].status)||'todo';if(st==='pass')pass++;else if(st==='fail')fail++;else todo++});
+  const lines=[];
+  lines.push('【离线媒体库 v'+VERSION+' 测试反馈】');
+  lines.push('时间：'+new Date().toLocaleString('zh-CN'));
+  lines.push('环境：'+(RUNTIME_MODE==='app'?'App':'网页')+'｜媒体目录：'+(curDirName||'未选择'));
+  lines.push('汇总：通过 '+pass+' / 不通过 '+fail+' / 未测 '+todo+'（共'+DEV_TEST_CASES.length+'项）');
+  lines.push('──────────────');
+  DEV_TEST_CASES.forEach(c=>{
+    const rec=s.cases[c.id]||{};
+    const mark=rec.status==='pass'?'✅':(rec.status==='fail'?'❌':'⏳');
+    lines.push(mark+' '+c.id+' ['+c.mod+'] '+c.name);
+    if(rec.note&&String(rec.note).trim())lines.push('　　备注：'+String(rec.note).trim());
+  });
+  return lines.join('\n');
+}
+async function devCopy(){
+  const txt=devBuildSummary();
+  let ok=false;
+  try{await navigator.clipboard.writeText(txt);ok=true}catch(e){}
+  if(!ok){
+    try{
+      const ta=document.createElement('textarea');ta.value=txt;ta.style.position='fixed';ta.style.opacity='0';
+      document.body.appendChild(ta);ta.focus();ta.select();
+      ok=document.execCommand('copy');document.body.removeChild(ta);
+    }catch(e2){}
+  }
+  showToast(ok?'已复制反馈内容，粘贴到微信发给助手即可':'复制失败，请重试或手动长按记录');
+}
+// 入口：设置页「关于」卡片版本文字连点 7 次（第 4 次起有提示）
+let _vTapCt=0,_vTapTimer=null;
+function bindDevEntry(){
+  const el=document.getElementById('aboutMode');
+  if(!el)return;
+  el.addEventListener('click',function(){
+    _vTapCt++;
+    if(_vTapTimer)clearTimeout(_vTapTimer);
+    _vTapTimer=setTimeout(function(){_vTapCt=0},2500);
+    if(_vTapCt>=7){_vTapCt=0;openDevPanel();showToast('已进入测试反馈面板')}
+    else if(_vTapCt>=4){showToast('再点 '+(7-_vTapCt)+' 次进入测试反馈面板')}
+  });
+}
+
 // ==================== v4.1: 原生文件系统适配层（Capacitor Android） ====================
 // 思路：为 @capacitor/filesystem 构造与浏览器 FileSystemHandle 同接口的「伪句柄」，
 // 业务代码（walkDir/detailConfirm/organize/delete/restoreHandles）零改动。
