@@ -1,5 +1,5 @@
 {
-  "version": "4.5.0",
-  "apkUrl": "https://github.com/Lyiyu/predestined/releases/download/v4.5.0/shiguang-v4.5.0.apk",
-  "note": "v4.5.0 新增侧边栏导航；AVI 等格式一键用系统播放器打开；GIF 动图识别入库（详情页原生播放动画）"
+  "version": "4.5.1",
+  "apkUrl": "https://github.com/Lyiyu/predestined/releases/download/v4.5.1/shiguang-v4.5.1.apk",
+  "note": "v4.5.1 修复视频全屏后右上角被状态栏遮挡：正确实现 HTML5 全屏（沉浸隐藏状态栏 + 自动横屏 + 返回键先退全屏）"
 }
