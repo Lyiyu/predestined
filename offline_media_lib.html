@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
-<title>拾光相册 v4.3.6</title>
+<title>拾光相册 v4.3.7</title>
 <style>
 *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 :root{
@@ -265,7 +265,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei
 <div class="topbar">
   <h1>📷 拾光相册</h1>
   <button class="topbar-btn" onclick="location.reload()" title="刷新页面（用于重新授权文件夹）">🔄</button>
-  <span class="tag">v4.3.6</span>
+  <span class="tag">v4.3.7</span>
 </div>
 
 <div class="progress-bar" id="progressBar"><i id="progressFill"></i></div>
@@ -504,7 +504,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei
 
 <script>
 // ==================== 状态 ====================
-const VERSION='4.3.6';
+const VERSION='4.3.7';
 const DB_NAME='offline_media_lib_v34',DB_VERSION=6;
 const STORE_MEDIA='media',STORE_THUMB='thumbs',STORE_SESSION='session',STORE_FACES='faces';
 let cfg={rule:'person_seq',tags:[],dateFormat:'YYYYMMDD',compress:true,maxCount:2000,showHidden:false,recentNameLimit:5};
@@ -687,9 +687,9 @@ async function rescanDir(forceFull){
   renderLib();
   showProgress(100);
   setTimeout(hideProgress,500);
-  // v4.3.6: App 模式扫出 0 个文件时引导去诊断（区别于"文件夹真的是空的"）
+  // v4.3.6: App 模式扫出 0 个文件时引导去诊断（区别于"文件夹真的是空的"）；v4.3.7: 指向更常见根因
   if(!items.length&&IS_NATIVE_APP){
-    showToast('扫描完成：0 个文件。若该文件夹确有照片/视频，请到 设置 → 存储诊断 生成报告发给我',6000);
+    showToast('扫描完成：0 个文件。多半是缺「所有文件访问」权限——重新点「选择文件夹」会自动引导开启；或到 设置 → 存储诊断',6000);
   }else{
     showToast('扫描完成：'+items.length+' 个文件');
   }
@@ -2431,6 +2431,21 @@ if(nApi){
   async function nRequestMediaPerms(){
     try{await nApi.requestPermissions()}catch(e){}
   }
+  // v4.3.7: 「所有文件访问」（MANAGE_EXTERNAL_STORAGE）检测与一键跳转。
+  // 真机诊断实证：Android 11+ 仅媒体权限时，File API 枚举按 MediaProvider 索引过滤，
+  // 隐藏目录（.1/ 等）中的媒体不被索引 → readdir 成功但 0 项 → "扫描完成：0 个文件"。
+  // 插件权限门在 Android 13+ 恒放行，checkPermissions 的 granted 不反映任何真实权限，
+  // 必须用原生 Environment.isExternalStorageManager() 检测。
+  function nAllFilesApi(){try{return (window.Capacitor.Plugins||{}).AllFilesAccess||null}catch(e){return null}}
+  async function nCheckAllFiles(){
+    const p=nAllFilesApi();if(!p)return true; // 插件不可用（异常环境）→ 放行，不阻塞旧流程
+    try{const r=await p.check();return !!(r&&r.granted)}catch(e){return true}
+  }
+  async function nOpenAllFilesSettings(){
+    const p=nAllFilesApi();
+    if(!p){showToast('请按上方步骤手动打开设置',5000);return}
+    try{await p.open();showToast('开启后返回本 App，点「我已开启，重试」',5000)}catch(e){showToast('无法跳转，请按上方步骤手动操作')}
+  }
   async function nCheckWriteAccess(){
     try{
       const probe='Download/.medialib_probe_'+Date.now();
@@ -2442,7 +2457,8 @@ if(nApi){
   }
   function nShowAllFilesGuide(retryFn){
     const list=document.getElementById('modalList');
-    list.innerHTML='<div style="font-size:13px;line-height:2;color:#444">需要「所有文件访问」权限：<br>1. 打开手机「设置」<br>2. 「应用管理」→「拾光相册」<br>3. 「权限」→「所有文件访问」<br>4. 选「<b>允许管理所有文件</b>」<br>5. 返回点「我已开启，重试」</div>';
+    // v4.3.7: 一键跳转系统「所有文件访问」设置页（原生插件 AllFilesAccess.open），不再让用户手动找
+    list.innerHTML='<div style="font-size:13px;line-height:2;color:#444">需要「<b>所有文件访问</b>」权限：<br>仅开“照片和视频”权限时，部分文件夹（如点开头的隐藏目录）里的照片会被系统隐藏，导致扫描不到。<br><br>1. 点下方「一键去开启」<br>2. 在系统页面打开「<b>允许管理所有文件</b>」<br>3. 返回本 App，点「我已开启，重试」<br><br><button class="btn-sm" style="background:var(--primary);color:#fff;border-color:var(--primary)" onclick="nOpenAllFilesSettings()">🚀 一键去开启</button></div>';
     document.getElementById('modalTitle').textContent='🔐 需要文件权限';
     document.getElementById('modalDesc').textContent='仅用于整理你手机里的照片和视频，不上传任何数据。';
     const btn=document.getElementById('modalConfirmBtn');
@@ -2456,11 +2472,16 @@ if(nApi){
   // v4.3.3: 目录选择器"显示隐藏文件夹"开关（默认关，状态记忆到 localStorage）
   function nPickerShowHidden(){return localStorage.getItem('nPickerShowHidden')==='1'}
   function nTogglePickerHidden(){localStorage.setItem('nPickerShowHidden',nPickerShowHidden()?'0':'1');renderNativePicker(nPickState&&nPickState.rel||'')}
-  function nativePickDir(){
+  // v4.3.7: 选择文件夹前先检查「所有文件访问」，未开启直接弹引导（含一键跳转），避免扫描出 0 个文件后才发现
+  async function nativePickDir(){
     showToast('正在打开目录选择器…');
-    nRequestMediaPerms().then(()=>{
-      nBeginPick('');
-    });
+    try{await nRequestMediaPerms()}catch(e){}
+    const allFiles=await nCheckAllFiles();
+    if(!allFiles){
+      nShowAllFilesGuide(function(){nativePickDir()});
+      return;
+    }
+    nBeginPick('');
   }
   function nBeginPick(rel){
     nPickState={rel,cb:null};
@@ -2551,6 +2572,8 @@ if(nApi){
   // v4.3.3: 块外全局代码（loadThumbForCell 缩略图 / 详情页大图）引用这两个块内函数 → 同样必须挂载
   window.nUri=nUri;
   window.nThumbNative=nThumbNative;
+  // v4.3.7: 权限引导弹窗 inline onclick 引用，同样必须挂 window（v4.3.3 规则）
+  window.nOpenAllFilesSettings=nOpenAllFilesSettings;
 
   // 覆盖 restoreSession（原生：路径持久化在 localStorage，无需授权弹窗）
   const _origRestoreSession=restoreSession;
@@ -2574,6 +2597,9 @@ if(nApi){
     document.getElementById('libArea').style.display='block';
     syncTaggedStatus();
     renderLib();
+    // v4.3.7: 会话恢复后检测「所有文件访问」——未开启时主动弹引导（重试=重新扫描），
+    // 避免用户重启 App 后面对 0 个文件却无任何提示的死角
+    if(!(await nCheckAllFiles()))nShowAllFilesGuide(function(){rescanDir(true)});
     return true;
   };
 
@@ -2594,7 +2620,8 @@ if(nApi){
     add('App版本','v'+VERSION+'（Android '+andVer+'）');
     try{const cap=window.Capacitor||{};add('平台',(cap.getPlatform&&cap.getPlatform())||'unknown');add('Capacitor运行时',((cap.VERSION&&(cap.VERSION.string||cap.VERSION.version))||'?'))}catch(e){add('平台','?')}
     add('Filesystem插件',nApi?'已加载':'未找到');
-    try{const p=await nApi.checkPermissions();add('checkPermissions',JSON.stringify(p))}catch(e){add('checkPermissions','失败：'+(e.message||e))}
+    try{const p=await nApi.checkPermissions();add('checkPermissions',JSON.stringify(p)+'（注：Android 13+ 上此项不反映真实权限）')}catch(e){add('checkPermissions','失败：'+(e.message||e))}
+    try{const af=await (window.Capacitor.Plugins||{}).AllFilesAccess.check();add('所有文件访问',af&&af.granted?'✅ 已开启':'❌ 未开启（隐藏目录/非索引媒体会被系统过滤成空——去「选择文件夹」会自动引导开启）')}catch(e){add('所有文件访问','插件不可用（'+(e.message||e)+'）')}
     const root=localStorage.getItem('nativeRootRel');
     add('所选目录',root===null?'（尚未选择文件夹）':(root===''?'（整个内部存储）':root));
     add('当前扫描结果',items.length+' 个文件');
