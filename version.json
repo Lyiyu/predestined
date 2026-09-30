@@ -1,5 +1,5 @@
 {
-  "version": "4.6.0",
-  "apkUrl": "https://github.com/Lyiyu/predestined/releases/download/v4.6.0/shiguang-v4.6.0.apk",
-  "note": "v4.6.0 新增收藏博主功能（小红书/抖音/微博/X主页+备注）；修复全屏视频页面闪烁；返回键优先关闭侧边栏/弹窗"
+  "version": "4.7.0",
+  "apkUrl": "https://github.com/Lyiyu/predestined/releases/download/v4.7.0/shiguang-v4.7.0.apk",
+  "note": "v4.7.0 鲁棒性大修：消除全部 onclick XSS 注入、blob URL 生命周期管理、扫描防重入+错误收集、localStorage 安全封装、importJson 校验+重置、查重已删id清理"
 }
