@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
-<title>拾光相册 v4.3.5</title>
+<title>拾光相册 v4.3.6</title>
 <style>
 *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 :root{
@@ -265,7 +265,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei
 <div class="topbar">
   <h1>📷 拾光相册</h1>
   <button class="topbar-btn" onclick="location.reload()" title="刷新页面（用于重新授权文件夹）">🔄</button>
-  <span class="tag">v4.3.5</span>
+  <span class="tag">v4.3.6</span>
 </div>
 
 <div class="progress-bar" id="progressBar"><i id="progressFill"></i></div>
@@ -400,6 +400,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei
       <div class="sub" id="aboutMode" style="margin:0;font-size:13px;color:#333">检测中…</div>
       <div class="sub" style="margin-top:6px">所有数据仅保存在本机浏览器（IndexedDB/localStorage），不上传云端。清除浏览器数据或换机前，请先导出 JSON 备份。</div>
       <button class="btn-ghost" onclick="checkUpdate()" style="margin-top:8px">🔔 检查更新</button>
+      <button class="btn-ghost" onclick="runStorageDiag()" style="margin-top:8px">🔧 存储诊断（扫描不出文件时点这里）</button>
     </div>
   </div>
 </div>
@@ -503,7 +504,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei
 
 <script>
 // ==================== 状态 ====================
-const VERSION='4.3.5';
+const VERSION='4.3.6';
 const DB_NAME='offline_media_lib_v34',DB_VERSION=6;
 const STORE_MEDIA='media',STORE_THUMB='thumbs',STORE_SESSION='session',STORE_FACES='faces';
 let cfg={rule:'person_seq',tags:[],dateFormat:'YYYYMMDD',compress:true,maxCount:2000,showHidden:false,recentNameLimit:5};
@@ -686,7 +687,12 @@ async function rescanDir(forceFull){
   renderLib();
   showProgress(100);
   setTimeout(hideProgress,500);
-  showToast('扫描完成：'+items.length+' 个文件');
+  // v4.3.6: App 模式扫出 0 个文件时引导去诊断（区别于"文件夹真的是空的"）
+  if(!items.length&&IS_NATIVE_APP){
+    showToast('扫描完成：0 个文件。若该文件夹确有照片/视频，请到 设置 → 存储诊断 生成报告发给我',6000);
+  }else{
+    showToast('扫描完成：'+items.length+' 个文件');
+  }
 }
 
 // 同步标签状态：文件名在媒体库记录中存在则恢复 tags/person/renamed
@@ -787,7 +793,7 @@ function fmtDate(d){const y=d.getFullYear(),m=String(d.getMonth()+1).padStart(2,
 function getExt(name){const i=name.lastIndexOf('.');return i>=0?name.slice(i):''}
 function getBaseName(name){const i=name.lastIndexOf('.');return i>=0?name.slice(0,i):name}
 // buildName 已移至文件末尾 v3.2 区域（支持标签全量存储：文件名仅含首个标签）
-function showToast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');clearTimeout(window._toastTimer);window._toastTimer=setTimeout(()=>t.classList.remove('show'),3000)}
+function showToast(msg,dur){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');clearTimeout(window._toastTimer);window._toastTimer=setTimeout(()=>t.classList.remove('show'),dur||3000)}
 
 // ==================== 缩略图懒加载 ====================
 let ioObserver=null;
@@ -2436,7 +2442,7 @@ if(nApi){
   }
   function nShowAllFilesGuide(retryFn){
     const list=document.getElementById('modalList');
-    list.innerHTML='<div style="font-size:13px;line-height:2;color:#444">需要「所有文件访问」权限：<br>1. 打开手机「设置」<br>2. 「应用管理」→「离线媒体库」<br>3. 「权限」→「所有文件访问」<br>4. 选「<b>允许管理所有文件</b>」<br>5. 返回点「我已开启，重试」</div>';
+    list.innerHTML='<div style="font-size:13px;line-height:2;color:#444">需要「所有文件访问」权限：<br>1. 打开手机「设置」<br>2. 「应用管理」→「拾光相册」<br>3. 「权限」→「所有文件访问」<br>4. 选「<b>允许管理所有文件</b>」<br>5. 返回点「我已开启，重试」</div>';
     document.getElementById('modalTitle').textContent='🔐 需要文件权限';
     document.getElementById('modalDesc').textContent='仅用于整理你手机里的照片和视频，不上传任何数据。';
     const btn=document.getElementById('modalConfirmBtn');
@@ -2479,11 +2485,11 @@ if(nApi){
     // v4.3.3: 显示隐藏文件夹开关（切到当前层重新渲染）
     html+='<div style="margin-bottom:8px"><span class="nchip'+(showHidden?' on':'')+'" style="cursor:pointer" onclick="nTogglePickerHidden()">'+(showHidden?'👁 已显示隐藏':'👁 显示隐藏')+'</span></div>';
     let entries=[];
-    let readErr=false;
-    try{entries=await nReaddir(rel)}catch(e){readErr=true}
+    let readErr=false,readErrMsg='';
+    try{entries=await nReaddir(rel)}catch(e){readErr=true;readErrMsg=(e&&e.message)||String(e)}
     if(readErr){
-      // v4.3.3: 读取失败不再伪装成"无子文件夹"，给出明确指引
-      html+='<div style="color:#c53030;font-size:13px;line-height:1.9;padding:8px 0">⚠️ 无法读取该目录<br><small>通常是未授予「所有文件访问」权限</small></div><div style="margin-top:6px"><button class="btn-sm" style="background:var(--primary);color:#fff;border-color:var(--primary)" onclick="nPickPermGuide()">🔐 去开启权限</button></div>';
+      // v4.3.3: 读取失败不再伪装成"无子文件夹"，给出明确指引；v4.3.6: 附上原始错误信息便于定位
+      html+='<div style="color:#c53030;font-size:13px;line-height:1.9;padding:8px 0">⚠️ 无法读取该目录<br><small>通常是未授予「所有文件访问」权限<br>错误详情：'+escapeHtml(readErrMsg)+'</small></div><div style="margin-top:6px"><button class="btn-sm" style="background:var(--primary);color:#fff;border-color:var(--primary)" onclick="nPickPermGuide()">🔐 去开启权限</button></div>';
     }else{
       let dirs=entries.filter(e=>e.isDir).map(e=>e.name).sort((a,b)=>a.localeCompare(b,'zh'));
       if(!showHidden)dirs=dirs.filter(d=>!d.startsWith('.'));
@@ -2575,6 +2581,65 @@ if(nApi){
   const _btnReauth=document.getElementById('btnReauth');
   if(_btnReauth)_btnReauth.style.display='none';
   window.reauthorizeDir=async function(){showToast('App 模式无需恢复授权，重新选择文件夹即可')};
+
+  // -------- v4.3.6: 存储诊断（扫描不出文件时一键生成运行时报告，复制回传给助手定位） --------
+  // 背景：真机 v4.3.5 权限已手动开启仍扫描不到 → 权限门在 Android 13+ 恒放行（isStoragePermissionGranted
+  // 的 SDK_INT>=TIRAMISU -> true），瓶颈在 ION FILE 库的路径解析/目录枚举。需要真机运行时数据定位。
+  let _diagReport='';
+  async function runStorageDiag(){
+    const L=[];
+    const add=(k,v)=>L.push(k+'：'+v);
+    const andVer=(navigator.userAgent.match(/Android\s([\d.]+)/i)||[])[1]||'?';
+    add('时间',new Date().toLocaleString());
+    add('App版本','v'+VERSION+'（Android '+andVer+'）');
+    try{const cap=window.Capacitor||{};add('平台',(cap.getPlatform&&cap.getPlatform())||'unknown');add('Capacitor运行时',((cap.VERSION&&(cap.VERSION.string||cap.VERSION.version))||'?'))}catch(e){add('平台','?')}
+    add('Filesystem插件',nApi?'已加载':'未找到');
+    try{const p=await nApi.checkPermissions();add('checkPermissions',JSON.stringify(p))}catch(e){add('checkPermissions','失败：'+(e.message||e))}
+    const root=localStorage.getItem('nativeRootRel');
+    add('所选目录',root===null?'（尚未选择文件夹）':(root===''?'（整个内部存储）':root));
+    add('当前扫描结果',items.length+' 个文件');
+    // getUri 先行：拿到所选目录被 ION 库解析出的真实绝对路径/URI 形态
+    let absPath='';
+    if(root!==null){
+      try{const u=await nApi.getUri({path:root||'.',directory:N_DIR});absPath=String(u.uri||'').replace(/^file:\/\//,'');add('getUri 所选目录',String(u.uri||'?'))}catch(e){add('getUri 所选目录','失败：'+(e.message||e))}
+    }
+    // readdir 多形态探测：全部取插件原始返回，看真实 type 取值与条数
+    const probes=[
+      {lbl:"readdir 根目录 path=''",opt:{path:'',directory:N_DIR}},
+      {lbl:"readdir 根目录 path='.'",opt:{path:'.',directory:N_DIR}}
+    ];
+    if(root!==null)probes.push({lbl:"readdir 所选目录",opt:{path:root||'.',directory:N_DIR}});
+    if(absPath&&absPath.startsWith('/'))probes.push({lbl:'readdir 绝对路径 '+absPath,opt:{path:absPath}});
+    for(const pr of probes){
+      try{
+        const r=await nApi.readdir(pr.opt);
+        const fl=r.files||[];
+        const dirs=fl.filter(f=>String(f.type).toLowerCase().startsWith('direc')||f.type===2).length;
+        add(pr.lbl,'成功：'+fl.length+' 项（'+dirs+' 个文件夹）');
+        add('  样例',fl.slice(0,8).map(f=>f.name+'['+f.type+']').join('、')||'（空列表）');
+      }catch(e){add(pr.lbl,'失败：'+(e.message||JSON.stringify(e)))}
+    }
+    add('写权限探测',(await nCheckWriteAccess())?'可写':'不可写（需「所有文件访问」）');
+    _diagReport=L.join('\n');
+    // 复用 modalOverlay 展示报告
+    document.getElementById('modalTitle').textContent='🔧 存储诊断报告';
+    document.getElementById('modalDesc').textContent='点击下方按钮复制报告，粘贴到微信发给助手即可';
+    document.getElementById('modalList').innerHTML='<pre style="font-size:12px;line-height:1.7;white-space:pre-wrap;word-break:break-all;color:#333;margin:0">'+escapeHtml(_diagReport)+'</pre>';
+    const btn=document.getElementById('modalConfirmBtn');
+    btn.style.display='block';btn.classList.remove('danger');btn.textContent='📋 复制报告';
+    modalCallback=async function(){
+      let ok=false;
+      try{await navigator.clipboard.writeText(_diagReport);ok=true}catch(e){
+        try{const ta=document.createElement('textarea');ta.value=_diagReport;ta.style.position='fixed';ta.style.opacity='0';document.body.appendChild(ta);ta.select();ok=document.execCommand('copy');document.body.removeChild(ta)}catch(e2){ok=false}
+      }
+      showToast(ok?'已复制，可粘贴发给助手':'复制失败，请长按报告文字手动复制');
+    };
+    document.getElementById('modalOverlay').classList.add('show');
+  }
+  window.runStorageDiag=runStorageDiag;
 }
+
+// v4.3.6: 网页版没有 Filesystem 插件 → 诊断按钮给出提示（块内挂载在 App 模式已完成）
+if(!window.runStorageDiag)window.runStorageDiag=function(){showToast('存储诊断仅 App 模式可用')};
 
 </script>
