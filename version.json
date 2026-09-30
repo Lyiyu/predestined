@@ -1,5 +1,5 @@
 {
-  "version": "4.1.0",
-  "apkUrl": "https://github.com/Lyiyu/predestined/releases/download/v4.1.0/medialib-v4.1.0-debug.apk",
-  "note": "v4.1 首个 App 版本：原生文件适配层 + 2Tab + 更新检查"
+  "version": "4.3.0",
+  "apkUrl": "https://github.com/Lyiyu/predestined/releases/download/v4.3.0/shiguang-v4.3.0.apk",
+  "note": "v4.3 拾光相册：人脸识别分组 + 文件改名后标签自动恢复 + 新图标"
 }
