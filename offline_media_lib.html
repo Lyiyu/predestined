@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
-<title>拾光相册 v4.6.0</title>
+<title>拾光相册 v4.7.0</title>
 <style>
 *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 :root{
@@ -284,7 +284,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei
   <button class="topbar-btn" onclick="toggleDrawer()" title="菜单" style="font-size:18px;padding:2px 10px">☰</button>
   <h1>📷 拾光相册</h1>
   <button class="topbar-btn" onclick="location.reload()" title="刷新页面（用于重新授权文件夹）">🔄</button>
-  <span class="tag">v4.6.0</span>
+  <span class="tag">v4.7.0</span>
 </div>
 
 <div class="progress-bar" id="progressBar"><i id="progressFill"></i></div>
@@ -577,7 +577,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei
 
 <script>
 // ==================== 状态 ====================
-const VERSION='4.6.0';
+const VERSION='4.7.0';
 const DB_NAME='offline_media_lib_v34',DB_VERSION=6;
 const STORE_MEDIA='media',STORE_THUMB='thumbs',STORE_SESSION='session',STORE_FACES='faces';
 let cfg={rule:'person_seq',tags:[],dateFormat:'YYYYMMDD',compress:true,maxCount:2000,showHidden:false,recentNameLimit:5};
@@ -596,6 +596,34 @@ let detailIdx=-1;
 let detailPerson='',detailTags=new Set(),detailDateStr='';
 let libSelectedTags=new Set();
 let sortDesc=true; // v3.4: 排序方向，true=降序（默认与 v3.3 一致），false=升序
+let _scanToken=0; // v4.7: rescanDir 防重入——并发扫描时旧扫描作废
+
+// ==================== v4.7: 安全工具（localStorage 写入封装 + blob URL 生命周期管理） ====================
+// localStorage 写入安全封装：配额满/隐私模式不中断用户操作，静默失败+一次性提示
+const _lsWarned=new Set();
+function storeSet(key,val){
+  try{localStorage.setItem(key,typeof val==='string'?val:JSON.stringify(val));return true}
+  catch(e){
+    if(!_lsWarned.has(key)){_lsWarned.add(key);try{showToast('本地存储失败（空间可能已满），操作可能不被保存',5000)}catch(e2){}}
+    return false;
+  }
+}
+function storeGet(key,def){
+  try{const v=localStorage.getItem(key);return v===null?def:v}catch(e){return def}
+}
+// blob URL 统一管理：登记-释放模式，closeDetail/切页时统一 revoke 防内存泄漏
+const _blobRegistry=new Set();
+function blobUrl(obj){
+  const u=URL.createObjectURL(obj);
+  _blobRegistry.add(u);
+  return u;
+}
+function revokeBlobUrl(u){
+  if(u&&_blobRegistry.has(u)){_blobRegistry.delete(u);try{URL.revokeObjectURL(u)}catch(e){}}
+}
+function revokeAllBlobUrls(){
+  [..._blobRegistry].forEach(revokeBlobUrl);
+}
 
 // ==================== IndexedDB ====================
 function openDB(){
@@ -722,7 +750,7 @@ const VID_PREVIEW_RE=/\.(mp4|m4v|mov|webm|3gp|3g2|mkv)$/i;
 // v4.5.3: 音频入库识别 + WebView 可播音频（amr 不入预览白名单，走占位+选择播放器）
 const AUDIO_EXT_RE=/\.(mp3|wav|flac|aac|m4a|ogg|opus|amr)$/i;
 const AUDIO_PREVIEW_RE=/\.(mp3|wav|ogg|opus|flac|m4a|aac)$/i;
-async function walkDir(handle,pathArr,out){
+async function walkDir(handle,pathArr,out,errAcc){
   try{
     for await(const entry of handle.values()){
       const name=entry.name;
@@ -731,7 +759,7 @@ async function walkDir(handle,pathArr,out){
       const p=pathArr.concat(name);
       if(entry.kind==='directory'){
         if(name==='Android'||name==='.thumbnails')continue;
-        await walkDir(entry,p,out);
+        await walkDir(entry,p,out,errAcc);
       }else{
         const lower=name.toLowerCase(); // 必须声明——丢失此行会导致 ReferenceError 被外层 catch 静默吞掉，扫描 0 产出
         const isImg=/(\.jpg|\.jpeg|\.png|\.webp|\.heic|\.gif)$/i.test(lower); // v4.5: .gif 动图入库（详情页原生播放动画，缩略图取首帧）
@@ -741,7 +769,10 @@ async function walkDir(handle,pathArr,out){
         out.push({id:'f'+Math.random().toString(36).slice(2,9),name,type:isVid?'video':(isAud?'audio':'image'),size:0,path:p.join('/'),handle:entry,hidden:isHidden,lastModified:0,savedAt:0,tags:[],person:'',renamed:false});
       }
     }
-  }catch(e){}
+  }catch(e){
+    // v4.7: 不再静默吞错——收集错误路径供扫描结束后提示（"扫描 0 个文件"的可诊断性）
+    if(errAcc){try{errAcc.push((pathArr.join('/')||'根目录')+'：'+((e&&e.message)||String(e)))}catch(e2){}}
+  }
 }
 
 async function rescanDir(forceFull){
@@ -750,21 +781,27 @@ async function rescanDir(forceFull){
   const oldItems=forceFull?[]:items.slice();
   const oldMap=new Map(oldItems.map(i=>[i.name,i]));
   items=[];
-  await walkDir(curDir,[],items);
+  const scanErrs=[]; // v4.7: 收集扫描错误，不再静默吞掉
+  await walkDir(curDir,[],items,scanErrs);
+  // v4.7: 防重入 token——并发扫描时只有最新一次的写回生效
+  const myToken=++_scanToken;
   showProgress(40);
   syncTaggedStatus();
   const batchSize=20;
   for(let i=0;i<items.length;i+=batchSize){
-    const batch=items.slice(i,i+batchSize);
+    const batch=items.slice(i,batchSize+i);
     await Promise.all(batch.map(async it=>{
       const old=oldMap.get(it.name);
       if(old&&!forceFull){it.size=old.size;it.lastModified=old.lastModified;it.savedAt=old.savedAt||0;it.renamed=old.renamed;it.tags=old.tags||[];it.person=old.person||'';return}
       try{if(IS_NATIVE_APP){const m=await it.handle.getFileMeta();it.size=m&&m.size||0;it.lastModified=m&&m.mtime||0}else{const f=await it.handle.getFile();it.size=f.size;it.lastModified=f.lastModified}}catch(e){it.size=0}
     }));
+    if(myToken!==_scanToken)return; // 有更新的扫描启动了，本次作废
     showProgress(40+Math.round((i+batchSize)/Math.max(1,items.length)*40));
   }
+  if(myToken!==_scanToken)return;
   showProgress(85);
   await saveSession();
+  selected=selected.filter(id=>items.some(x=>x.id===id)); // v4.7: 清理已不存在的选中id
   renderLib();
   showProgress(100);
   setTimeout(hideProgress,500);
@@ -773,6 +810,10 @@ async function rescanDir(forceFull){
     showToast('扫描完成：0 个文件。多半是缺「所有文件访问」权限——重新点「选择文件夹」会自动引导开启；或到 设置 → 存储诊断',6000);
   }else{
     showToast('扫描完成：'+items.length+' 个文件');
+  }
+  // v4.7: 有目录读取失败时提示（防"静默丢目录"）
+  if(scanErrs.length){
+    showToast('⚠️ '+scanErrs.length+' 个目录读取失败'+(scanErrs[0]?'：'+scanErrs[0].substring(0,30)+'…':''),6000);
   }
 }
 
@@ -1019,7 +1060,7 @@ async function loadDetailImage(item){
     }
     try{
       const file=await item.handle.getFile();
-      const url=URL.createObjectURL(file);
+      const url=blobUrl(file); // v4.7: blob 生命周期管理
       set('<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;width:100%;padding:10px;text-align:center"><div style="font-size:60px">🎵</div><div style="color:#ddd;font-size:14px;word-break:break-all">'+escapeHtml(item.name)+'</div><audio controls src="'+url+'" style="width:88%;max-width:420px"></audio><div style="color:#999;font-size:12px">可标记 / 重命名 / 整理，与照片一致</div></div>');
       return;
     }catch(e){set('<div style="color:#666">无法加载</div>');return}
@@ -1039,7 +1080,7 @@ async function loadDetailImage(item){
   }
   try{
     const file=await item.handle.getFile();
-    const url=URL.createObjectURL(file);
+    const url=blobUrl(file); // v4.7: 登记到 blobRegistry，closeDetail 时统一释放防泄漏
     if(item.type==='video'){set('<video src="'+url+'" controls style="max-width:100%;max-height:100%;border-radius:8px"></video>')}
     else{set('<img src="'+url+'">')}
   }catch(e){set('<div style="color:#666">无法加载</div>')}
@@ -1048,12 +1089,14 @@ function renderNameChips(){
   const el=document.getElementById('nameChips');
   const limit=cfg.recentNameLimit||5;
   const names=recentNames.slice(0,limit);
-  let html=names.map((n,i)=>'<span class="nchip drag-item '+(detailPerson===n?'on':'')+'" draggable="true" data-name="'+escapeHtml(n)+'" data-idx="'+i+'" onclick="selectName(\''+escapeHtml(n)+'\')">'+escapeHtml(n)+'</span>').join('');
+  let html=names.map((n,i)=>'<span class="nchip drag-item '+(detailPerson===n?'on':'')+'" draggable="true" data-name="'+escapeHtml(n)+'" data-idx="'+i+'">'+escapeHtml(n)+'</span>').join('');
   html+='<span class="nchip add"><input type="text" id="newNameInput" placeholder="新人名" oninput="onNameInput(this.value)" onchange="onNameInput(this.value)"></span>';
   el.innerHTML=html;
   if(detailPerson){const inp=document.getElementById('newNameInput');if(inp&&!names.includes(detailPerson))inp.value=detailPerson}
   // 绑定拖动事件
   bindDragSort(el,'name',function(){renderNameChips();updatePreviewName()});
+  // v4.7: 事件委托替代 inline onclick（消除 XSS / 引号注入断裂）
+  el.querySelectorAll('.nchip[data-name]').forEach(ch=>ch.addEventListener('click',()=>selectName(ch.dataset.name)));
 }
 function selectName(n){detailPerson=n;renderNameChips();updatePreviewName()}
 function onNameInput(v){if(v.trim())detailPerson=v.trim();updatePreviewName()}
@@ -1070,15 +1113,17 @@ function renderTagChips(){
   allTags.forEach(t=>{if(!orderedTags.includes(t))orderedTags.push(t)});
   el.innerHTML=orderedTags.map(t=>{
     const isOn=detailTags.has(t);
-    return '<span class="tchip drag-item '+(isOn?'on':'')+'" draggable="true" data-tag="'+escapeHtml(t)+'" onclick="toggleDetailTag(\''+escapeHtml(t)+'\')">'+escapeHtml(t)+'</span>';
+    return '<span class="tchip drag-item '+(isOn?'on':'')+'" draggable="true" data-tag="'+escapeHtml(t)+'">'+escapeHtml(t)+'</span>';
   }).join('')||'<span class="sub" style="font-size:12px">暂无标签，点下方「➕ 新增标签」添加你的第一个标签</span>';
   // 绑定拖动事件
   bindDragSort(el,'tag',function(){renderTagChips();updatePreviewName()});
+  // v4.7: 事件委托
+  el.querySelectorAll('.tchip[data-tag]').forEach(ch=>ch.addEventListener('click',()=>toggleDetailTag(ch.dataset.tag)));
 }
 function toggleDetailTag(t){if(detailTags.has(t))detailTags.delete(t);else detailTags.add(t);renderTagChips();updatePreviewName()}
 // updatePreviewName 和 detailConfirm 已移至文件末尾 v3.2 区域
 document.getElementById('detailDate').addEventListener('input',function(){const d=this.value?new Date(this.value):new Date();detailDateStr=fmtDate(d);updatePreviewName()});
-function closeDetail(){document.getElementById('detailOverlay').classList.remove('show');detailIdx=-1;document.getElementById('dPrevBtn').classList.remove('show');document.getElementById('dNextBtn').classList.remove('show');document.getElementById('dCounter').classList.remove('show')}
+function closeDetail(){document.getElementById('detailOverlay').classList.remove('show');detailIdx=-1;document.getElementById('dPrevBtn').classList.remove('show');document.getElementById('dNextBtn').classList.remove('show');document.getElementById('dCounter').classList.remove('show');revokeAllBlobUrls()} // v4.7: 关闭详情页释放 blob URL 防泄漏
 // detailConfirm 已移至文件末尾 v3.2 区域
 function detailNext(){
   // v4.4: 保存并下一张跟随滑动导航列表（与滑动切换一致）
@@ -1238,7 +1283,7 @@ window.__handleBackButton=function(){
 // ==================== v4.6: 收藏博主（localStorage 存储，离线、不上传） ====================
 const FAV_KEY='favCreators';
 function getFav(){try{return JSON.parse(localStorage.getItem(FAV_KEY)||'[]')}catch(e){return[]}}
-function saveFav(list){localStorage.setItem(FAV_KEY,JSON.stringify(list))}
+function saveFav(list){storeSet(FAV_KEY,list)} // v4.7: 安全写入封装
 const FAV_ICONS={xhs:'📕',dy:'🎵',wb:'🐦',x:'❌'};
 const FAV_NAMES={xhs:'小红书',dy:'抖音',wb:'微博',x:'X'};
 function addFav(){
@@ -1284,24 +1329,32 @@ function renderFav(){
     const icon=FAV_ICONS[f.platform]||'🔗';
     const pfName=FAV_NAMES[f.platform]||'';
     const date=new Date(f.savedAt).toLocaleDateString();
-    return '<div class="setitem" style="flex-direction:column;align-items:stretch;padding:12px">'+
+    return '<div class="setitem fav-card" data-id="'+f.id+'" data-url="'+escapeHtml(f.url)+'" style="flex-direction:column;align-items:stretch;padding:12px">'+
       '<div style="display:flex;align-items:center;gap:8px">'+
         '<span style="font-size:24px">'+icon+'</span>'+
         '<div style="flex:1">'+
           '<div style="font-weight:600;font-size:14px">'+escapeHtml(f.name)+'</div>'+
           '<div style="font-size:11px;color:var(--sub);margin-top:2px">'+pfName+' · '+date+'</div>'+
         '</div>'+
-        '<button class="btn-sm" style="background:#fff;border:1px solid var(--line);padding:4px 8px;font-size:12px" onclick="openFavUrl(\''+escapeHtml(f.url)+'\')">🔗 打开</button>'+
+        '<button class="btn-sm fav-open" style="background:#fff;border:1px solid var(--line);padding:4px 8px;font-size:12px">🔗 打开</button>'+
       '</div>'+
       (f.note?'<div style="font-size:12px;color:#555;margin-top:6px;padding:6px 8px;background:#f5f3ff;border-radius:6px">'+escapeHtml(f.note)+'</div>':'')+
       '<div style="font-size:10px;color:#999;margin-top:4px;word-break:break-all">'+escapeHtml(f.url)+'</div>'+
       '<div style="margin-top:8px;display:flex;gap:6px">'+
-        '<button class="btn-sm" style="background:#fff;border:1px solid var(--line);padding:4px 10px;font-size:12px" onclick="copyFavUrl(\''+escapeHtml(f.url)+'\')">📋 复制</button>'+
-        '<button class="btn-sm" style="background:#fff;border:1px solid var(--line);padding:4px 10px;font-size:12px" onclick="editFavNote(\''+f.id+'\')">✏️ 备注</button>'+
-        '<button class="btn-sm" style="background:#fff;border:1px solid #e53e3e;color:#e53e3e;padding:4px 10px;font-size:12px" onclick="delFav(\''+f.id+'\')">🗑️ 删除</button>'+
+        '<button class="btn-sm fav-copy" style="background:#fff;border:1px solid var(--line);padding:4px 10px;font-size:12px">📋 复制</button>'+
+        '<button class="btn-sm fav-note" style="background:#fff;border:1px solid var(--line);padding:4px 10px;font-size:12px">✏️ 备注</button>'+
+        '<button class="btn-sm fav-del" style="background:#fff;border:1px solid #e53e3e;color:#e53e3e;padding:4px 10px;font-size:12px">🗑️ 删除</button>'+
       '</div>'+
     '</div>';
   }).join('');
+  // v4.7: 事件委托替代 inline onclick（安全+URL含引号不再断裂）
+  el.querySelectorAll('.fav-card').forEach(card=>{
+    const id=card.dataset.id,url=card.dataset.url;
+    card.querySelector('.fav-open').addEventListener('click',()=>openFavUrl(url));
+    card.querySelector('.fav-copy').addEventListener('click',()=>copyFavUrl(url));
+    card.querySelector('.fav-note').addEventListener('click',()=>editFavNote(id));
+    card.querySelector('.fav-del').addEventListener('click',()=>delFav(id));
+  });
 }
 function compressImage(file,maxSide){
   return new Promise(res=>{
@@ -1414,15 +1467,19 @@ async function importJson(event){
     const text=await file.text();
     const data=JSON.parse(text);
     if(!Array.isArray(data)){showToast('JSON 格式错误');return}
+    // v4.7: schema 校验——过滤无 name 的坏记录
+    const clean=data.filter(r=>r&&typeof r.name==='string'&&r.name.length>0);
+    if(clean.length<data.length)showToast('已过滤 '+(data.length-clean.length)+' 条无效记录',4000);
     // 保存到 IndexedDB
-    await dbSaveMedia(data);
+    await dbSaveMedia(clean);
     // 重新加载
     libItems=await dbLoadMedia();
     // 同步到当前文件列表
     syncTaggedStatus();
     renderLib();renderSetStats();updateQuota();
-    showToast('已导入 '+data.length+' 条记录，'+items.filter(i=>i.renamed).length+' 个文件已匹配');
+    showToast('已导入 '+clean.length+' 条记录，'+items.filter(i=>i.renamed).length+' 个文件已匹配');
   }catch(e){showToast('导入失败：'+(e.message||e))}
+  finally{event.target.value=''} // v4.7: 重置 input 允许重复导入同一文件
 }
 
 // ==================== 设置 ====================
@@ -2068,12 +2125,14 @@ function renderSubdirBar(){
   if(subdirs.size===0){bar.style.display='none';return}
   bar.style.display='flex';
   let chips='<div class="subdir-label">📁 位置：</div>';
-  chips+='<span class="subdir-chip'+(curSubdir===''?' on':'')+'" onclick="switchSubdir(\'\')">全部</span>';
-  chips+='<span class="subdir-chip'+(curSubdir==='root'?' on':'')+'" onclick="switchSubdir(\'root\')">根目录</span>';
+  chips+='<span class="subdir-chip'+(curSubdir===''?' on':'')+'" data-dir="">全部</span>';
+  chips+='<span class="subdir-chip'+(curSubdir==='root'?' on':'')+'" data-dir="root">根目录</span>';
   [...subdirs].sort().forEach(d=>{
-    chips+='<span class="subdir-chip'+(curSubdir===d?' on':'')+'" onclick="switchSubdir(\''+escapeHtml(d)+'\')">'+escapeHtml(d)+'</span>';
+    chips+='<span class="subdir-chip'+(curSubdir===d?' on':'')+'" data-dir="'+escapeHtml(d)+'">'+escapeHtml(d)+'</span>';
   });
   bar.innerHTML=chips;
+  // v4.7: 事件委托
+  bar.querySelectorAll('.subdir-chip').forEach(c=>c.addEventListener('click',()=>switchSubdir(c.dataset.dir)));
 }
 function switchSubdir(dir){
   curSubdir=dir;
@@ -2100,7 +2159,11 @@ function renderLib(){
   const curPerson=person||document.getElementById('libPerson').value;
   document.getElementById('libPerson').innerHTML='<option value="">全部人名</option>'+persons.map(p=>'<option value="'+escapeHtml(p)+'"'+(curPerson===p?' selected':'')+'>'+escapeHtml(p)+'</option>').join('');
   const tagChips=document.getElementById('libTagChips');
-  tagChips.innerHTML=allTags.map(t=>'<span class="tchip '+(libSelectedTags.has(t)?'on':'')+'" onclick="toggleLibTag(\''+escapeHtml(t)+'\')">'+escapeHtml(t)+'</span>').join('');
+  tagChips.innerHTML=allTags.map(t=>'<span class="tchip libtag'+(libSelectedTags.has(t)?' on':'')+'" data-tag="'+escapeHtml(t)+'" style="cursor:pointer">'+escapeHtml(t)+'</span>').join('');
+  // v4.7: 事件委托（替代 inline onclick，消除 XSS）
+  tagChips.querySelectorAll('.tchip.libtag').forEach(c=>{
+    c.addEventListener('click',()=>toggleLibTag(c.dataset.tag));
+  });
   // 渲染子文件夹切换栏
   renderSubdirBar();
   const selectedTagArr=[...libSelectedTags];
@@ -2488,7 +2551,7 @@ async function renderFaceGroups(){
   if(!groups.length){list.innerHTML='<div style="text-align:center;color:var(--sub);padding:36px 16px;font-size:13px">已扫描但未检出人脸</div>';return}
   list.innerHTML=groups.map((g,i)=>{
     const known=g.members.map(m=>{const it=items.find(x=>x.name===m.name);return it&&it.person}).filter(Boolean);
-    const knownStr=known.length?'<span style="color:#1a7f37;font-size:12px">（含已标记：'+[...new Set(known)].join('、')+'）</span>':'';
+    const knownStr=known.length?'<span style="color:#1a7f37;font-size:12px">（含已标记：'+escapeHtml([...new Set(known)].join('、'))+'）</span>':'';
     return '<div class="dev-case" style="display:flex;gap:12px;align-items:center;cursor:pointer" onclick="applyFaceGroup('+i+')">'+
       '<img src="'+g.members[0].faceThumb+'" style="width:64px;height:64px;border-radius:12px;object-fit:cover;flex:0 0 auto">'+
       '<div style="flex:1"><div style="font-weight:700">第 '+(i+1)+' 组 · '+g.members.length+' 张'+knownStr+'</div>'+
@@ -2858,32 +2921,37 @@ if(nApi){
     const quick=[{rel:'DCIM',icon:'📷',lbl:'相册（DCIM）'},{rel:'Pictures',icon:'🖼️',lbl:'图片（Pictures）'},{rel:'Movies',icon:'🎬',lbl:'视频（Movies）'},{rel:'Download',icon:'📥',lbl:'下载（Download）'},{rel:'',icon:'📱',lbl:'整个内部存储'}];
     const list=document.getElementById('modalList');
     const showHidden=nPickerShowHidden();
-    const crumbs=rel===''?'内部存储':rel.split('/').map((p,i,arr)=>'<span class="nchip'+(i===arr.length-1?' on':'')+'" style="cursor:pointer" onclick="nGoPick(\''+arr.slice(0,i+1).join('/')+'\')">'+escapeHtml(p)+'</span>').join(' › ');
+    const crumbs=rel===''?'内部存储':rel.split('/').map((p,i,arr)=>'<span class="nchip'+(i===arr.length-1?' on':'')+'" style="cursor:pointer" data-go="'+escapeHtml(arr.slice(0,i+1).join('/'))+'">'+escapeHtml(p)+'</span>').join(' › ');
     let html='<div style="font-size:12px;color:#999;margin-bottom:8px">'+crumbs+'</div>';
     if(rel===''){
-      html+='<div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:12px">'+quick.map(q=>'<span class="nchip" style="cursor:pointer" onclick="nConfirmPick(\''+q.rel+'\')">'+q.icon+' '+q.lbl+'</span>').join('')+'</div>';
+      html+='<div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:12px">'+quick.map(q=>'<span class="nchip" style="cursor:pointer" data-pick="'+q.rel+'">'+q.icon+' '+q.lbl+'</span>').join('')+'</div>';
     }else{
-      html+='<div style="margin-bottom:10px"><button class="btn-sm" style="background:#fff;color:var(--primary);border-color:var(--primary)" onclick="nGoPick(\''+nParent(rel)+'\')">⬆️ 上一级</button> <button class="btn-sm" style="background:var(--primary);color:#fff;border-color:var(--primary)" onclick="nConfirmPick(\''+rel+'\')">✅ 就选这个文件夹</button></div>';
+      html+='<div style="margin-bottom:10px"><button class="btn-sm" style="background:#fff;color:var(--primary);border-color:var(--primary)" data-go="'+escapeHtml(nParent(rel))+'">⬆️ 上一级</button> <button class="btn-sm" style="background:var(--primary);color:#fff;border-color:var(--primary)" data-pick="'+escapeHtml(rel)+'">✅ 就选这个文件夹</button></div>';
     }
     // v4.3.3: 显示隐藏文件夹开关（切到当前层重新渲染）
-    html+='<div style="margin-bottom:8px"><span class="nchip'+(showHidden?' on':'')+'" style="cursor:pointer" onclick="nTogglePickerHidden()">'+(showHidden?'👁 已显示隐藏':'👁 显示隐藏')+'</span></div>';
+    html+='<div style="margin-bottom:8px"><span class="nchip'+(showHidden?' on':'')+'" style="cursor:pointer" data-togglehidden="1">'+(showHidden?'👁 已显示隐藏':'👁 显示隐藏')+'</span></div>';
     let entries=[];
     let readErr=false,readErrMsg='';
     try{entries=await nReaddir(rel)}catch(e){readErr=true;readErrMsg=(e&&e.message)||String(e)}
     if(readErr){
       // v4.3.3: 读取失败不再伪装成"无子文件夹"，给出明确指引；v4.3.6: 附上原始错误信息便于定位
-      html+='<div style="color:#c53030;font-size:13px;line-height:1.9;padding:8px 0">⚠️ 无法读取该目录<br><small>通常是未授予「所有文件访问」权限<br>错误详情：'+escapeHtml(readErrMsg)+'</small></div><div style="margin-top:6px"><button class="btn-sm" style="background:var(--primary);color:#fff;border-color:var(--primary)" onclick="nPickPermGuide()">🔐 去开启权限</button></div>';
+      html+='<div style="color:#c53030;font-size:13px;line-height:1.9;padding:8px 0">⚠️ 无法读取该目录<br><small>通常是未授予「所有文件访问」权限<br>错误详情：'+escapeHtml(readErrMsg)+'</small></div><div style="margin-top:6px"><button class="btn-sm" style="background:var(--primary);color:#fff;border-color:var(--primary)" data-permguide="1">🔐 去开启权限</button></div>';
     }else{
       let dirs=entries.filter(e=>e.isDir).map(e=>e.name).sort((a,b)=>a.localeCompare(b,'zh'));
       if(!showHidden)dirs=dirs.filter(d=>!d.startsWith('.'));
       if(rel===''){['Android'].forEach(x=>{const i=dirs.indexOf(x);if(i>=0)dirs.splice(i,1)})}
       html+=dirs.map(d=>{
         const hidden=d.startsWith('.');
-        return '<div class="modal-item" style="padding:10px 12px'+(hidden?';background:#f5f3ff':'')+'" onclick="nGoPick(\''+nJoin(rel,d)+'\')"><div class="mi-name">'+(hidden?'📂 ':'📁 ')+escapeHtml(d)+(hidden?' <small style="color:#999">（隐藏）</small>':'')+'</div></div>';
+        return '<div class="modal-item" style="padding:10px 12px'+(hidden?';background:#f5f3ff':'')+'" data-go="'+escapeHtml(nJoin(rel,d))+'"><div class="mi-name">'+(hidden?'📂 ':'📁 ')+escapeHtml(d)+(hidden?' <small style="color:#999">（隐藏）</small>':'')+'</div></div>';
       }).join('')||'<div style="color:#999;font-size:13px;padding:8px 0">（无子文件夹）</div>';
     }
     list.innerHTML=html;
     list.scrollTop=0;
+    // v4.7: 事件委托——目录名含单引号/双引号时 inline onclick 会断链/注入，统一 data-* + addEventListener
+    list.querySelectorAll('[data-go]').forEach(el=>el.addEventListener('click',()=>nGoPick(el.dataset.go)));
+    list.querySelectorAll('[data-pick]').forEach(el=>el.addEventListener('click',()=>nConfirmPick(el.dataset.pick)));
+    list.querySelectorAll('[data-togglehidden]').forEach(el=>el.addEventListener('click',()=>nTogglePickerHidden()));
+    list.querySelectorAll('[data-permguide]').forEach(el=>el.addEventListener('click',()=>nPickPermGuide()));
   }
   function nPickPermGuide(){nShowAllFilesGuide(()=>{nBeginPick(nPickState&&nPickState.rel||'')})}
   async function nGoPick(rel){
