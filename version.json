@@ -1,5 +1,5 @@
 {
-  "version": "4.3.3",
-  "apkUrl": "https://github.com/Lyiyu/predestined/releases/download/v4.3.3/shiguang-v4.3.3.apk",
-  "note": "v4.3.3 修复选择器点击无反应（块内函数作用域）+ 支持显示隐藏文件夹"
+  "version": "4.3.4",
+  "apkUrl": "https://github.com/Lyiyu/predestined/releases/download/v4.3.4/shiguang-v4.3.4.apk",
+  "note": "v4.3.4 修复扫描未识别内容（targetSdk权限门）+ 扫描速度大幅提升"
 }
