@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
-<title>拾光相册 v4.5.2</title>
+<title>拾光相册 v4.5.3</title>
 <style>
 *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 :root{
@@ -284,7 +284,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei
   <button class="topbar-btn" onclick="toggleDrawer()" title="菜单" style="font-size:18px;padding:2px 10px">☰</button>
   <h1>📷 拾光相册</h1>
   <button class="topbar-btn" onclick="location.reload()" title="刷新页面（用于重新授权文件夹）">🔄</button>
-  <span class="tag">v4.5.2</span>
+  <span class="tag">v4.5.3</span>
 </div>
 
 <div class="progress-bar" id="progressBar"><i id="progressFill"></i></div>
@@ -310,7 +310,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei
   <div id="libArea" style="display:none">
     <div class="stats" id="libStats"></div>
     <div class="filters">
-      <select id="libType" onchange="renderLib()"><option value="">全部</option><option value="image">图片</option><option value="video">视频</option><option value="tagged">已标记</option><option value="untagged">未标记</option></select>
+      <select id="libType" onchange="renderLib()"><option value="">全部</option><option value="image">图片</option><option value="video">视频</option><option value="audio">🎵 音频</option><option value="tagged">已标记</option><option value="untagged">未标记</option></select>
       <select id="libPerson" onchange="renderLib()" class="person-select"><option value="">全部人名</option></select>
       <select id="libSort" onchange="renderLib()">
         <option value="name">文件名</option>
@@ -551,7 +551,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei
 
 <script>
 // ==================== 状态 ====================
-const VERSION='4.5.2';
+const VERSION='4.5.3';
 const DB_NAME='offline_media_lib_v34',DB_VERSION=6;
 const STORE_MEDIA='media',STORE_THUMB='thumbs',STORE_SESSION='session',STORE_FACES='faces';
 let cfg={rule:'person_seq',tags:[],dateFormat:'YYYYMMDD',compress:true,maxCount:2000,showHidden:false,recentNameLimit:5};
@@ -693,6 +693,9 @@ function hideProgress(){document.getElementById('progressBar').classList.remove(
 // AVI/FLV/WMV/TS/MPG/RMVB 可入库标记整理，但 <video> 无法解码（Chromium 容器限制），详情页降级为占位提示
 const VIDO_EXT_RE=/\.(mp4|mov|avi|mkv|webm|m4v|3gp|3g2|flv|wmv|ts|mpg|mpeg|rmvb)$/i;
 const VID_PREVIEW_RE=/\.(mp4|m4v|mov|webm|3gp|3g2|mkv)$/i;
+// v4.5.3: 音频入库识别 + WebView 可播音频（amr 不入预览白名单，走占位+选择播放器）
+const AUDIO_EXT_RE=/\.(mp3|wav|flac|aac|m4a|ogg|opus|amr)$/i;
+const AUDIO_PREVIEW_RE=/\.(mp3|wav|ogg|opus|flac|m4a|aac)$/i;
 async function walkDir(handle,pathArr,out){
   try{
     for await(const entry of handle.values()){
@@ -704,11 +707,12 @@ async function walkDir(handle,pathArr,out){
         if(name==='Android'||name==='.thumbnails')continue;
         await walkDir(entry,p,out);
       }else{
-        const lower=name.toLowerCase();
+        const lower=name.toLowerCase(); // 必须声明——丢失此行会导致 ReferenceError 被外层 catch 静默吞掉，扫描 0 产出
         const isImg=/(\.jpg|\.jpeg|\.png|\.webp|\.heic|\.gif)$/i.test(lower); // v4.5: .gif 动图入库（详情页原生播放动画，缩略图取首帧）
         const isVid=VIDO_EXT_RE.test(lower); // v4.4: 扩展识别（avi/m4v/3gp/flv/wmv/ts/mpg/rmvb 等）
-        if(!isImg&&!isVid)continue;
-        out.push({id:'f'+Math.random().toString(36).slice(2,9),name,type:isVid?'video':'image',size:0,path:p.join('/'),handle:entry,hidden:isHidden,lastModified:0,savedAt:0,tags:[],person:'',renamed:false});
+        const isAud=AUDIO_EXT_RE.test(lower); // v4.5.3: mp3/wav/flac 等音频入库
+        if(!isImg&&!isVid&&!isAud)continue;
+        out.push({id:'f'+Math.random().toString(36).slice(2,9),name,type:isVid?'video':(isAud?'audio':'image'),size:0,path:p.join('/'),handle:entry,hidden:isHidden,lastModified:0,savedAt:0,tags:[],person:'',renamed:false});
       }
     }
   }catch(e){}
@@ -872,6 +876,8 @@ async function loadThumbForCell(el,id){
   const rec=libItems.find(i=>i.name===item.name);
   if(rec&&(rec.img||rec.thumb)){const t=rec.thumb||rec.img;thumbCache.set(item.name,t);el.innerHTML='<img src="'+t+'">';return}
   if(!item.handle){el.textContent='🔒';return}
+  // v4.5.3: 音频缩略图直接用音符图标（Web/App 通用，免读文件）
+  if(item.type==='audio'){el.textContent='🎵';return}
   // v4.1 原生模式：缩略图直接用本地文件 URL 生成（不读入 JS 内存，大视频安全）
   if(IS_NATIVE_APP&&nApi){await nThumbNative(el,item);return}
   try{
@@ -968,13 +974,37 @@ async function loadDetailImage(item){
     set('<div style="text-align:center;padding:20px"><div style="font-size:52px">🎬</div><div style="color:#ddd;font-size:14px;margin-top:8px;word-break:break-all">'+escapeHtml(item.name)+'</div><div style="color:#999;font-size:12px;margin-top:10px;line-height:1.9">'+ext+' 格式暂不支持在 App 内播放<br>（受 WebView 解码器限制）<br>标记 / 重命名 / 整理等操作不受影响</div>'+openBtn+'</div>');
     return;
   }
+  // v4.5.3: 音频播放（mp3/wav/flac 等）——内置 <audio> 播放器 + 重命名/整理全链路支持
+  if(item.type==='audio'){
+    if(!AUDIO_PREVIEW_RE.test(item.name)){
+      // amr 等 WebView 解不了的音频：占位 + 选择播放器
+      const ext=getExt(item.name).toUpperCase();
+      const openBtn=(IS_NATIVE_APP&&item.handle&&item.handle._rel!==undefined)
+        ?'<button class="btn-sm" style="background:var(--primary);color:#fff;border-color:var(--primary);margin-top:14px;padding:10px 22px;font-size:14px" onclick="dOpenExternal()">▶ 选择播放器打开</button>':'';
+      set('<div style="text-align:center;padding:20px"><div style="font-size:52px">🎵</div><div style="color:#ddd;font-size:14px;margin-top:8px;word-break:break-all">'+escapeHtml(item.name)+'</div><div style="color:#999;font-size:12px;margin-top:10px;line-height:1.9">'+ext+' 格式暂不支持在 App 内播放<br>（受 WebView 解码器限制）<br>标记 / 重命名 / 整理等操作不受影响</div>'+openBtn+'</div>');
+      return;
+    }
+    if(IS_NATIVE_APP&&nApi&&item.handle._rel!==undefined){
+      try{
+        const url=await nUri(item.handle._rel);
+        set('<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;width:100%;padding:10px;text-align:center"><div style="font-size:60px">🎵</div><div style="color:#ddd;font-size:14px;word-break:break-all;max-width:90%">'+escapeHtml(item.name)+'</div><audio controls src="'+url+'" style="width:88%;max-width:420px"></audio><div style="color:#999;font-size:12px">支持标记 / 重命名 / 整理，与照片视频一致</div></div>');
+        return;
+      }catch(e){set('<div style="color:#666">无法加载</div>');return}
+    }
+    try{
+      const file=await item.handle.getFile();
+      const url=URL.createObjectURL(file);
+      set('<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;width:100%;padding:10px;text-align:center"><div style="font-size:60px">🎵</div><div style="color:#ddd;font-size:14px;word-break:break-all">'+escapeHtml(item.name)+'</div><audio controls src="'+url+'" style="width:88%;max-width:420px"></audio><div style="color:#999;font-size:12px">可标记 / 重命名 / 整理，与照片一致</div></div>');
+      return;
+    }catch(e){set('<div style="color:#666">无法加载</div>');return}
+  }
   // v4.1 原生模式：<img>/<video> 直接指向本地文件 URL，零内存占用
   if(IS_NATIVE_APP&&nApi&&item.handle._rel!==undefined){
     try{
       const url=await nUri(item.handle._rel);
-      // v4.5.2: 可播视频也提供「选择播放器」按钮（用户可能想用 MX Player 的字幕/倍速等功能）
+      // v4.5.2: 可播视频也提供「选择播放器」按钮（用户可能想用 MX Player 的字幕/倍速等功能）；v4.5.3: 加卡顿引导
       const extBtn=(IS_NATIVE_APP&&item.handle&&item.handle._rel!==undefined)
-        ?'<div style="text-align:center;margin-top:6px"><button class="btn-sm" style="background:#fff;color:var(--primary);border:1px solid var(--primary);padding:6px 16px;font-size:13px" onclick="dOpenExternal()">⤴ 选择播放器打开</button></div>'
+        ?'<div style="text-align:center;margin-top:6px"><button class="btn-sm" style="background:#fff;color:var(--primary);border:1px solid var(--primary);padding:6px 16px;font-size:13px" onclick="dOpenExternal()">⤴ 选择播放器打开</button><div style="color:#999;font-size:11px;margin-top:4px">App 内播放受解码器限制，大视频/高码率卡顿时用外部播放器（硬解）更流畅</div></div>'
         :'';
       if(item.type==='video'){set('<div style="width:100%;height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center"><video src="'+url+'" controls style="max-width:100%;max-height:calc(100% - 40px);border-radius:8px"></video>'+extBtn+'</div>')}
       else{set('<img src="'+url+'">')}
@@ -1600,6 +1630,8 @@ async function loadDupThumb(item,gi,fi){
   // 从媒体库记录中查找缩略图
   const rec=libItems.find(i=>i.name===item.name);
   if(rec&&(rec.img||rec.thumb)){const t=rec.thumb||rec.img;el.innerHTML='<img src="'+t+'">';return}
+  // v4.5.3: 音频查重项直接用 🎵 图标
+  if(item.type==='audio'){el.textContent='🎵';return}
   // v4.3.8: App 模式复用主网格的原生缩略图管线（nThumbNative：本地文件 URL → canvas，零全量读入）。
   // 修复真机查重面板缩略图全空：原实现走 getFile() 全文件 base64 过桥——大视频必失败（插件大文件读取限制），
   // 大图也慢；且与主网格管线不一致，缓存互不共享。复用后缩略图也会写入 thumbCache/IndexedDB，双向共用。
@@ -1967,7 +1999,7 @@ function renderLib(){
   let list=items.filter(p=>{
     if(type==='tagged'&&!p.renamed)return false;
     if(type==='untagged'&&p.renamed)return false;
-    if((type==='image'||type==='video')&&p.type!==type)return false;
+    if((type==='image'||type==='video'||type==='audio')&&p.type!==type)return false;
     if(person&&p.person!==person)return false;
     if(selectedTagArr.length>0){const itemTags=p.tags||[];if(!selectedTagArr.every(t=>itemTags.includes(t)))return false}
     if(q&&!p.name.toLowerCase().includes(q))return false;
@@ -1996,7 +2028,7 @@ function renderLib(){
   grid.innerHTML=list.map(p=>{
     const isSel=selIds.has(p.id);
     const doneMark=p.renamed?'<span class="done-mark">✓已标记</span>':'';
-    const typeMark=p.hidden?'<span class="hidden-mark">隐藏</span>':(p.type==='video'?'<span class="badge">▶</span>':'');
+    const typeMark=p.hidden?'<span class="hidden-mark">隐藏</span>':(p.type==='video'?'<span class="badge">▶</span>':(p.type==='audio'?'<span class="badge">🎵</span>':''));
     // 显示：文件名中只含第一个标签，但全部标签在 chips 中展示
     const displayTags=(p.tags&&p.tags.length)?'·'+escapeHtml(p.tags.slice(0,2).join('·'))+(p.tags.length>2?'+'+(p.tags.length-2):''):'';
     const personStr=p.person?'<b>'+escapeHtml(p.person)+'</b>':'';
@@ -2627,6 +2659,8 @@ if(nApi){
 
   // -------- 原生缩略图（走本地文件 URL，不读入内存） --------
   async function nThumbNative(el,item){
+    // v4.5.3: 音频不走图片/视频管线，直接音符图标
+    if(item.type==='audio'){el.textContent='🎵';return}
     try{
       const url=await nUri(item.handle._rel);
       if(!url){el.textContent=item.type==='video'?'▶':'🖼';return}
