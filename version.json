@@ -1,5 +1,5 @@
 {
-  "version": "4.5.2",
-  "apkUrl": "https://github.com/Lyiyu/predestined/releases/download/v4.5.2/shiguang-v4.5.2.apk",
-  "note": "v4.5.2 所有视频都能选择打开方式（弹出系统播放器选择器）；可播视频也增加「选择播放器」按钮"
+  "version": "4.5.3",
+  "apkUrl": "https://github.com/Lyiyu/predestined/releases/download/v4.5.3/shiguang-v4.5.3.apk",
+  "note": "v4.5.3 新增 MP3 等音频完整支持（入库/播放/重命名/整理/查重）；视频全屏改固定横屏减少卡顿；大视频卡顿引导"
 }
