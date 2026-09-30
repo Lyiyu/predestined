@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
-<title>拾光相册 v4.3</title>
+<title>拾光相册 v4.3.1</title>
 <style>
 *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 :root{
@@ -15,7 +15,7 @@
   --tab-h:56px;--btn-h:42px;--gap:10px;--shadow:0 2px 8px rgba(0,0,0,.06);--shadow-lg:0 4px 16px rgba(0,0,0,.1);
 }
 html,body{height:100%;overflow:hidden}
-body{font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei",sans-serif;background:var(--bg);color:var(--text);display:flex;flex-direction:column;overflow:hidden;word-break:keep-all;-webkit-word-break:keep-all;overflow-wrap:anywhere}
+body{font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei",sans-serif;background:var(--bg);color:var(--text);display:flex;flex-direction:column;overflow:hidden;word-break:keep-all;-webkit-word-break:keep-all;overflow-wrap:anywhere;text-wrap:pretty}
 .topbar{position:relative;flex:0 0 auto;z-index:100;background:linear-gradient(135deg,var(--primary),var(--primary2));color:#fff;padding:calc(10px + var(--safe-t)) 14px 10px;display:flex;align-items:center;gap:8px;box-shadow:0 2px 10px rgba(91,108,255,.25)}
 .topbar h1{font-size:17px;font-weight:700;flex:1 1 auto;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .topbar .topbar-btn{background:rgba(255,255,255,.25);border:none;color:#fff;font-size:16px;width:34px;height:34px;border-radius:50%;cursor:pointer;display:flex;align-items:center;justify-content:center;flex:0 0 auto;padding:0;line-height:1}
@@ -265,7 +265,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei
 <div class="topbar">
   <h1>📷 拾光相册</h1>
   <button class="topbar-btn" onclick="location.reload()" title="刷新页面（用于重新授权文件夹）">🔄</button>
-  <span class="tag">v4.3</span>
+  <span class="tag">v4.3.1</span>
 </div>
 
 <div class="progress-bar" id="progressBar"><i id="progressFill"></i></div>
@@ -352,14 +352,14 @@ body{font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei
   <div class="setcard">
     <h3>🏷️ 标签设置</h3>
     <div class="setitem">
-      <label>自定义标签（逗号分隔，展示在详情页供选择）</label>
-      <input type="text" id="setTags" placeholder="自定义标签，用英文逗号分隔，如：风景,夜景,人像" onchange="saveSettings()">
-      <div class="sub">点击图片详情页时显示这些标签，可多选</div>
+      <label>自定义标签（英文逗号分隔）</label>
+      <input type="text" id="setTags" placeholder="如：风景,夜景,人像" onchange="saveSettings()">
+      <div class="sub">详情页可选这些标签，多选</div>
     </div>
     <div class="setitem">
-      <label>详情页人名快捷数量（最多显示几个快捷人名）</label>
+      <label>详情页人名快捷数量</label>
       <input type="number" id="setNameLimit" min="1" max="20" value="5" onchange="saveSettings()">
-      <div class="sub">详情页展示的快捷人名 chips 数量，默认 5 个</div>
+      <div class="sub">详情页最多显示几个人名，默认 5</div>
     </div>
   </div>
   <div class="setcard">
@@ -370,7 +370,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei
         <input type="range" id="setMaxCount" min="50" max="5000" step="50" value="2000" style="flex:3" onchange="saveSettings()">
         <span id="setMaxCountVal" style="flex:1;text-align:center;font-weight:700">2000</span>
       </div>
-      <div class="sub">超过此数量将无法继续入库，避免浏览器存储被占满</div>
+      <div class="sub">超过此数量无法继续入库</div>
     </div>
     <div class="setitem">
       <div class="switch">
@@ -428,7 +428,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei
   <div class="detail-panel" id="detailPanel">
     <div class="step-label">① 选择人名（可拖动排序）</div>
     <div class="name-chips" id="nameChips"></div>
-    <div class="step-label">② 选择标签（可多选，拖动排序决定写入文件名的首选标签）</div>
+    <div class="step-label">② 选择标签（可多选，拖动定首选）</div>
     <div class="tag-chips" id="tagChips"></div>
     <div style="margin-top:8px">
       <span class="tag-add-btn" id="tagAddBtn" onclick="showTagAddInput()">➕ 新增标签</span>
@@ -466,7 +466,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei
     <div class="dt-title">🧪 测试反馈面板</div>
     <div class="dt-close" onclick="closeDevPanel()">×</div>
   </div>
-  <div class="dev-tip">手机上边测边填：每项选「通过 / 不通过」，可写备注（问题现象、建议）。全部填完后点底部「📋 复制反馈」，粘贴到微信发给助手即可，不用再发文件。</div>
+  <div class="dev-tip">边测边填：每项选「通过 / 不通过」，可写备注。填完点「📋 复制反馈」，粘贴到微信发给助手。</div>
   <div class="dev-stats" id="devStats"></div>
   <div class="dev-list" id="devList"></div>
   <div class="dev-actions">
@@ -503,7 +503,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei
 
 <script>
 // ==================== 状态 ====================
-const VERSION='4.3.0';
+const VERSION='4.3.1';
 const DB_NAME='offline_media_lib_v34',DB_VERSION=6;
 const STORE_MEDIA='media',STORE_THUMB='thumbs',STORE_SESSION='session',STORE_FACES='faces';
 let cfg={rule:'person_seq',tags:[],dateFormat:'YYYYMMDD',compress:true,maxCount:2000,showHidden:false,recentNameLimit:5};
@@ -558,12 +558,16 @@ async function dbClearFaces(){try{const db=await openDB();return new Promise((re
 async function quotaInfo(){try{if(!navigator.storage||!navigator.storage.estimate)return null;const est=await navigator.storage.estimate();return{usage:est.usage||0,quota:est.quota||0}}catch(e){return null}}
 async function updateQuota(){
   const q=await quotaInfo();if(!q){document.getElementById('quotaText').textContent='不可用';return}
-  const mb=1048576;const used=(q.usage/mb).toFixed(1),total=(q.quota/mb).toFixed(0);
+  const mb=1048576;const used=(q.usage/mb).toFixed(1);
+  // 大额配额用 GB/W 单位简写，避免超长数字换行产生孤行
+  const fmtSize=v=>{const m=v/mb;if(m>=1048576)return(m/1048576).toFixed(0)+' TB';if(m>=1024)return(m/1024).toFixed(0)+' GB';return m.toFixed(0)+' MB'};
   const pct=Math.min(100,(q.usage/q.quota*100).toFixed(1));
-  document.getElementById('quotaText').textContent=used+' MB / '+total+' MB';
+  document.getElementById('quotaText').textContent=fmtSize(q.usage)+' / '+fmtSize(q.quota);
   document.getElementById('quotaBar').style.width=pct+'%';
   const remain=q.quota-q.usage;const estCount=Math.floor(remain/400000);
-  document.getElementById('quotaTip').textContent='已用 '+used+' MB / 总额 '+total+' MB（约可再导入 '+Math.max(0,estCount)+' 个媒体）';
+  // 大数字用「万」简写，控制整行长度，防孤行
+  const fmtCount=n=>n>=10000?Math.round(n/10000)+' 万':String(n);
+  document.getElementById('quotaTip').textContent='已用 '+fmtSize(q.usage)+' / 总额 '+fmtSize(q.quota)+'，约可再导入 '+fmtCount(Math.max(0,estCount))+' 个媒体';
 }
 // 计算单个 objectStore 的近似大小（遍历所有记录，累加 value 序列化长度）
 async function storeSize(storeName){
@@ -955,6 +959,49 @@ function compressImage(file,maxSide){
 // 运行环境：Capacitor APK 内为 app 模式；网页浏览器为 web 模式
 const IS_NATIVE_APP=!!(window.Capacitor&&window.Capacitor.isNativePlatform&&window.Capacitor.isNativePlatform());
 const RUNTIME_MODE=IS_NATIVE_APP?'app':'web';
+// v4.3.1 修复：App 模式状态栏高度补偿。Android WebView 中 env(safe-area-inset-top) 常为 0，
+// 导致顶栏与系统状态栏重叠。App 模式下用 JS 探测状态栏高度并写入 CSS 变量。
+if(IS_NATIVE_APP){
+  const applySafeTop=function(px){
+    document.documentElement.style.setProperty('--safe-t',px+'px');
+    const pbar=document.getElementById('progressBar');
+    if(pbar)pbar.style.top='calc(52px + '+px+'px)';
+  };
+  const applySafeBottom=function(px){
+    document.documentElement.style.setProperty('--safe-b',px+'px');
+  };
+  // 底部安全区（手势条）：Android 通常为 0，刘海屏/挖孔屏可能有值
+  try{
+    const probeB=document.createElement('div');
+    probeB.style.cssText='position:fixed;bottom:env(safe-area-inset-bottom,0px);visibility:hidden;pointer-events:none;';
+    document.body.appendChild(probeB);
+    setTimeout(function(){
+      try{
+        const vb=parseInt(getComputedStyle(probeB).bottom)||0;
+        if(vb>0)applySafeBottom(vb);
+      }catch(e){}
+      probeB.remove();
+    },100);
+  }catch(e){}
+  try{
+    const SB=window.Capacitor&&window.Capacitor.Plugins&&window.Capacitor.Plugins.StatusBar;
+    if(SB&&SB.getInfo){
+      SB.getInfo().then(function(info){
+        if(info&&typeof info.height==='number'&&info.height>0)applySafeTop(Math.max(0,info.height));
+      }).catch(function(){});
+    }
+  }catch(e){}
+  const probeDiv=document.createElement('div');
+  probeDiv.style.cssText='position:fixed;top:env(safe-area-inset-top,0px);visibility:hidden;pointer-events:none;';
+  document.body.appendChild(probeDiv);
+  setTimeout(function(){
+    try{
+      const v=parseInt(getComputedStyle(probeDiv).top)||0;
+      if(v>0)applySafeTop(v);
+    }catch(e){}
+    probeDiv.remove();
+  },100);
+}
 // 云端版本清单（GitHub Pages 托管 version.json，仅存版本信息，无任何用户数据）
 const VERSION_INFO_URL=IS_NATIVE_APP?'https://lyiyu.github.io/predestined/version.json':'version.json';
 function compareVersion(a,b){const pa=String(a).split('.').map(Number),pb=String(b).split('.').map(Number);for(let i=0;i<Math.max(pa.length,pb.length);i++){const d=(pa[i]||0)-(pb[i]||0);if(d)return d>0?1:-1}return 0}
@@ -1137,7 +1184,7 @@ function switchTab(t){
 (async function init(){
   loadSettings();
   // v4.0：首次运行提示（空白配置，零个人数据）
-  if(_firstRun)showToast('欢迎使用离线媒体库！首次使用：① 选择照片文件夹 ② 在设置页添加你的标签');
+  if(_firstRun)showToast('欢迎使用拾光相册！先选文件夹，再到设置页加标签');
   // v4.0：关于信息（版本+运行模式）
   const aboutEl=document.getElementById('aboutMode');
   if(aboutEl)aboutEl.textContent='拾光相册 v'+VERSION+'（'+(RUNTIME_MODE==='app'?'App 模式':'网页版')+'）';
@@ -1271,7 +1318,7 @@ async function findDuplicates(){
   // 渲染去重面板
   const body=document.getElementById('dupBody');
   let totalDups=dupPairs.reduce((a,b)=>a+b.files.length,0);
-  body.innerHTML='<div style="font-size:13px;color:var(--sub);margin-bottom:12px">发现 '+dupPairs.length+' 组大小相同的文件（共 '+totalDups+' 个），请逐组选择保留哪个，删除其余。可点击「✏️重命名」对保留的文件直接命名。</div>';
+  body.innerHTML='<div style="font-size:13px;color:var(--sub);margin-bottom:12px">发现 '+dupPairs.length+' 组相同文件（共 '+totalDups+' 个），每组保留一个，其余可删除。可点「✏️重命名」直接命名。</div>';
   dupPairs.forEach((group,gi)=>{
     const div=document.createElement('div');
     div.className='dup-group';
@@ -1464,7 +1511,7 @@ function organizeByPerson(){
   const list=document.getElementById('modalList');
   list.innerHTML=persons.map(p=>'<div class="modal-item selected" data-person="'+escapeHtml(p)+'" onclick="toggleModalItem(this)"><input type="checkbox" checked><div class="mi-name">'+escapeHtml(p)+'</div><div class="mi-count">'+personCounts[p]+' 张</div></div>').join('');
   document.getElementById('modalTitle').textContent='选择要整理的人名';
-  document.getElementById('modalDesc').textContent='勾选需要创建文件夹并移动的人名，未勾选的将保留在原位置。';
+  document.getElementById('modalDesc').textContent='勾选要移动的人名，未勾选保留原位置。';
   document.getElementById('modalConfirmBtn').textContent='确认移动';
   modalCallback=async function(selectedPersons){
     if(!selectedPersons.length){showToast('未选择任何人名');return}
@@ -1485,7 +1532,7 @@ function toggleModalItem(el){
   cb.checked=!cb.checked;
   el.classList.toggle('selected',cb.checked);
 }
-function closeModal(){document.getElementById('modalOverlay').classList.remove('show');modalCallback=null;var btn=document.getElementById('modalConfirmBtn');if(btn)btn.classList.remove('danger')}
+function closeModal(){document.getElementById('modalOverlay').classList.remove('show');modalCallback=null;var btn=document.getElementById('modalConfirmBtn');if(btn){btn.classList.remove('danger');btn.style.display='block'}}
 // v4.2: 通用二次确认弹窗（复用 modalOverlay，用于移动前确认）
 function showMoveConfirm(title,desc,listHtml,onOk,okText){
   document.getElementById('modalList').innerHTML=listHtml;
@@ -1561,7 +1608,7 @@ function organizeByPersonMedia(){
   const list=document.getElementById('modalList');
   list.innerHTML=persons.map(p=>'<div class="modal-item selected" data-person="'+escapeHtml(p)+'" onclick="toggleModalItem(this)"><input type="checkbox" checked><div class="mi-name">'+escapeHtml(p)+'</div><div class="mi-count">'+personCounts[p]+' 个</div></div>').join('');
   document.getElementById('modalTitle').textContent='选择要聚合的人名';
-  document.getElementById('modalDesc').textContent='将按「人名/照片」和「人名/视频」两个子目录分类聚合，未勾选的将保留在原位置。';
+  document.getElementById('modalDesc').textContent='按「人名/照片」「人名/视频」分类聚合，未勾选保留原位置。';
   document.getElementById('modalConfirmBtn').textContent='确认聚合';
   modalCallback=async function(selectedPersons){
     if(!selectedPersons.length){showToast('未选择任何人名');return}
@@ -2373,7 +2420,7 @@ if(nApi){
   }
   function nShowAllFilesGuide(retryFn){
     const list=document.getElementById('modalList');
-    list.innerHTML='<div style="font-size:13px;line-height:2;color:#444">重命名/移动/删除功能需要「所有文件访问」权限：<br>1. 打开手机系统「设置」<br>2. 进入「应用管理」→ 找到「离线媒体库」<br>3. 进入「权限」→「文件和媒体」/「所有文件访问」<br>4. 选择「<b>允许管理所有文件</b>」<br>5. 返回本页点击「我已开启，重试」</div>';
+    list.innerHTML='<div style="font-size:13px;line-height:2;color:#444">需要「所有文件访问」权限：<br>1. 打开手机「设置」<br>2. 「应用管理」→「离线媒体库」<br>3. 「权限」→「所有文件访问」<br>4. 选「<b>允许管理所有文件</b>」<br>5. 返回点「我已开启，重试」</div>';
     document.getElementById('modalTitle').textContent='🔐 需要文件权限';
     document.getElementById('modalDesc').textContent='仅用于整理你手机里的照片和视频，不上传任何数据。';
     const btn=document.getElementById('modalConfirmBtn');
@@ -2391,6 +2438,11 @@ if(nApi){
   }
   function nBeginPick(rel){
     nPickState={rel,cb:null};
+    // v4.3.1 修复：App 端点击"选择文件夹"无反应——之前漏掉显示 modalOverlay
+    document.getElementById('modalTitle').textContent='📂 选择文件夹';
+    document.getElementById('modalDesc').textContent='选择包含照片/视频的文件夹，可进入子文件夹';
+    document.getElementById('modalConfirmBtn').style.display='none';
+    document.getElementById('modalOverlay').classList.add('show');
     renderNativePicker(rel,'');
   }
   async function renderNativePicker(rel,selectedName){
@@ -2421,14 +2473,13 @@ if(nApi){
       // 校验可写（重命名需要）
       const writable=await nCheckWriteAccess();
       if(!writable){
-        nPickState.pendingRel=rel;
-        nPickState=null!==null?nPickState:null;
-        const state={pendingRel:rel};
+        nPickState={rel,cb:null};
         document.getElementById('modalOverlay').classList.remove('show');
         nShowAllFilesGuide(()=>{nativePickDir2(rel)});
         return;
       }
       document.getElementById('modalOverlay').classList.remove('show');
+      document.getElementById('modalConfirmBtn').style.display='block';
       nFinishPick(rel);
     }catch(e){showToast('选择失败：'+(e.message||e))}
   }
