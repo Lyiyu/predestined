@@ -1,5 +1,5 @@
 {
-  "version": "4.3.0",
-  "apkUrl": "https://github.com/Lyiyu/predestined/releases/download/v4.3.0/shiguang-v4.3.0.apk",
-  "note": "v4.3 拾光相册：人脸识别分组 + 文件改名后标签自动恢复 + 新图标"
+  "version": "4.3.1",
+  "apkUrl": "https://github.com/Lyiyu/predestined/releases/download/v4.3.1/shiguang-v4.3.1.apk",
+  "note": "v4.3.1 App UI 修复：选择文件夹无反应 + 状态栏重叠 + 标签输入框截断 + 孤行"
 }
