@@ -1,5 +1,5 @@
 {
-  "version": "4.3.6",
-  "apkUrl": "https://github.com/Lyiyu/predestined/releases/download/v4.3.6/shiguang-v4.3.6.apk",
-  "note": "v4.3.6 新增存储诊断（设置→存储诊断一键生成报告），扫描不出文件时把报告发给助手即可定位"
+  "version": "4.3.7",
+  "apkUrl": "https://github.com/Lyiyu/predestined/releases/download/v4.3.7/shiguang-v4.3.7.apk",
+  "note": "v4.3.7 修复扫描不到文件的根因：检测「所有文件访问」权限并支持一键跳转开启（仅开照片/视频权限时，隐藏目录里的照片会被系统隐藏）"
 }
