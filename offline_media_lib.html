@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
-<title>拾光相册 v4.3.3</title>
+<title>拾光相册 v4.3.4</title>
 <style>
 *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 :root{
@@ -265,7 +265,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei
 <div class="topbar">
   <h1>📷 拾光相册</h1>
   <button class="topbar-btn" onclick="location.reload()" title="刷新页面（用于重新授权文件夹）">🔄</button>
-  <span class="tag">v4.3.3</span>
+  <span class="tag">v4.3.4</span>
 </div>
 
 <div class="progress-bar" id="progressBar"><i id="progressFill"></i></div>
@@ -503,7 +503,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei
 
 <script>
 // ==================== 状态 ====================
-const VERSION='4.3.3';
+const VERSION='4.3.4';
 const DB_NAME='offline_media_lib_v34',DB_VERSION=6;
 const STORE_MEDIA='media',STORE_THUMB='thumbs',STORE_SESSION='session',STORE_FACES='faces';
 let cfg={rule:'person_seq',tags:[],dateFormat:'YYYYMMDD',compress:true,maxCount:2000,showHidden:false,recentNameLimit:5};
@@ -978,6 +978,9 @@ if(IS_NATIVE_APP){
   try{
     const SB=window.Capacitor&&window.Capacitor.Plugins&&window.Capacitor.Plugins.StatusBar;
     if(SB&&SB.getInfo){
+      // v4.3.4: targetSdk 降 32 后 Android 15 不再强制 edge-to-edge——主动开沉浸模式，
+      // 让渐变顶栏继续延伸到状态栏后面（保持 v4.3.2 修复的视觉），safe-top 补偿链照常工作
+      try{if(SB.setOverlaysWebView)SB.setOverlaysWebView({overlay:true}).catch(function(){})}catch(e){}
       SB.getInfo().then(function(info){
         if(info&&typeof info.height==='number'&&info.height>0){
           const dpr=window.devicePixelRatio||1;
@@ -2310,7 +2313,8 @@ if(nApi){
   // -------- 底层操作 --------
   async function nReaddir(rel){
     const r=await nApi.readdir({path:rel||'.',directory:N_DIR});
-    return (r.files||[]).map(f=>({name:f.name,isDir:f.type==='DIRECTORY'||f.type===2||(typeof f.type==='string'&&f.type.toLowerCase().startsWith('direc'))}));
+    // v4.3.4: 保留 readdir 已返回的 size/mtime（Capacitor FileInfo 含这些字段），扫描器直接用，避免逐文件 readFile 灾难
+    return (r.files||[]).map(f=>({name:f.name,isDir:f.type==='DIRECTORY'||f.type===2||(typeof f.type==='string'&&f.type.toLowerCase().startsWith('direc')),size:(typeof f.size==='number'?f.size:0),mtime:(typeof f.mtime==='number'?f.mtime:0)}));
   }
   async function nStat(rel){try{return await nApi.stat({path:rel||'.',directory:N_DIR})}catch(e){return null}}
   async function nExists(rel){try{await nApi.stat({path:rel,directory:N_DIR});return true}catch(e){return false}}
@@ -2328,9 +2332,9 @@ if(nApi){
   async function nUri(rel){try{const r=await nApi.getUri({path:rel,directory:N_DIR});const abs=String(r.uri||'').replace(/^file:\/\//,'');return window.Capacitor.convertFileSrc(abs)}catch(e){return ''}}
 
   // -------- 伪句柄 --------
-  function nFileHandle(rel){
+  function nFileHandle(rel,info){
     return {
-      kind:'file',name:nName(rel),_rel:rel,
+      kind:'file',name:nName(rel),_rel:rel,_info:info||null,
       async getFileMeta(){this._meta=this._meta||await nStat(rel);return this._meta},
       async getFile(){ // 读入 Blob（图片场景安全；视频场景上层已改用 nUri URL）
         const blob=await nReadBlob(rel);
@@ -2387,7 +2391,7 @@ if(nApi){
         const entries=await nReaddir(rel);
         for(const e of entries){
           if(e.isDir)yield nDirHandle(nJoin(rel,e.name));
-          else yield nFileHandle(nJoin(rel,e.name));
+          else yield nFileHandle(nJoin(rel,e.name),e); // v4.3.4: 传 FileInfo(size/mtime)，扫描零额外 IO
         }
       },
       async queryPermission(){return 'granted'},
