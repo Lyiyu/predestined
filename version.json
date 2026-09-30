@@ -1,5 +1,5 @@
 {
-  "version": "4.3.8",
-  "apkUrl": "https://github.com/Lyiyu/predestined/releases/download/v4.3.8/shiguang-v4.3.8.apk",
-  "note": "v4.3.8 修复查重面板缩略图不显示（历史遗留 DOM 时序 Bug + App 端补原生缩略图管线）"
+  "version": "4.4.0",
+  "apkUrl": "https://github.com/Lyiyu/predestined/releases/download/v4.4.0/shiguang-v4.4.0.apk",
+  "note": "v4.4.0 详情页相册化：前后滑动切换、双指捏合/双击放大、放大后拖动平移；AVI 等格式优雅降级提示；操作按钮 UI 统一"
 }
