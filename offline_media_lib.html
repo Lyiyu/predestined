@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
-<title>拾光相册 v4.3.1</title>
+<title>拾光相册 v4.3.2</title>
 <style>
 *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 :root{
@@ -265,7 +265,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei
 <div class="topbar">
   <h1>📷 拾光相册</h1>
   <button class="topbar-btn" onclick="location.reload()" title="刷新页面（用于重新授权文件夹）">🔄</button>
-  <span class="tag">v4.3.1</span>
+  <span class="tag">v4.3.2</span>
 </div>
 
 <div class="progress-bar" id="progressBar"><i id="progressFill"></i></div>
@@ -503,7 +503,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei
 
 <script>
 // ==================== 状态 ====================
-const VERSION='4.3.1';
+const VERSION='4.3.2';
 const DB_NAME='offline_media_lib_v34',DB_VERSION=6;
 const STORE_MEDIA='media',STORE_THUMB='thumbs',STORE_SESSION='session',STORE_FACES='faces';
 let cfg={rule:'person_seq',tags:[],dateFormat:'YYYYMMDD',compress:true,maxCount:2000,showHidden:false,recentNameLimit:5};
@@ -959,18 +959,48 @@ function compressImage(file,maxSide){
 // 运行环境：Capacitor APK 内为 app 模式；网页浏览器为 web 模式
 const IS_NATIVE_APP=!!(window.Capacitor&&window.Capacitor.isNativePlatform&&window.Capacitor.isNativePlatform());
 const RUNTIME_MODE=IS_NATIVE_APP?'app':'web';
-// v4.3.1 修复：App 模式状态栏高度补偿。Android WebView 中 env(safe-area-inset-top) 常为 0，
-// 导致顶栏与系统状态栏重叠。App 模式下用 JS 探测状态栏高度并写入 CSS 变量。
+// v4.3.2 修复：App 模式状态栏高度补偿（真机 v4.3.1 仍重叠的彻底方案）。
+// v4.3.1 失败根因：①当时未安装 @capacitor/status-bar 插件，Plugins.StatusBar 为 undefined；
+// ②Android WebView 中 env(safe-area-inset-top) 返回 0，两条路都失效。
+// v4.3.2 三层保障：启动立即固定兜底 28px（保证绝不重叠）→ StatusBar 插件精确值校准（物理像素/DPR 换算）→ env 探针更大值覆盖（深刘海屏）。
 if(IS_NATIVE_APP){
-  const applySafeTop=function(px){
-    document.documentElement.style.setProperty('--safe-t',px+'px');
+  const applySafeTop=function(cssPx){
+    document.documentElement.style.setProperty('--safe-t',cssPx+'px');
     const pbar=document.getElementById('progressBar');
-    if(pbar)pbar.style.top='calc(52px + '+px+'px)';
+    if(pbar)pbar.style.top='calc(52px + '+cssPx+'px)';
   };
-  const applySafeBottom=function(px){
-    document.documentElement.style.setProperty('--safe-b',px+'px');
+  const applySafeBottom=function(cssPx){
+    document.documentElement.style.setProperty('--safe-b',cssPx+'px');
   };
-  // 底部安全区（手势条）：Android 通常为 0，刘海屏/挖孔屏可能有值
+  // 第0层：立即固定兜底——Android 状态栏常见 24~30dp，取 28 保证第一时间不重叠
+  applySafeTop(28);
+  // 第1层：StatusBar 插件（v4.3.2 已安装 @capacitor/status-bar）——getInfo().height 为物理像素，必须除以 devicePixelRatio 转 CSS 像素
+  try{
+    const SB=window.Capacitor&&window.Capacitor.Plugins&&window.Capacitor.Plugins.StatusBar;
+    if(SB&&SB.getInfo){
+      SB.getInfo().then(function(info){
+        if(info&&typeof info.height==='number'&&info.height>0){
+          const dpr=window.devicePixelRatio||1;
+          const cssH=Math.round(info.height/dpr);
+          if(cssH>=20&&cssH<=80)applySafeTop(cssH); // 合理区间才校准
+        }
+      }).catch(function(){});
+      // 状态栏背景色与顶栏渐变起始色一致，避免色差割裂
+      try{SB.setBackgroundColor({color:'#5b6cff'}).catch(function(){})}catch(e){}
+    }
+  }catch(e){}
+  // 第2层：env() 探针——仅当返回值 > 28（深刘海/挖孔屏）时覆盖
+  const probeDiv=document.createElement('div');
+  probeDiv.style.cssText='position:fixed;top:env(safe-area-inset-top,0px);visibility:hidden;pointer-events:none;';
+  document.body.appendChild(probeDiv);
+  setTimeout(function(){
+    try{
+      const v=parseInt(getComputedStyle(probeDiv).top)||0;
+      if(v>28)applySafeTop(v);
+    }catch(e){}
+    probeDiv.remove();
+  },100);
+  // 底部安全区（手势条）
   try{
     const probeB=document.createElement('div');
     probeB.style.cssText='position:fixed;bottom:env(safe-area-inset-bottom,0px);visibility:hidden;pointer-events:none;';
@@ -983,24 +1013,6 @@ if(IS_NATIVE_APP){
       probeB.remove();
     },100);
   }catch(e){}
-  try{
-    const SB=window.Capacitor&&window.Capacitor.Plugins&&window.Capacitor.Plugins.StatusBar;
-    if(SB&&SB.getInfo){
-      SB.getInfo().then(function(info){
-        if(info&&typeof info.height==='number'&&info.height>0)applySafeTop(Math.max(0,info.height));
-      }).catch(function(){});
-    }
-  }catch(e){}
-  const probeDiv=document.createElement('div');
-  probeDiv.style.cssText='position:fixed;top:env(safe-area-inset-top,0px);visibility:hidden;pointer-events:none;';
-  document.body.appendChild(probeDiv);
-  setTimeout(function(){
-    try{
-      const v=parseInt(getComputedStyle(probeDiv).top)||0;
-      if(v>0)applySafeTop(v);
-    }catch(e){}
-    probeDiv.remove();
-  },100);
 }
 // 云端版本清单（GitHub Pages 托管 version.json，仅存版本信息，无任何用户数据）
 const VERSION_INFO_URL=IS_NATIVE_APP?'https://lyiyu.github.io/predestined/version.json':'version.json';
