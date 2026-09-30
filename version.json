@@ -1,5 +1,5 @@
 {
-  "version": "4.3.7",
-  "apkUrl": "https://github.com/Lyiyu/predestined/releases/download/v4.3.7/shiguang-v4.3.7.apk",
-  "note": "v4.3.7 修复扫描不到文件的根因：检测「所有文件访问」权限并支持一键跳转开启（仅开照片/视频权限时，隐藏目录里的照片会被系统隐藏）"
+  "version": "4.3.8",
+  "apkUrl": "https://github.com/Lyiyu/predestined/releases/download/v4.3.8/shiguang-v4.3.8.apk",
+  "note": "v4.3.8 修复查重面板缩略图不显示（历史遗留 DOM 时序 Bug + App 端补原生缩略图管线）"
 }
