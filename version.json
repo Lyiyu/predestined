@@ -1,5 +1,5 @@
 {
-  "version": "4.3.2",
-  "apkUrl": "https://github.com/Lyiyu/predestined/releases/download/v4.3.2/shiguang-v4.3.2.apk",
-  "note": "v4.3.2 彻底修复状态栏重叠（安装StatusBar插件+固定兜底+精确校准）"
+  "version": "4.3.3",
+  "apkUrl": "https://github.com/Lyiyu/predestined/releases/download/v4.3.3/shiguang-v4.3.3.apk",
+  "note": "v4.3.3 修复选择器点击无反应（块内函数作用域）+ 支持显示隐藏文件夹"
 }
