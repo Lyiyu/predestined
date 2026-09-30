@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
-<title>拾光相册 v4.3.2</title>
+<title>拾光相册 v4.3.3</title>
 <style>
 *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 :root{
@@ -265,7 +265,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei
 <div class="topbar">
   <h1>📷 拾光相册</h1>
   <button class="topbar-btn" onclick="location.reload()" title="刷新页面（用于重新授权文件夹）">🔄</button>
-  <span class="tag">v4.3.2</span>
+  <span class="tag">v4.3.3</span>
 </div>
 
 <div class="progress-bar" id="progressBar"><i id="progressFill"></i></div>
@@ -503,7 +503,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei
 
 <script>
 // ==================== 状态 ====================
-const VERSION='4.3.2';
+const VERSION='4.3.3';
 const DB_NAME='offline_media_lib_v34',DB_VERSION=6;
 const STORE_MEDIA='media',STORE_THUMB='thumbs',STORE_SESSION='session',STORE_FACES='faces';
 let cfg={rule:'person_seq',tags:[],dateFormat:'YYYYMMDD',compress:true,maxCount:2000,showHidden:false,recentNameLimit:5};
@@ -2443,7 +2443,11 @@ if(nApi){
 
   // -------- 目录选择器（复用 modalOverlay） --------
   let nPickState=null;
+  // v4.3.3: 目录选择器"显示隐藏文件夹"开关（默认关，状态记忆到 localStorage）
+  function nPickerShowHidden(){return localStorage.getItem('nPickerShowHidden')==='1'}
+  function nTogglePickerHidden(){localStorage.setItem('nPickerShowHidden',nPickerShowHidden()?'0':'1');renderNativePicker(nPickState&&nPickState.rel||'')}
   function nativePickDir(){
+    showToast('正在打开目录选择器…');
     nRequestMediaPerms().then(()=>{
       nBeginPick('');
     });
@@ -2460,6 +2464,7 @@ if(nApi){
   async function renderNativePicker(rel,selectedName){
     const quick=[{rel:'DCIM',icon:'📷',lbl:'相册（DCIM）'},{rel:'Pictures',icon:'🖼️',lbl:'图片（Pictures）'},{rel:'Movies',icon:'🎬',lbl:'视频（Movies）'},{rel:'Download',icon:'📥',lbl:'下载（Download）'},{rel:'',icon:'📱',lbl:'整个内部存储'}];
     const list=document.getElementById('modalList');
+    const showHidden=nPickerShowHidden();
     const crumbs=rel===''?'内部存储':rel.split('/').map((p,i,arr)=>'<span class="nchip'+(i===arr.length-1?' on':'')+'" style="cursor:pointer" onclick="nGoPick(\''+arr.slice(0,i+1).join('/')+'\')">'+escapeHtml(p)+'</span>').join(' › ');
     let html='<div style="font-size:12px;color:#999;margin-bottom:8px">'+crumbs+'</div>';
     if(rel===''){
@@ -2467,14 +2472,27 @@ if(nApi){
     }else{
       html+='<div style="margin-bottom:10px"><button class="btn-sm" style="background:#fff;color:var(--primary);border-color:var(--primary)" onclick="nGoPick(\''+nParent(rel)+'\')">⬆️ 上一级</button> <button class="btn-sm" style="background:var(--primary);color:#fff;border-color:var(--primary)" onclick="nConfirmPick(\''+rel+'\')">✅ 就选这个文件夹</button></div>';
     }
+    // v4.3.3: 显示隐藏文件夹开关（切到当前层重新渲染）
+    html+='<div style="margin-bottom:8px"><span class="nchip'+(showHidden?' on':'')+'" style="cursor:pointer" onclick="nTogglePickerHidden()">'+(showHidden?'👁 已显示隐藏':'👁 显示隐藏')+'</span></div>';
     let entries=[];
-    try{entries=await nReaddir(rel)}catch(e){}
-    const dirs=entries.filter(e=>e.isDir&&!e.name.startsWith('.')).map(e=>e.name).sort((a,b)=>a.localeCompare(b,'zh'));
-    if(rel===''){['Android'].forEach(x=>{const i=dirs.indexOf(x);if(i>=0)dirs.splice(i,1)})}
-    html+=dirs.map(d=>'<div class="modal-item" style="padding:10px 12px" onclick="nGoPick(\''+nJoin(rel,d)+'\')"><div class="mi-name">📁 '+escapeHtml(d)+'</div></div>').join('')||'<div style="color:#999;font-size:13px;padding:8px 0">（无子文件夹）</div>';
+    let readErr=false;
+    try{entries=await nReaddir(rel)}catch(e){readErr=true}
+    if(readErr){
+      // v4.3.3: 读取失败不再伪装成"无子文件夹"，给出明确指引
+      html+='<div style="color:#c53030;font-size:13px;line-height:1.9;padding:8px 0">⚠️ 无法读取该目录<br><small>通常是未授予「所有文件访问」权限</small></div><div style="margin-top:6px"><button class="btn-sm" style="background:var(--primary);color:#fff;border-color:var(--primary)" onclick="nPickPermGuide()">🔐 去开启权限</button></div>';
+    }else{
+      let dirs=entries.filter(e=>e.isDir).map(e=>e.name).sort((a,b)=>a.localeCompare(b,'zh'));
+      if(!showHidden)dirs=dirs.filter(d=>!d.startsWith('.'));
+      if(rel===''){['Android'].forEach(x=>{const i=dirs.indexOf(x);if(i>=0)dirs.splice(i,1)})}
+      html+=dirs.map(d=>{
+        const hidden=d.startsWith('.');
+        return '<div class="modal-item" style="padding:10px 12px'+(hidden?';background:#f5f3ff':'')+'" onclick="nGoPick(\''+nJoin(rel,d)+'\')"><div class="mi-name">'+(hidden?'📂 ':'📁 ')+escapeHtml(d)+(hidden?' <small style="color:#999">（隐藏）</small>':'')+'</div></div>';
+      }).join('')||'<div style="color:#999;font-size:13px;padding:8px 0">（无子文件夹）</div>';
+    }
     list.innerHTML=html;
     list.scrollTop=0;
   }
+  function nPickPermGuide(){nShowAllFilesGuide(()=>{nBeginPick(nPickState&&nPickState.rel||'')})}
   async function nGoPick(rel){
     if(!nPickState)return;
     await renderNativePicker(rel);
@@ -2499,6 +2517,8 @@ if(nApi){
   async function nFinishPick(rel){
     nativeRoot=rel;
     localStorage.setItem('nativeRootRel',rel);
+    // v4.3.3: 保险恢复确认按钮显示（防止后续整理/聚合弹窗按钮被隐藏）
+    document.getElementById('modalConfirmBtn').style.display='block';
     curDir=nDirHandle(rel);
     curDirName=rel===''?'内部存储':nName(rel);
     document.getElementById('dirName').textContent='📂 '+curDirName;
@@ -2510,6 +2530,17 @@ if(nApi){
   }
   // 覆盖 pickDir（原生模式走目录选择 UI）
   window.pickDir=function(){ if(isPickingDir)return; isPickingDir=true; try{ nativePickDir(); } finally { isPickingDir=false; } };
+  // v4.3.3 关键修复：全局代码的块内函数声明不会提升为全局变量（Chrome 仅在函数体内支持 Annex B 提升），
+  // 目录选择器 HTML 的 inline onclick="nGoPick(...)" 等在全局作用域解析失败 → ReferenceError →
+  // 真机表现为"弹窗能打开但点目录项/快捷入口/开关全部无反应"。必须显式挂载到 window。
+  window.nGoPick=nGoPick;
+  window.nConfirmPick=nConfirmPick;
+  window.nTogglePickerHidden=nTogglePickerHidden;
+  window.nPickPermGuide=nPickPermGuide;
+  window.nativePickDir2=nativePickDir2;
+  // v4.3.3: 块外全局代码（loadThumbForCell 缩略图 / 详情页大图）引用这两个块内函数 → 同样必须挂载
+  window.nUri=nUri;
+  window.nThumbNative=nThumbNative;
 
   // 覆盖 restoreSession（原生：路径持久化在 localStorage，无需授权弹窗）
   const _origRestoreSession=restoreSession;
