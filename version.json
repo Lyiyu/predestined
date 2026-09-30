@@ -1,5 +1,5 @@
 {
-  "version": "4.3.4",
-  "apkUrl": "https://github.com/Lyiyu/predestined/releases/download/v4.3.4/shiguang-v4.3.4.apk",
-  "note": "v4.3.4 修复扫描未识别内容（targetSdk权限门）+ 扫描速度大幅提升"
+  "version": "4.3.5",
+  "apkUrl": "https://github.com/Lyiyu/predestined/releases/download/v4.3.5/shiguang-v4.3.5.apk",
+  "note": "v4.3.5 修复权限弹窗不出现（manifest maxSdkVersion 过滤）"
 }
