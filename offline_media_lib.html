@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
-<title>离线媒体库 v4.0</title>
+<title>离线媒体库 v4.1</title>
 <style>
 *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 :root{
@@ -243,7 +243,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei
 <div class="topbar">
   <h1>📁 离线媒体库</h1>
   <button class="topbar-btn" onclick="location.reload()" title="刷新页面（用于重新授权文件夹）">🔄</button>
-  <span class="tag">v4.0</span>
+  <span class="tag">v4.1</span>
 </div>
 
 <div class="progress-bar" id="progressBar"><i id="progressFill"></i></div>
@@ -452,7 +452,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei
 
 <script>
 // ==================== 状态 ====================
-const VERSION='4.0.0';
+const VERSION='4.1.0';
 const DB_NAME='offline_media_lib_v34',DB_VERSION=5;
 const STORE_MEDIA='media',STORE_THUMB='thumbs',STORE_SESSION='session';
 let cfg={rule:'person_seq',tags:[],dateFormat:'YYYYMMDD',compress:true,maxCount:2000,showHidden:false,recentNameLimit:5};
@@ -616,7 +616,7 @@ async function rescanDir(forceFull){
     await Promise.all(batch.map(async it=>{
       const old=oldMap.get(it.name);
       if(old&&!forceFull){it.size=old.size;it.lastModified=old.lastModified;it.savedAt=old.savedAt||0;it.renamed=old.renamed;it.tags=old.tags||[];it.person=old.person||'';return}
-      try{const f=await it.handle.getFile();it.size=f.size;it.lastModified=f.lastModified}catch(e){it.size=0}
+      try{if(IS_NATIVE_APP){const m=await it.handle.getFileMeta();it.size=m&&m.size||0;it.lastModified=m&&m.mtime||0}else{const f=await it.handle.getFile();it.size=f.size;it.lastModified=f.lastModified}}catch(e){it.size=0}
     }));
     showProgress(40+Math.round((i+batchSize)/Math.max(1,items.length)*40));
   }
@@ -682,6 +682,8 @@ async function loadThumbForCell(el,id){
   const rec=libItems.find(i=>i.name===item.name);
   if(rec&&(rec.img||rec.thumb)){const t=rec.thumb||rec.img;thumbCache.set(item.name,t);el.innerHTML='<img src="'+t+'">';return}
   if(!item.handle){el.textContent='🔒';return}
+  // v4.1 原生模式：缩略图直接用本地文件 URL 生成（不读入 JS 内存，大视频安全）
+  if(IS_NATIVE_APP&&nApi){await nThumbNative(el,item);return}
   try{
     const file=await item.handle.getFile();
     if(item.type==='video'){
@@ -755,6 +757,15 @@ async function loadDetailImage(item){
     return;
   }
   el.innerHTML='<div style="color:#666">加载中…</div>';
+  // v4.1 原生模式：<img>/<video> 直接指向本地文件 URL，零内存占用
+  if(IS_NATIVE_APP&&nApi&&item.handle._rel!==undefined){
+    try{
+      const url=await nUri(item.handle._rel);
+      if(item.type==='video'){el.innerHTML='<video src="'+url+'" controls style="max-width:100%;max-height:100%;border-radius:8px"></video>'}
+      else{el.innerHTML='<img src="'+url+'">'}
+    }catch(e){el.innerHTML='<div style="color:#666">无法加载</div>'}
+    return;
+  }
   try{
     const file=await item.handle.getFile();
     const url=URL.createObjectURL(file);
@@ -1789,6 +1800,252 @@ function updatePreviewName(){
   // v3.5.3: 已移除预览文件名区块，仅维护确认按钮可用状态
   const btn=document.getElementById('detailConfirm');
   if(btn)btn.disabled=!detailPerson;
+}
+// ==================== v4.1: 原生文件系统适配层（Capacitor Android） ====================
+// 思路：为 @capacitor/filesystem 构造与浏览器 FileSystemHandle 同接口的「伪句柄」，
+// 业务代码（walkDir/detailConfirm/organize/delete/restoreHandles）零改动。
+let nApi=null; // 原生 Filesystem 插件实例；非 App 环境为 null
+if(IS_NATIVE_APP&&window.Capacitor){
+  const P=window.Capacitor.Plugins||{};
+  nApi=P.Filesystem||P['Filesystem']||null;
+}
+if(nApi){
+  const N_DIR='EXTERNAL_STORAGE';
+  let nativeRoot=''; // 相对外部存储根（/storage/emulated/0）的相对路径，''=全部
+  const nJoin=(...a)=>a.filter(p=>p!==''&&p!==null&&p!==undefined).join('/');
+  const nParent=rel=>{const p=rel.split('/');p.pop();return p.join('/')};
+  const nName=rel=>rel.split('/').pop();
+  function nMime(name){const e=getExt(name).toLowerCase();return{'.jpg':'image/jpeg','.jpeg':'image/jpeg','.png':'image/png','.webp':'image/webp','.heic':'image/heic','.gif':'image/gif','.mp4':'video/mp4','.mov':'video/quicktime','.mkv':'video/x-matroska','.avi':'video/x-msvideo','.webm':'video/webm'}[e]||'application/octet-stream'}
+
+  // -------- 底层操作 --------
+  async function nReaddir(rel){
+    const r=await nApi.readdir({path:rel||'.',directory:N_DIR});
+    return (r.files||[]).map(f=>({name:f.name,isDir:f.type==='DIRECTORY'||f.type===2||(typeof f.type==='string'&&f.type.toLowerCase().startsWith('direc'))}));
+  }
+  async function nStat(rel){try{return await nApi.stat({path:rel||'.',directory:N_DIR})}catch(e){return null}}
+  async function nExists(rel){try{await nApi.stat({path:rel,directory:N_DIR});return true}catch(e){return false}}
+  async function nReadBlob(rel){
+    const r=await nApi.readFile({path:rel,directory:N_DIR});
+    const bin=atob(r.data);const arr=new Uint8Array(bin.length);
+    for(let i=0;i<bin.length;i++)arr[i]=bin.charCodeAt(i);
+    return new Blob([arr],{type:nMime(rel)});
+  }
+  function nBlobToB64(blob){return new Promise(res=>{const fr=new FileReader();fr.onload=()=>res(String(fr.result).split(',')[1]||'');fr.onerror=()=>res('');fr.readAsDataURL(blob)})}
+  async function nWriteBlob(rel,blob){const b64=await nBlobToB64(blob);await nApi.writeFile({path:rel,directory:N_DIR,data:b64,recursive:true})}
+  async function nMkdir(rel){try{await nApi.mkdir({path:rel,directory:N_DIR,recursive:true});return true}catch(e){return false}}
+  async function nRename(from,to){await nApi.rename({from,to,directory:N_DIR,toDirectory:N_DIR})}
+  async function nDelete(rel){await nApi.deleteFile({path:rel,directory:N_DIR})}
+  async function nUri(rel){try{const r=await nApi.getUri({path:rel,directory:N_DIR});const abs=String(r.uri||'').replace(/^file:\/\//,'');return window.Capacitor.convertFileSrc(abs)}catch(e){return ''}}
+
+  // -------- 伪句柄 --------
+  function nFileHandle(rel){
+    return {
+      kind:'file',name:nName(rel),_rel:rel,
+      async getFileMeta(){this._meta=this._meta||await nStat(rel);return this._meta},
+      async getFile(){ // 读入 Blob（图片场景安全；视频场景上层已改用 nUri URL）
+        const blob=await nReadBlob(rel);
+        const st=await nStat(rel);
+        return new File([blob],nName(rel),{type:nMime(rel),lastModified:(st&&st.mtime)||Date.now()});
+      },
+      async move(a,b){
+        // 兼容 move(newName) 与 move(dirHandle, newName)
+        const dirH=(a&&a.kind==='directory')?a:null;
+        const newName=dirH?(b||a.name):(typeof a==='string'?a:a.name);
+        const toRel=dirH?nJoin(dirH._rel,newName):nJoin(nParent(rel),newName);
+        await nRename(rel,toRel);
+        const fresh=nFileHandle(toRel);
+        Object.keys(this).forEach(k=>delete this[k]);
+        Object.assign(this,fresh); // 就地更新：业务代码持有的引用自动指向新文件
+        return this;
+      },
+      async remove(){await nDelete(rel)},
+      async createWritable(){ // 兼容业务代码 write(data)+close() 用法，close 时真正落盘
+        let _chunks=[];
+        return {
+          async write(d){_chunks.push(d)},
+          async close(){
+            const blob=_chunks.length===1&&(_chunks[0] instanceof Blob)?_chunks[0]:new Blob(_chunks.slice());
+            await nWriteBlob(rel,blob);_chunks=null;
+          }
+        };
+      },
+      async getParent(){return nDirHandle(nParent(rel))},
+      async queryPermission(){return 'granted'},
+      async requestPermission(){return 'granted'}
+    };
+  }
+  function nDirHandle(rel){
+    const name=rel===''?'内部存储':nName(rel);
+    return {
+      kind:'directory',name:name,_rel:rel,
+      async getFileHandle(fname,opts){
+        const child=nJoin(rel,fname);
+        if(opts&&opts.create){if(rel!==''&&!(await nExists(rel)))await nMkdir(rel);return nFileHandle(child)}
+        if(await nExists(child))return nFileHandle(child);
+        throw new Error('NotFoundError: '+fname);
+      },
+      async getDirectoryHandle(dname,opts){
+        const child=nJoin(rel,dname);
+        const isDirKey='__isdir_'+child;
+        if(opts&&opts.create){await nMkdir(child);return nDirHandle(child)}
+        const st=await nStat(child);
+        if(st)return nDirHandle(child);
+        throw new Error('NotFoundError: '+dname);
+      },
+      async removeEntry(n){try{await nApi.rmdir({path:nJoin(rel,n),directory:N_DIR})}catch(e){try{await nDelete(nJoin(rel,n))}catch(e2){throw e}}},
+      async *values(){
+        const entries=await nReaddir(rel);
+        for(const e of entries){
+          if(e.isDir)yield nDirHandle(nJoin(rel,e.name));
+          else yield nFileHandle(nJoin(rel,e.name));
+        }
+      },
+      async queryPermission(){return 'granted'},
+      async requestPermission(){return 'granted'}
+    };
+  }
+
+  // -------- 原生缩略图（走本地文件 URL，不读入内存） --------
+  async function nThumbNative(el,item){
+    try{
+      const url=await nUri(item.handle._rel);
+      if(!url){el.textContent=item.type==='video'?'▶':'🖼';return}
+      if(item.type==='video'){
+        const v=document.createElement('video');v.preload='metadata';v.muted=true;v.src=url;
+        await new Promise(res=>{
+          v.onloadeddata=()=>{try{v.currentTime=Math.min(v.duration/2||0,1);v.onseeked=()=>{try{const c=document.createElement('canvas');c.width=v.videoWidth||160;c.height=v.videoHeight||160;c.getContext('2d').drawImage(v,0,0,c.width,c.height);const data=c.toDataURL('image/jpeg',.5);thumbCache.set(item.name,data);dbPutThumb(item.name+'@'+curDirName,data);el.innerHTML='<img src="'+data+'">';res()}catch(e){el.textContent='▶';res()}}}catch(e){el.textContent='▶';res()}};
+          v.onerror=()=>{el.textContent='▶';res()};
+        });
+      }else{
+        const img=new Image();
+        await new Promise(res=>{
+          img.onload=()=>{try{const maxSide=300;const r=Math.min(1,maxSide/Math.max(img.width,img.height));const w=Math.max(1,Math.round(img.width*r)),h=Math.max(1,Math.round(img.height*r));const c=document.createElement('canvas');c.width=w;c.height=h;c.getContext('2d').drawImage(img,0,0,w,h);const data=c.toDataURL('image/jpeg',.6);thumbCache.set(item.name,data);dbPutThumb(item.name+'@'+curDirName,data);el.innerHTML='<img src="'+data+'">';res()}catch(e){el.textContent='🖼';res()}};
+          img.onerror=()=>{el.textContent='🖼';res()};
+          img.src=url;
+        });
+      }
+    }catch(e){el.textContent='🖼'}
+  }
+
+  // -------- 存储权限（重命名/删除需要「所有文件访问」） --------
+  async function nRequestMediaPerms(){
+    try{await nApi.requestPermissions()}catch(e){}
+  }
+  async function nCheckWriteAccess(){
+    try{
+      const probe='Download/.medialib_probe_'+Date.now();
+      const b64=btoa('ok');
+      await nApi.writeFile({path:probe,directory:N_DIR,data:b64,recursive:true});
+      await nApi.deleteFile({path:probe,directory:N_DIR});
+      return true;
+    }catch(e){return false}
+  }
+  function nShowAllFilesGuide(retryFn){
+    const list=document.getElementById('modalList');
+    list.innerHTML='<div style="font-size:13px;line-height:2;color:#444">重命名/移动/删除功能需要「所有文件访问」权限：<br>1. 打开手机系统「设置」<br>2. 进入「应用管理」→ 找到「离线媒体库」<br>3. 进入「权限」→「文件和媒体」/「所有文件访问」<br>4. 选择「<b>允许管理所有文件</b>」<br>5. 返回本页点击「我已开启，重试」</div>';
+    document.getElementById('modalTitle').textContent='🔐 需要文件权限';
+    document.getElementById('modalDesc').textContent='仅用于整理你手机里的照片和视频，不上传任何数据。';
+    const btn=document.getElementById('modalConfirmBtn');
+    btn.textContent='我已开启，重试';
+    modalCallback=async function(){retryFn&&retryFn()};
+    document.getElementById('modalOverlay').classList.add('show');
+  }
+
+  // -------- 目录选择器（复用 modalOverlay） --------
+  let nPickState=null;
+  function nativePickDir(){
+    nRequestMediaPerms().then(()=>{
+      nBeginPick('');
+    });
+  }
+  function nBeginPick(rel){
+    nPickState={rel,cb:null};
+    renderNativePicker(rel,'');
+  }
+  async function renderNativePicker(rel,selectedName){
+    const quick=[{rel:'DCIM',icon:'📷',lbl:'相册（DCIM）'},{rel:'Pictures',icon:'🖼️',lbl:'图片（Pictures）'},{rel:'Movies',icon:'🎬',lbl:'视频（Movies）'},{rel:'Download',icon:'📥',lbl:'下载（Download）'},{rel:'',icon:'📱',lbl:'整个内部存储'}];
+    const list=document.getElementById('modalList');
+    const crumbs=rel===''?'内部存储':rel.split('/').map((p,i,arr)=>'<span class="nchip'+(i===arr.length-1?' on':'')+'" style="cursor:pointer" onclick="nGoPick(\''+arr.slice(0,i+1).join('/')+'\')">'+escapeHtml(p)+'</span>').join(' › ');
+    let html='<div style="font-size:12px;color:#999;margin-bottom:8px">'+crumbs+'</div>';
+    if(rel===''){
+      html+='<div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:12px">'+quick.map(q=>'<span class="nchip" style="cursor:pointer" onclick="nConfirmPick(\''+q.rel+'\')">'+q.icon+' '+q.lbl+'</span>').join('')+'</div>';
+    }else{
+      html+='<div style="margin-bottom:10px"><button class="btn-sm" style="background:#fff;color:var(--primary);border-color:var(--primary)" onclick="nGoPick(\''+nParent(rel)+'\')">⬆️ 上一级</button> <button class="btn-sm" style="background:var(--primary);color:#fff;border-color:var(--primary)" onclick="nConfirmPick(\''+rel+'\')">✅ 就选这个文件夹</button></div>';
+    }
+    let entries=[];
+    try{entries=await nReaddir(rel)}catch(e){}
+    const dirs=entries.filter(e=>e.isDir&&!e.name.startsWith('.')).map(e=>e.name).sort((a,b)=>a.localeCompare(b,'zh'));
+    if(rel===''){['Android'].forEach(x=>{const i=dirs.indexOf(x);if(i>=0)dirs.splice(i,1)})}
+    html+=dirs.map(d=>'<div class="modal-item" style="padding:10px 12px" onclick="nGoPick(\''+nJoin(rel,d)+'\')"><div class="mi-name">📁 '+escapeHtml(d)+'</div></div>').join('')||'<div style="color:#999;font-size:13px;padding:8px 0">（无子文件夹）</div>';
+    list.innerHTML=html;
+    list.scrollTop=0;
+  }
+  async function nGoPick(rel){
+    if(!nPickState)return;
+    await renderNativePicker(rel);
+  }
+  async function nConfirmPick(rel){
+    if(!nPickState)return;
+    try{
+      // 校验可写（重命名需要）
+      const writable=await nCheckWriteAccess();
+      if(!writable){
+        nPickState.pendingRel=rel;
+        nPickState=null!==null?nPickState:null;
+        const state={pendingRel:rel};
+        document.getElementById('modalOverlay').classList.remove('show');
+        nShowAllFilesGuide(()=>{nativePickDir2(rel)});
+        return;
+      }
+      document.getElementById('modalOverlay').classList.remove('show');
+      nFinishPick(rel);
+    }catch(e){showToast('选择失败：'+(e.message||e))}
+  }
+  function nativePickDir2(rel){nFinishPick(rel)}
+  async function nFinishPick(rel){
+    nativeRoot=rel;
+    localStorage.setItem('nativeRootRel',rel);
+    curDir=nDirHandle(rel);
+    curDirName=rel===''?'内部存储':nName(rel);
+    document.getElementById('dirName').textContent='📂 '+curDirName;
+    document.getElementById('dirCard').style.display='block';
+    document.getElementById('btnPickDir').style.display='none';
+    document.getElementById('btnReauth').style.display='none';
+    document.getElementById('libArea').style.display='block';
+    await rescanDir(true);
+  }
+  // 覆盖 pickDir（原生模式走目录选择 UI）
+  window.pickDir=function(){ if(isPickingDir)return; isPickingDir=true; try{ nativePickDir(); } finally { isPickingDir=false; } };
+
+  // 覆盖 restoreSession（原生：路径持久化在 localStorage，无需授权弹窗）
+  const _origRestoreSession=restoreSession;
+  window.restoreSession=async function(){
+    const savedRoot=localStorage.getItem('nativeRootRel');
+    if(savedRoot===null||savedRoot===undefined){
+      return _origRestoreSession(); // 没选过目录 → 原逻辑
+    }
+    const okRead=await (async()=>{try{await nReaddir(savedRoot);return true}catch(e){return false}})();
+    if(!okRead){return _origRestoreSession()}
+    nativeRoot=savedRoot;
+    curDir=nDirHandle(savedRoot);
+    // 复用原 session 数据（items 列表）
+    const sess=await dbLoadSession();
+    if(sess&&sess.items&&sess.items.length){items=sess.items.map(it=>({...it,handle:null}));await restoreHandles()}
+    curDirName=savedRoot===''?'内部存储':nName(savedRoot);
+    document.getElementById('dirName').textContent='📂 '+curDirName;
+    document.getElementById('dirCard').style.display='block';
+    document.getElementById('btnPickDir').style.display='none';
+    document.getElementById('btnReauth').style.display='none';
+    document.getElementById('libArea').style.display='block';
+    syncTaggedStatus();
+    renderLib();
+    return true;
+  };
+
+  // 恢复授权按钮在原生模式下用不到（权限进程级长效）
+  const _btnReauth=document.getElementById('btnReauth');
+  if(_btnReauth)_btnReauth.style.display='none';
+  window.reauthorizeDir=async function(){showToast('App 模式无需恢复授权，重新选择文件夹即可')};
 }
 
 </script>
