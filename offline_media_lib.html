@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
-<title>拾光相册 v4.3.7</title>
+<title>拾光相册 v4.3.8</title>
 <style>
 *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 :root{
@@ -265,7 +265,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei
 <div class="topbar">
   <h1>📷 拾光相册</h1>
   <button class="topbar-btn" onclick="location.reload()" title="刷新页面（用于重新授权文件夹）">🔄</button>
-  <span class="tag">v4.3.7</span>
+  <span class="tag">v4.3.8</span>
 </div>
 
 <div class="progress-bar" id="progressBar"><i id="progressFill"></i></div>
@@ -504,7 +504,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei
 
 <script>
 // ==================== 状态 ====================
-const VERSION='4.3.7';
+const VERSION='4.3.8';
 const DB_NAME='offline_media_lib_v34',DB_VERSION=6;
 const STORE_MEDIA='media',STORE_THUMB='thumbs',STORE_SESSION='session',STORE_FACES='faces';
 let cfg={rule:'person_seq',tags:[],dateFormat:'YYYYMMDD',compress:true,maxCount:2000,showHidden:false,recentNameLimit:5};
@@ -1345,6 +1345,10 @@ async function findDuplicates(){
     div.className='dup-group';
     const typeIcon=group.files[0].type==='video'?'🎬':'📷';
     div.innerHTML='<h4>'+typeIcon+' 第'+(gi+1)+'组 · '+fmtSize(group.size)+' · '+group.files.length+'个</h4>';
+    // v4.3.8 修复（历史遗留 Bug，网页版同样存在）：必须先把 div 挂进 body，再逐个加载缩略图——
+    // 原顺序 loadDupThumb 在 body.appendChild(div) 之前调用，其内部 getElementById 找不到元素
+    // → 永远静默 return → 查重面板缩略图永远停在'···'
+    body.appendChild(div);
     group.files.forEach((f,fi)=>{
       const pair=document.createElement('div');
       pair.className='dup-pair';
@@ -1366,10 +1370,9 @@ async function findDuplicates(){
           '<button class="dup-btn del" onclick="dupDelete('+gi+','+fi+')">删除</button>'+
         '</div>';
       div.appendChild(pair);
-      // 异步加载缩略图（图片和视频都加载）
+      // 异步加载缩略图（图片和视频都加载）——此时元素已在文档中
       loadDupThumb(f,gi,fi);
     });
-    body.appendChild(div);
   });
   document.getElementById('dupOverlay').classList.add('show');
 }
@@ -1384,6 +1387,10 @@ async function loadDupThumb(item,gi,fi){
   // 从媒体库记录中查找缩略图
   const rec=libItems.find(i=>i.name===item.name);
   if(rec&&(rec.img||rec.thumb)){const t=rec.thumb||rec.img;el.innerHTML='<img src="'+t+'">';return}
+  // v4.3.8: App 模式复用主网格的原生缩略图管线（nThumbNative：本地文件 URL → canvas，零全量读入）。
+  // 修复真机查重面板缩略图全空：原实现走 getFile() 全文件 base64 过桥——大视频必失败（插件大文件读取限制），
+  // 大图也慢；且与主网格管线不一致，缓存互不共享。复用后缩略图也会写入 thumbCache/IndexedDB，双向共用。
+  if(IS_NATIVE_APP&&nApi){await nThumbNative(el,item);return}
   try{
     const file=await item.handle.getFile();
     if(item.type==='video'){
