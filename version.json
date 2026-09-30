@@ -1,5 +1,5 @@
 {
-  "version": "4.3.5",
-  "apkUrl": "https://github.com/Lyiyu/predestined/releases/download/v4.3.5/shiguang-v4.3.5.apk",
-  "note": "v4.3.5 修复权限弹窗不出现（manifest maxSdkVersion 过滤）"
+  "version": "4.3.6",
+  "apkUrl": "https://github.com/Lyiyu/predestined/releases/download/v4.3.6/shiguang-v4.3.6.apk",
+  "note": "v4.3.6 新增存储诊断（设置→存储诊断一键生成报告），扫描不出文件时把报告发给助手即可定位"
 }
