@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
-<title>拾光相册 v4.5.3</title>
+<title>拾光相册 v4.6.0</title>
 <style>
 *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 :root{
@@ -284,7 +284,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei
   <button class="topbar-btn" onclick="toggleDrawer()" title="菜单" style="font-size:18px;padding:2px 10px">☰</button>
   <h1>📷 拾光相册</h1>
   <button class="topbar-btn" onclick="location.reload()" title="刷新页面（用于重新授权文件夹）">🔄</button>
-  <span class="tag">v4.5.3</span>
+  <span class="tag">v4.6.0</span>
 </div>
 
 <div class="progress-bar" id="progressBar"><i id="progressFill"></i></div>
@@ -334,6 +334,30 @@ body{font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei
     <div class="grid" id="libGrid"></div>
     <div class="empty" id="libEmpty" style="display:none"><div class="icon">🗂️</div>没有匹配的文件<br><small>选择文件夹后，所有文件会显示在这里</small></div>
     <div class="hint">点缩略图打开大图详情 → 选人名→标签→日期→确认重命名</div>
+  </div>
+</div>
+
+<!-- v4.6: 收藏页 -->
+<div class="page" id="pageFav">
+  <div class="setcard">
+    <h3>⭐ 收藏博主</h3>
+    <div class="sub">输入小红书/抖音/微博/X 的主页链接，收藏博主并备注。后续支持一键下载其视频。</div>
+    <div style="margin-top:12px;display:flex;flex-direction:column;gap:8px">
+      <select id="favPlatform" style="padding:8px 10px;border:1px solid var(--line);border-radius:8px;font-size:14px;font-family:inherit">
+        <option value="xhs">📕 小红书</option>
+        <option value="dy">🎵 抖音</option>
+        <option value="wb">🐦 微博</option>
+        <option value="x">❌ X(Twitter)</option>
+      </select>
+      <input type="text" id="favUrl" placeholder="粘贴主页链接" style="padding:8px 10px;border:1px solid var(--line);border-radius:8px;font-size:14px">
+      <input type="text" id="favName" placeholder="博主名（可留空，自动从链接提取）" style="padding:8px 10px;border:1px solid var(--line);border-radius:8px;font-size:14px">
+      <textarea id="favNote" placeholder="备注（可选）" rows="2" style="padding:8px 10px;border:1px solid var(--line);border-radius:8px;font-size:14px;font-family:inherit;resize:vertical"></textarea>
+      <button class="btn-sm" style="background:var(--primary);color:#fff;border-color:var(--primary);padding:10px" onclick="addFav()">＋ 添加收藏</button>
+    </div>
+  </div>
+  <div class="setcard">
+    <h3>📋 已收藏 (<span id="favCount">0</span>)</h3>
+    <div id="favList"></div>
   </div>
 </div>
 
@@ -435,6 +459,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei
 <!-- 底部Tab -->
 <div class="tabbar" id="tabbar">
   <button class="tab active" id="tabLib" onclick="switchTab('lib')"><span class="ic">🗂️</span>媒体库</button>
+  <button class="tab" id="tabFav" onclick="switchTab('fav')"><span class="ic">⭐</span>收藏</button>
   <button class="tab" id="tabSet" onclick="switchTab('set')"><span class="ic">⚙️</span>设置</button>
 </div>
 
@@ -448,6 +473,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei
   <nav>
     <div class="drawer-group">导航</div>
     <button class="drawer-item" onclick="drawerAction('lib')">🗂️ 媒体库</button>
+    <button class="drawer-item" onclick="drawerAction('fav')">⭐ 收藏博主</button>
     <button class="drawer-item" onclick="drawerAction('set')">⚙️ 设置</button>
     <div class="drawer-group">工具</div>
     <button class="drawer-item" onclick="drawerAction('face')">😊 人脸识别</button>
@@ -551,7 +577,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei
 
 <script>
 // ==================== 状态 ====================
-const VERSION='4.5.3';
+const VERSION='4.6.0';
 const DB_NAME='offline_media_lib_v34',DB_VERSION=6;
 const STORE_MEDIA='media',STORE_THUMB='thumbs',STORE_SESSION='session',STORE_FACES='faces';
 let cfg={rule:'person_seq',tags:[],dateFormat:'YYYYMMDD',compress:true,maxCount:2000,showHidden:false,recentNameLimit:5};
@@ -1166,6 +1192,7 @@ function toggleDrawer(show){
 function drawerAction(key){
   toggleDrawer(false);
   if(key==='lib'){switchTab('lib');return}
+  if(key==='fav'){switchTab('fav');return}
   if(key==='set'){switchTab('set');return}
   if(key==='diag'){runStorageDiag();return}
   if(key==='export'){switchTab('set');exportJson();return}
@@ -1196,6 +1223,86 @@ async function dOpenExternal(){
 // v4.5: 抽屉头部版本信息。注意此处位于 script 靠前位置，不能引用后部才声明的 const（RUNTIME_MODE 有 TDZ），
 // 直接用 Capacitor 检测运行环境
 document.getElementById('drawerVer').textContent='v'+VERSION+' · '+((window.Capacitor&&window.Capacitor.isNativePlatform&&window.Capacitor.isNativePlatform())?'App':'网页')+'版 · 数据仅存本机';
+
+// ==================== v4.6: 返回键处理（App 模式：优先关闭侧边栏/弹窗/详情页，不退出 App） ====================
+window.__handleBackButton=function(){
+  // 优先级：侧边栏 > 通用弹窗 > 查重面板 > 人脸面板 > 详情页
+  if(document.getElementById('drawer').classList.contains('show')){toggleDrawer(false);return true}
+  if(document.getElementById('modalOverlay').classList.contains('show')){closeModal();return true}
+  if(document.getElementById('dupOverlay').classList.contains('show')){closeDupOverlay();return true}
+  const fo=document.getElementById('faceOverlay');if(fo&&fo.classList.contains('show')){closeFacePanel();return true}
+  if(document.getElementById('detailOverlay').classList.contains('show')){closeDetail();return true}
+  return false;
+};
+
+// ==================== v4.6: 收藏博主（localStorage 存储，离线、不上传） ====================
+const FAV_KEY='favCreators';
+function getFav(){try{return JSON.parse(localStorage.getItem(FAV_KEY)||'[]')}catch(e){return[]}}
+function saveFav(list){localStorage.setItem(FAV_KEY,JSON.stringify(list))}
+const FAV_ICONS={xhs:'📕',dy:'🎵',wb:'🐦',x:'❌'};
+const FAV_NAMES={xhs:'小红书',dy:'抖音',wb:'微博',x:'X'};
+function addFav(){
+  const platform=document.getElementById('favPlatform').value;
+  let url=document.getElementById('favUrl').value.trim();
+  let name=document.getElementById('favName').value.trim();
+  const note=document.getElementById('favNote').value.trim();
+  if(!url){showToast('请粘贴主页链接');return}
+  // 尝试从 URL 自动提取博主名
+  if(!name){
+    try{
+      const u=new URL(url);
+      const parts=u.pathname.split('/').filter(Boolean);
+      // 小红书: /user/profile/{id}, 抖音: /user/{id}, 微博: /u/{id}, X: /{handle}
+      name=parts[parts.length-1]||parts[0]||'';
+      if(name.length>20)name=name.substring(0,20)+'…';
+    }catch(e){name='未知'}
+  }
+  const entry={id:'fav'+Date.now(),platform,url,name,note,savedAt:Date.now()};
+  const list=getFav();list.unshift(entry);saveFav(list);
+  document.getElementById('favUrl').value='';document.getElementById('favName').value='';document.getElementById('favNote').value='';
+  renderFav();
+  showToast('已收藏：'+FAV_ICONS[platform]+' '+name);
+}
+function delFav(id){
+  if(!confirm('确认删除此收藏？'))return;
+  saveFav(getFav().filter(f=>f.id!==id));
+  renderFav();
+}
+function editFavNote(id){
+  const list=getFav();const f=list.find(x=>x.id===id);if(!f)return;
+  const note=prompt('修改备注：',f.note||'');
+  if(note!==null){f.note=note.trim();saveFav(list);renderFav()}
+}
+function copyFavUrl(url){navigator.clipboard.writeText(url).then(()=>showToast('已复制链接')).catch(()=>showToast('复制失败'))}
+function openFavUrl(url){if(IS_NATIVE_APP){const p=(window.Capacitor.Plugins||{}).AllFilesAccess;if(p&&p.openExternal){p.openExternal({path:url}).catch(()=>{window.open(url,'_blank')})}}else{window.open(url,'_blank')}}
+function renderFav(){
+  const list=getFav();
+  document.getElementById('favCount').textContent=list.length;
+  const el=document.getElementById('favList');
+  if(!list.length){el.innerHTML='<div style="color:var(--sub);font-size:13px;padding:16px 0">还没有收藏的博主，在上方添加。</div>';return}
+  el.innerHTML=list.map(f=>{
+    const icon=FAV_ICONS[f.platform]||'🔗';
+    const pfName=FAV_NAMES[f.platform]||'';
+    const date=new Date(f.savedAt).toLocaleDateString();
+    return '<div class="setitem" style="flex-direction:column;align-items:stretch;padding:12px">'+
+      '<div style="display:flex;align-items:center;gap:8px">'+
+        '<span style="font-size:24px">'+icon+'</span>'+
+        '<div style="flex:1">'+
+          '<div style="font-weight:600;font-size:14px">'+escapeHtml(f.name)+'</div>'+
+          '<div style="font-size:11px;color:var(--sub);margin-top:2px">'+pfName+' · '+date+'</div>'+
+        '</div>'+
+        '<button class="btn-sm" style="background:#fff;border:1px solid var(--line);padding:4px 8px;font-size:12px" onclick="openFavUrl(\''+escapeHtml(f.url)+'\')">🔗 打开</button>'+
+      '</div>'+
+      (f.note?'<div style="font-size:12px;color:#555;margin-top:6px;padding:6px 8px;background:#f5f3ff;border-radius:6px">'+escapeHtml(f.note)+'</div>':'')+
+      '<div style="font-size:10px;color:#999;margin-top:4px;word-break:break-all">'+escapeHtml(f.url)+'</div>'+
+      '<div style="margin-top:8px;display:flex;gap:6px">'+
+        '<button class="btn-sm" style="background:#fff;border:1px solid var(--line);padding:4px 10px;font-size:12px" onclick="copyFavUrl(\''+escapeHtml(f.url)+'\')">📋 复制</button>'+
+        '<button class="btn-sm" style="background:#fff;border:1px solid var(--line);padding:4px 10px;font-size:12px" onclick="editFavNote(\''+f.id+'\')">✏️ 备注</button>'+
+        '<button class="btn-sm" style="background:#fff;border:1px solid #e53e3e;color:#e53e3e;padding:4px 10px;font-size:12px" onclick="delFav(\''+f.id+'\')">🗑️ 删除</button>'+
+      '</div>'+
+    '</div>';
+  }).join('');
+}
 function compressImage(file,maxSide){
   return new Promise(res=>{
     const url=URL.createObjectURL(file);const img=new Image();
@@ -1439,8 +1546,9 @@ async function doDeleteFromDisk(item){
 // ==================== Tab ====================
 function switchTab(t){
   currentTab=t;
-  ['lib','set'].forEach(n=>{const pg=document.getElementById('page'+n.charAt(0).toUpperCase()+n.slice(1));const tb=document.getElementById('tab'+n.charAt(0).toUpperCase()+n.slice(1));if(pg)pg.classList.toggle('show',n===t);if(tb)tb.classList.toggle('active',n===t)});
+  ['lib','fav','set'].forEach(n=>{const pg=document.getElementById('page'+n.charAt(0).toUpperCase()+n.slice(1));const tb=document.getElementById('tab'+n.charAt(0).toUpperCase()+n.slice(1));if(pg)pg.classList.toggle('show',n===t);if(tb)tb.classList.toggle('active',n===t)});
   if(t==='lib')renderLib();
+  if(t==='fav')renderFav();
   if(t==='set'){loadSettingsForm();renderSetStats();updateQuota()}
 }
 
