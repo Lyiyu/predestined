@@ -1,5 +1,5 @@
 {
-  "version": "4.7.0",
-  "apkUrl": "https://github.com/Lyiyu/predestined/releases/download/v4.7.0/shiguang-v4.7.0.apk",
-  "note": "v4.7.0 鲁棒性大修：消除全部 onclick XSS 注入、blob URL 生命周期管理、扫描防重入+错误收集、localStorage 安全封装、importJson 校验+重置、查重已删id清理"
+  "version": "4.8.0",
+  "apkUrl": "https://github.com/Lyiyu/predestined/releases/download/v4.8.0/shiguang-v4.8.0.apk",
+  "note": "v4.8.0 同名跨目录修复+性能优化：path 主键替代 name（子文件夹不再错位）、缩略图 LRU 缓存、搜索节流、安全区旋转重探、文件操作原子性回滚、maxCount 生效"
 }
