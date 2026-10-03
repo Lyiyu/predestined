@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
-<title>拾光相册 v4.7.0</title>
+<title>拾光相册 v4.8.0</title>
 <style>
 *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 :root{
@@ -284,7 +284,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei
   <button class="topbar-btn" onclick="toggleDrawer()" title="菜单" style="font-size:18px;padding:2px 10px">☰</button>
   <h1>📷 拾光相册</h1>
   <button class="topbar-btn" onclick="location.reload()" title="刷新页面（用于重新授权文件夹）">🔄</button>
-  <span class="tag">v4.7.0</span>
+  <span class="tag" id="topVerTag">v4.8.0</span>
 </div>
 
 <div class="progress-bar" id="progressBar"><i id="progressFill"></i></div>
@@ -319,7 +319,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei
         <option value="size">大小</option>
       </select>
       <button class="btn-sm sort-dir" id="btnSortDir" onclick="toggleSortDir()" title="切换排序方向">↓</button>
-      <input type="text" id="libSearch" placeholder="搜索文件名" oninput="renderLib()">
+      <input type="text" id="libSearch" placeholder="搜索文件名" oninput="onSearchInput()">
       <span class="count-tip" id="libCount"></span>
     </div>
     <div class="filters" style="margin-top:0">
@@ -577,7 +577,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei
 
 <script>
 // ==================== 状态 ====================
-const VERSION='4.7.0';
+const VERSION='4.8.0';
 const DB_NAME='offline_media_lib_v34',DB_VERSION=6;
 const STORE_MEDIA='media',STORE_THUMB='thumbs',STORE_SESSION='session',STORE_FACES='faces';
 let cfg={rule:'person_seq',tags:[],dateFormat:'YYYYMMDD',compress:true,maxCount:2000,showHidden:false,recentNameLimit:5};
@@ -591,7 +591,12 @@ let libItems=[],libFiltered=[];
 let currentTab='lib';
 let recentNames=[];
 let isPickingDir=false;
-let thumbCache=new Map();
+// v4.8: LRU 缩略图缓存——500 条上限，超出自动淘汰最旧条目，防大文件夹内存膨胀
+class LRUMap{constructor(max){this.max=max;this.m=new Map()}has(k){return this.m.has(k)}get(k){if(!this.m.has(k))return undefined;const v=this.m.get(k);this.m.delete(k);this.m.set(k,v);return v}set(k,v){if(this.m.has(k))this.m.delete(k);this.m.set(k,v);while(this.m.size>this.max){const fk=this.m.keys().next().value;this.m.delete(fk)}}delete(k){return this.m.delete(k)}clear(){this.m.clear()}get size(){return this.m.size}}
+let thumbCache=new LRUMap(500);
+// v4.8: 文件唯一键——path 优先（同名跨目录不再冲突），name 兜底（兼容旧会话数据）
+function itemKey(it){return it&&it.path?it.path:(it?it.name:'')}
+function libKey(rec){return rec&&rec.origPath?rec.origPath:(rec?rec.name:'')}
 let detailIdx=-1;
 let detailPerson='',detailTags=new Set(),detailDateStr='';
 let libSelectedTags=new Set();
@@ -750,7 +755,8 @@ const VID_PREVIEW_RE=/\.(mp4|m4v|mov|webm|3gp|3g2|mkv)$/i;
 // v4.5.3: 音频入库识别 + WebView 可播音频（amr 不入预览白名单，走占位+选择播放器）
 const AUDIO_EXT_RE=/\.(mp3|wav|flac|aac|m4a|ogg|opus|amr)$/i;
 const AUDIO_PREVIEW_RE=/\.(mp3|wav|ogg|opus|flac|m4a|aac)$/i;
-async function walkDir(handle,pathArr,out,errAcc){
+async function walkDir(handle,pathArr,out,errAcc,maxCount){
+  if(maxCount&&out.length>=maxCount)return;
   try{
     for await(const entry of handle.values()){
       const name=entry.name;
@@ -759,9 +765,10 @@ async function walkDir(handle,pathArr,out,errAcc){
       const p=pathArr.concat(name);
       if(entry.kind==='directory'){
         if(name==='Android'||name==='.thumbnails')continue;
-        await walkDir(entry,p,out,errAcc);
+        await walkDir(entry,p,out,errAcc,maxCount);
       }else{
         const lower=name.toLowerCase(); // 必须声明——丢失此行会导致 ReferenceError 被外层 catch 静默吞掉，扫描 0 产出
+        if(maxCount&&out.length>=maxCount)return;
         const isImg=/(\.jpg|\.jpeg|\.png|\.webp|\.heic|\.gif)$/i.test(lower); // v4.5: .gif 动图入库（详情页原生播放动画，缩略图取首帧）
         const isVid=VIDO_EXT_RE.test(lower); // v4.4: 扩展识别（avi/m4v/3gp/flv/wmv/ts/mpg/rmvb 等）
         const isAud=AUDIO_EXT_RE.test(lower); // v4.5.3: mp3/wav/flac 等音频入库
@@ -779,10 +786,10 @@ async function rescanDir(forceFull){
   if(!curDir)return;
   showProgress(5);
   const oldItems=forceFull?[]:items.slice();
-  const oldMap=new Map(oldItems.map(i=>[i.name,i]));
+  const oldMap=new Map();oldItems.forEach(i=>{oldMap.set(itemKey(i),i);if(!oldMap.has(i.name))oldMap.set(i.name,i)}); // v4.8: path 优先，name 兜底
   items=[];
   const scanErrs=[]; // v4.7: 收集扫描错误，不再静默吞掉
-  await walkDir(curDir,[],items,scanErrs);
+  await walkDir(curDir,[],items,scanErrs,cfg.maxCount);
   // v4.7: 防重入 token——并发扫描时只有最新一次的写回生效
   const myToken=++_scanToken;
   showProgress(40);
@@ -791,7 +798,7 @@ async function rescanDir(forceFull){
   for(let i=0;i<items.length;i+=batchSize){
     const batch=items.slice(i,batchSize+i);
     await Promise.all(batch.map(async it=>{
-      const old=oldMap.get(it.name);
+      const old=oldMap.get(itemKey(it))||oldMap.get(it.name); // v4.8: path 优先，name 兜底
       if(old&&!forceFull){it.size=old.size;it.lastModified=old.lastModified;it.savedAt=old.savedAt||0;it.renamed=old.renamed;it.tags=old.tags||[];it.person=old.person||'';return}
       try{if(IS_NATIVE_APP){const m=await it.handle.getFileMeta();it.size=m&&m.size||0;it.lastModified=m&&m.mtime||0}else{const f=await it.handle.getFile();it.size=f.size;it.lastModified=f.lastModified}}catch(e){it.size=0}
     }));
@@ -809,7 +816,7 @@ async function rescanDir(forceFull){
   if(!items.length&&IS_NATIVE_APP){
     showToast('扫描完成：0 个文件。多半是缺「所有文件访问」权限——重新点「选择文件夹」会自动引导开启；或到 设置 → 存储诊断',6000);
   }else{
-    showToast('扫描完成：'+items.length+' 个文件');
+    showToast('扫描完成：'+items.length+' 个文件'+(items.length>=cfg.maxCount?'（已达上限 '+cfg.maxCount+'，可在设置中调整）':''));
   }
   // v4.7: 有目录读取失败时提示（防"静默丢目录"）
   if(scanErrs.length){
@@ -823,10 +830,10 @@ async function rescanDir(forceFull){
 // 匹配成功后自愈：更新媒体库记录为新文件名，下次直接精确命中
 function syncTaggedStatus(){
   const libMap=new Map();
-  libItems.forEach(i=>libMap.set(i.name,i));
+  libItems.forEach(i=>{libMap.set(libKey(i),i);if(!libMap.has(i.name))libMap.set(i.name,i)}); // v4.8: origPath 优先，name 兜底
   const unmatchedItems=[];
   items.forEach(it=>{
-    const rec=libMap.get(it.name);
+    const rec=libMap.get(itemKey(it))||libMap.get(it.name); // v4.8: path 优先，name 兜底
     if(rec){it.tags=rec.tags||[];it.person=rec.person||'';it.renamed=true;if(rec.savedAt)it.savedAt=rec.savedAt;libMap.delete(it.name)}
     else unmatchedItems.push(it);
   });
@@ -936,12 +943,13 @@ function initObserver(){
 async function loadThumbForCell(el,id){
   const item=items.find(x=>x.id===id);
   if(!item)return;
-  if(thumbCache.has(item.name)){el.innerHTML='<img src="'+thumbCache.get(item.name)+'">';return}
-  const cached=await dbGetThumb(item.name+'@'+curDirName);
-  if(cached){thumbCache.set(item.name,cached);el.innerHTML='<img src="'+cached+'">';return}
+  if(thumbCache.has(tk)){el.innerHTML='<img src="'+thumbCache.get(tk)+'">';return}
+  const cached=await dbGetThumb(tk+'@'+curDirName);
+  if(cached){thumbCache.set(tk,cached);el.innerHTML='<img src="'+cached+'">';return}
   // 媒体库记录中可能有缩略图
-  const rec=libItems.find(i=>i.name===item.name);
-  if(rec&&(rec.img||rec.thumb)){const t=rec.thumb||rec.img;thumbCache.set(item.name,t);el.innerHTML='<img src="'+t+'">';return}
+  const rec=libItems.find(i=>(item.path&&i.origPath===item.path)||i.name===item.name);
+  if(rec&&(rec.img||rec.thumb)){const t=rec.thumb||rec.img;thumbCache.set(tk,t);el.innerHTML='<img src="'+t+'">';return}
+  const tk=itemKey(item); // v4.8: 缩略图缓存键改用 path（同名跨目录不再共享缩略图）
   if(!item.handle){el.textContent='🔒';return}
   // v4.5.3: 音频缩略图直接用音符图标（Web/App 通用，免读文件）
   if(item.type==='audio'){el.textContent='🎵';return}
@@ -953,7 +961,7 @@ async function loadThumbForCell(el,id){
       const url=URL.createObjectURL(file);
       const v=document.createElement('video');v.preload='metadata';v.muted=true;
       await new Promise((res)=>{
-        v.onloadeddata=()=>{try{v.currentTime=Math.min(v.duration/2||0,1);v.onseeked=()=>{const c=document.createElement('canvas');c.width=v.videoWidth||160;c.height=v.videoHeight||160;c.getContext('2d').drawImage(v,0,0,c.width,c.height);const data=c.toDataURL('image/jpeg',.5);thumbCache.set(item.name,data);dbPutThumb(item.name+'@'+curDirName,data);el.innerHTML='<img src="'+data+'">';URL.revokeObjectURL(url);res()}}catch(e){el.textContent='▶';res()}};v.onerror=()=>{el.textContent='▶';res()};
+        v.onloadeddata=()=>{try{v.currentTime=Math.min(v.duration/2||0,1);v.onseeked=()=>{const c=document.createElement('canvas');c.width=v.videoWidth||160;c.height=v.videoHeight||160;c.getContext('2d').drawImage(v,0,0,c.width,c.height);const data=c.toDataURL('image/jpeg',.5);thumbCache.set(tk,data);dbPutThumb(tk+'@'+curDirName,data);el.innerHTML='<img src="'+data+'">';URL.revokeObjectURL(url);res()}}catch(e){el.textContent='▶';res()}};v.onerror=()=>{el.textContent='▶';res()};
         v.src=url;
       });
     }else{
@@ -965,7 +973,7 @@ async function loadThumbForCell(el,id){
           const w=Math.max(1,Math.round(img.width*r)),h=Math.max(1,Math.round(img.height*r));
           const c=document.createElement('canvas');c.width=w;c.height=h;c.getContext('2d').drawImage(img,0,0,w,h);
           const data=c.toDataURL('image/jpeg',.6);
-          thumbCache.set(item.name,data);dbPutThumb(item.name+'@'+curDirName,data);
+          thumbCache.set(tk,data);dbPutThumb(tk+'@'+curDirName,data);
           el.innerHTML='<img src="'+data+'">';URL.revokeObjectURL(url);res();
         };
         img.onerror=()=>{el.textContent='🖼';res()};
@@ -1024,7 +1032,7 @@ async function loadDetailImage(item){
   const el=document.getElementById('detailImg');
   const set=(html)=>{if(seq===_detailLoadSeq)el.innerHTML=html}; // 仅当前页生效
   if(!item.handle){
-    const libRec=libItems.find(i=>i.name===item.name);
+    const libRec=libItems.find(i=>(item.path&&i.origPath===item.path)||i.name===item.name); // v4.8: path 优先
     if(libRec&&(libRec.img||libRec.thumb)){set('<img src="'+(libRec.img||libRec.thumb)+'" style="max-width:100%;max-height:100%">');return}
     set('<div style="color:#666">🔒 需重新选择文件夹才能加载原图</div>');
     return;
@@ -1268,6 +1276,7 @@ async function dOpenExternal(){
 // v4.5: 抽屉头部版本信息。注意此处位于 script 靠前位置，不能引用后部才声明的 const（RUNTIME_MODE 有 TDZ），
 // 直接用 Capacitor 检测运行环境
 document.getElementById('drawerVer').textContent='v'+VERSION+' · '+((window.Capacitor&&window.Capacitor.isNativePlatform&&window.Capacitor.isNativePlatform())?'App':'网页')+'版 · 数据仅存本机';
+const _tvt=document.getElementById('topVerTag');if(_tvt)_tvt.textContent='v'+VERSION; // v4.8.0: 顶栏版本标签改为动态渲染，避免升版遗漏
 
 // ==================== v4.6: 返回键处理（App 模式：优先关闭侧边栏/弹窗/详情页，不退出 App） ====================
 window.__handleBackButton=function(){
@@ -1425,6 +1434,20 @@ if(IS_NATIVE_APP){
       probeB.remove();
     },100);
   }catch(e){}
+  // v4.8: 旋转/resize 时重新探测安全区（折叠屏、外接显示器、横竖屏切换）
+  let _resizeTimer=null;
+  window.addEventListener('resize',function(){
+    clearTimeout(_resizeTimer);
+    _resizeTimer=setTimeout(function(){
+      var pT=document.createElement('div');pT.style.cssText='position:fixed;top:env(safe-area-inset-top,0px);visibility:hidden;pointer-events:none';document.body.appendChild(pT);
+      var pB=document.createElement('div');pB.style.cssText='position:fixed;bottom:env(safe-area-inset-bottom,0px);visibility:hidden;pointer-events:none';document.body.appendChild(pB);
+      setTimeout(function(){
+        try{var v=parseInt(getComputedStyle(pT).top)||0;if(v>0)document.documentElement.style.setProperty('--safe-t',v+'px')}catch(e){}
+        try{var vb=parseInt(getComputedStyle(pB).bottom)||0;if(vb>0)document.documentElement.style.setProperty('--safe-b',vb+'px')}catch(e){}
+        pT.remove();pB.remove();
+      },50);
+    },300);
+  });
 }
 // 云端版本清单（GitHub Pages 托管 version.json，仅存版本信息，无任何用户数据）
 const VERSION_INFO_URL=IS_NATIVE_APP?'https://lyiyu.github.io/predestined/version.json':'version.json';
@@ -1572,8 +1595,7 @@ async function doDeleteFromDisk(item){
   if(item.handle&&item.handle.remove){await item.handle.remove()}
   else{throw new Error('无法删除：没有文件句柄')}
   // 清理缩略图缓存
-  thumbCache.delete(item.name);
-  // 从 items 移除
+  thumbCache.delete(itemKey(item)); // v4.8: path-based key
   const ii=items.findIndex(x=>x.id===item.id);
   if(ii>=0)items.splice(ii,1);
   // 从 libItems 移除（媒体库记录）
@@ -1788,12 +1810,13 @@ async function loadDupThumb(item,gi,fi){
   const el=document.getElementById('dupThumb_'+gi+'_'+fi);
   if(!el||!item.handle)return;
   // 先查缓存
-  const cached=thumbCache.get(item.name);
+  const tk=itemKey(item); // v4.8: path-based key
+  const cached=thumbCache.get(tk);
   if(cached){el.innerHTML='<img src="'+cached+'">';return}
-  const dbCached=await dbGetThumb(item.name+'@'+curDirName);
-  if(dbCached){thumbCache.set(item.name,dbCached);el.innerHTML='<img src="'+dbCached+'">';return}
+  const dbCached=await dbGetThumb(tk+'@'+curDirName);
+  if(dbCached){thumbCache.set(tk,dbCached);el.innerHTML='<img src="'+dbCached+'">';return}
   // 从媒体库记录中查找缩略图
-  const rec=libItems.find(i=>i.name===item.name);
+  const rec=libItems.find(i=>(item.path&&i.origPath===item.path)||i.name===item.name);
   if(rec&&(rec.img||rec.thumb)){const t=rec.thumb||rec.img;el.innerHTML='<img src="'+t+'">';return}
   // v4.5.3: 音频查重项直接用 🎵 图标
   if(item.type==='audio'){el.textContent='🎵';return}
@@ -1807,13 +1830,13 @@ async function loadDupThumb(item,gi,fi){
       // 视频：截取第一帧作为缩略图
       const url=URL.createObjectURL(file);
       const v=document.createElement('video');v.preload='metadata';v.muted=true;
-      v.onloadeddata=()=>{try{v.currentTime=Math.min(v.duration/2||0,1);v.onseeked=()=>{try{const c=document.createElement('canvas');c.width=v.videoWidth||120;c.height=v.videoHeight||120;c.getContext('2d').drawImage(v,0,0,c.width,c.height);const data=c.toDataURL('image/jpeg',.5);thumbCache.set(item.name,data);dbPutThumb(item.name+'@'+curDirName,data);el.innerHTML='<img src="'+data+'">';URL.revokeObjectURL(url)}catch(e){el.textContent='🎬';URL.revokeObjectURL(url)}}}catch(e){el.textContent='🎬'}};
+      v.onloadeddata=()=>{try{v.currentTime=Math.min(v.duration/2||0,1);v.onseeked=()=>{try{const c=document.createElement('canvas');c.width=v.videoWidth||120;c.height=v.videoHeight||120;c.getContext('2d').drawImage(v,0,0,c.width,c.height);const data=c.toDataURL('image/jpeg',.5);thumbCache.set(tk,data);dbPutThumb(tk+'@'+curDirName,data);el.innerHTML='<img src="'+data+'">';URL.revokeObjectURL(url)}catch(e){el.textContent='🎬';URL.revokeObjectURL(url)}}}catch(e){el.textContent='🎬'}};
       v.onerror=()=>{el.textContent='🎬';URL.revokeObjectURL(url)};
       v.src=url;
     }else{
       const url=URL.createObjectURL(file);
       const img=new Image();
-      img.onload=()=>{const maxSide=200;const r=Math.min(1,maxSide/Math.max(img.width,img.height));const w=Math.max(1,Math.round(img.width*r)),h=Math.max(1,Math.round(img.height*r));const c=document.createElement('canvas');c.width=w;c.height=h;c.getContext('2d').drawImage(img,0,0,w,h);const data=c.toDataURL('image/jpeg',.6);thumbCache.set(item.name,data);dbPutThumb(item.name+'@'+curDirName,data);el.innerHTML='<img src="'+data+'">';URL.revokeObjectURL(url)};
+      img.onload=()=>{const maxSide=200;const r=Math.min(1,maxSide/Math.max(img.width,img.height));const w=Math.max(1,Math.round(img.width*r)),h=Math.max(1,Math.round(img.height*r));const c=document.createElement('canvas');c.width=w;c.height=h;c.getContext('2d').drawImage(img,0,0,w,h);const data=c.toDataURL('image/jpeg',.6);thumbCache.set(tk,data);dbPutThumb(tk+'@'+curDirName,data);el.innerHTML='<img src="'+data+'">';URL.revokeObjectURL(url)};
       img.onerror=()=>{el.textContent='🖼'};
       img.src=url;
     }
@@ -1826,7 +1849,7 @@ async function dupDelete(gi,fi){
   try{
     await file.handle.remove();
     items=items.filter(i=>i.id!==file.id);
-    thumbCache.delete(file.name);
+    thumbCache.delete(itemKey(file)); // v4.8: path-based key
     await saveSession();
     renderLib();
     showToast('已删除：'+file.name);
@@ -2015,8 +2038,8 @@ async function doOrganizeByPerson(tagged,selectedPersons){
         const w=await newHandle.createWritable();
         await w.write(file);
         await w.close();
-        await item.handle.remove();
-        item.handle=newHandle; // v3.3: 更新句柄
+        try{await item.handle.remove()}catch(eDel){try{await newHandle.remove()}catch(eRm){}throw eDel} // v4.8: 删除失败则回滚删副本
+        item.handle=newHandle;
         item.path=(item.path||'').replace(/^[^\/]+\/?/,item.person+'/');
         ok++;
       }catch(e2){console.error('移动失败',item.name,e,e2);fail++}
@@ -2145,6 +2168,10 @@ function switchSubdir(dir){
 function buildName(person,tags,dateStr,idx){
   return buildNameV32(person,tags,dateStr,idx);
 }
+
+// v4.8: 搜索输入节流——5000+文件时避免每次按键都全量渲染
+let _searchDebounce=null;
+function onSearchInput(){clearTimeout(_searchDebounce);_searchDebounce=setTimeout(renderLib,300)}
 
 // ---- 重写 renderLib 添加子文件夹过滤 ----
 function renderLib(){
@@ -2314,14 +2341,13 @@ async function reauthorizeDir(){
 // v3.2: 恢复文件 handles（通过遍历目录匹配文件名）
 async function restoreHandles(){
   if(!curDir)return;
-  const nameMap=new Map();
-  items.forEach(it=>nameMap.set(it.name,it));
   const allFiles=[];
   await walkDir(curDir,[],allFiles);
-  // 更新 items 中的 handle
-  const fileMap=new Map(allFiles.map(f=>[f.name,f]));
+  // v4.8: path 优先匹配（同名跨目录不再互相覆盖），name 兜底兼容旧会话
+  const fileMap=new Map();
+  allFiles.forEach(f=>{fileMap.set(itemKey(f),f);if(!fileMap.has(f.name))fileMap.set(f.name,f)});
   items.forEach(it=>{
-    const found=fileMap.get(it.name);
+    const found=fileMap.get(itemKey(it))||fileMap.get(it.name);
     if(found){it.handle=found.handle;it.size=found.size||it.size;it.lastModified=found.lastModified||it.lastModified;it.path=found.path||it.path||it.name}
   });
 }
@@ -2351,10 +2377,11 @@ async function detailConfirm(){
   let renamed=false;
   try{
     await item.handle.move(newName); // move(仅名字)：在原文件夹内改名，不移动目录
-    thumbCache.delete(item.name);
+    thumbCache.delete(itemKey(item)); // v4.8: path-based key
     item.name=newName;
     // 更新 handle 指向新文件（重要：否则后续操作失效）
     try{item.handle=await parent.getFileHandle(newName)}catch(e){}
+    if(item.path){const pp=item.path.split('/');pp[pp.length-1]=newName;item.path=pp.join('/')} // v4.8: 同步更新 path
     renamed=true;
   }catch(e){
     // 降级方案：复制到新名字 + 删除原文件（仍保留在原文件夹）
@@ -2364,10 +2391,11 @@ async function detailConfirm(){
       const w=await newHandle.createWritable();
       await w.write(file);
       await w.close();
-      await item.handle.remove();
-      thumbCache.delete(item.name);
+      try{await item.handle.remove()}catch(eDel){try{await newHandle.remove()}catch(eRm){}throw eDel} // v4.8: 删除失败则回滚删副本，避免双文件
+      thumbCache.delete(itemKey(item)); // v4.8: path-based key
       item.name=newName;
       item.handle=newHandle;
+      if(item.path){const pp=item.path.split('/');pp[pp.length-1]=newName;item.path=pp.join('/')} // v4.8: 同步更新 path
       renamed=true;
     }catch(e2){
       console.error('重命名失败',item.name,e,e2);
@@ -2406,7 +2434,7 @@ async function detailConfirm(){
           await w2.write(blob);await w2.close();
           // 删除旧格式文件
           await item.handle.remove();
-          thumbCache.delete(item.name);
+          thumbCache.delete(itemKey(item)); // v4.8: path-based key
           item.name=finalName;
           item.handle=jpgHandle;
           // 更新 path
@@ -2434,7 +2462,7 @@ async function detailConfirm(){
   }
   const libRec={id:'lib'+Date.now()+'_'+Math.random().toString(36).slice(2,6),name:item.name,person:detailPerson,tags:item.tags,date:detailDateStr,type:item.type,size:item.size,img,thumb,origPath:item.path,renamed:true,savedAt:item.savedAt};
   await dbSaveMedia([libRec]);
-  const existIdx=libItems.findIndex(i=>i.name===item.name);
+  const existIdx=libItems.findIndex(i=>(item.path&&i.origPath===item.path)||i.name===item.name); // v4.8: path 优先
   if(existIdx>=0)libItems[existIdx]=libRec;else libItems.push(libRec);
   await saveSession();
   closeDetail();
@@ -2550,7 +2578,7 @@ async function renderFaceGroups(){
   if(!records.length){list.innerHTML='<div style="text-align:center;color:var(--sub);padding:36px 16px;font-size:13px;line-height:2">还没有人脸数据<br>点底部「🔍 扫描人脸」开始</div>';return}
   if(!groups.length){list.innerHTML='<div style="text-align:center;color:var(--sub);padding:36px 16px;font-size:13px">已扫描但未检出人脸</div>';return}
   list.innerHTML=groups.map((g,i)=>{
-    const known=g.members.map(m=>{const it=items.find(x=>x.name===m.name);return it&&it.person}).filter(Boolean);
+    const known=g.members.map(m=>{const it=items.find(x=>(m.path&&x.path===m.path)||x.name===m.name);return it&&it.person}).filter(Boolean);
     const knownStr=known.length?'<span style="color:#1a7f37;font-size:12px">（含已标记：'+escapeHtml([...new Set(known)].join('、'))+'）</span>':'';
     return '<div class="dev-case" style="display:flex;gap:12px;align-items:center;cursor:pointer" onclick="applyFaceGroup('+i+')">'+
       '<img src="'+g.members[0].faceThumb+'" style="width:64px;height:64px;border-radius:12px;object-fit:cover;flex:0 0 auto">'+
@@ -2579,9 +2607,10 @@ function applyFaceGroup(gi){
 async function doApplyFaceGroup(g,person){
   showProgress(2);
   let ok=0,fail=0;
-  const personFiles=g.members.map(m=>m.name);
+  const personFiles=g.members.map(m=>({name:m.name,path:m.path})); // v4.8: 包含 path 用于精确匹配
   for(let i=0;i<personFiles.length;i++){
-    const item=items.find(x=>x.name===personFiles[i]);
+    const pf=personFiles[i];
+    const item=items.find(x=>(pf.path&&x.path===pf.path)||x.name===pf.name); // v4.8: path 优先
     if(!item||!item.handle)continue;
     try{
       // 在父目录找一个不重名的人名_序号
@@ -2596,9 +2625,9 @@ async function doApplyFaceGroup(g,person){
       try{await item.handle.move(newName)}catch(e2){
         const file=await item.handle.getFile();
         const nh=await parent.getFileHandle(newName,{create:true});
-        const w=await nh.createWritable();await w.write(file);await w.close();await item.handle.remove();item.handle=nh;
+        const w=await nh.createWritable();await w.write(file);await w.close();try{await item.handle.remove()}catch(eDel){try{await nh.remove()}catch(eRm){}throw eDel}item.handle=nh; // v4.8: 原子性回滚
       }
-      thumbCache.delete(item.name);
+      thumbCache.delete(itemKey(item)); // v4.8: path-based key
       item.name=newName;
       item.person=person;item.tags=[];item.renamed=true;item.savedAt=Date.now();
       try{item.handle=await parent.getFileHandle(newName)}catch(e){}
@@ -2608,11 +2637,11 @@ async function doApplyFaceGroup(g,person){
       localStorage.setItem('recent_names_v34',JSON.stringify(recentNames));
       const libRec={id:'lib'+Date.now()+'_'+Math.random().toString(36).slice(2,6),name:item.name,person,tags:[],date:'',type:item.type,size:item.size,img:'',thumb:'',origPath:item.path,renamed:true,savedAt:item.savedAt};
       await dbSaveMedia([libRec]);
-      const ei=libItems.findIndex(x=>x.name===item.name);if(ei>=0)libItems[ei]=libRec;else libItems.push(libRec);
+      const ei=libItems.findIndex(x=>(item.path&&x.origPath===item.path)||x.name===item.name);if(ei>=0)libItems[ei]=libRec;else libItems.push(libRec);
       // 人脸库记录同步到新名（先删旧名再写新名，避免残留）
-      try{const recs=await dbAllFaces();const fr=recs.find(r=>r.name===personFiles[i]);if(fr){const oldName=fr.name;fr.name=item.name;await dbPutFace(fr);await dbDeleteFace(oldName)}}catch(e){}
+      try{const recs=await dbAllFaces();const fr=recs.find(r=>r.name===pf.name);if(fr){const oldName=fr.name;fr.name=item.name;await dbPutFace(fr);await dbDeleteFace(oldName)}}catch(e){}
       ok++;
-    }catch(e){console.warn('face apply fail',personFiles[i],e);fail++}
+    }catch(e){console.warn('face apply fail',pf.name,e);fail++}
     showProgress(Math.round(2+(i+1)/personFiles.length*96));
   }
   await saveSession();hideProgress();
@@ -2641,9 +2670,18 @@ const DEV_TEST_CASES=[
  {id:'U01',mod:'更新检查',name:'App内检查更新',expect:'设置页点「🔔检查更新」显示当前版本状态（或新版下载链接）'},
  {id:'U02',mod:'手机兼容',name:'布局适配',expect:'2Tab（媒体库/设置）布局无错位、无文字遮挡'},
  {id:'F01',mod:'反馈面板',name:'本面板-复制功能',expect:'点「📋复制反馈」提示已复制；粘贴到微信能发出完整汇总文本'},
- {id:'W01',mod:'网页版回归',name:'Chrome网页版',expect:'https://lyiyu.github.io/predestined/offline_media_lib.html 功能正常，旧标签人名保留'}
+  {id:'W01',mod:'网页版回归',name:'Chrome网页版',expect:'https://lyiyu.github.io/predestined/offline_media_lib.html 功能正常，旧标签人名保留'},
+  // v4.8.0 补齐：v4.3~v4.8 新功能用例（此前面板一直是 v4.2 的 17 项，新功能无测试条目）
+  {id:'X01',mod:'v4.8核心修复',name:'同名跨目录不错位',expect:'两个子文件夹各放一个同名文件（或找现成的），扫描后缩略图/标记/删除各归各位、互不串图'},
+  {id:'G01',mod:'人脸识别',name:'人脸扫描分组',expect:'😊人脸→开始扫描，完成后显示人脸分组列表（每人一组缩略图）'},
+  {id:'G02',mod:'人脸识别',name:'人脸组标记',expect:'点任一分组→输入人名确认，该组照片批量重命名为 人名-N.jpg'},
+  {id:'T01',mod:'标签自愈',name:'改名后标签恢复(前缀)',expect:'系统文件管理器中把已标记照片 人名_1.jpg 改为 人名_新年.jpg，App重新扫描后标签仍为该人名'},
+  {id:'T02',mod:'标签自愈',name:'改名后标签恢复(完全改名)',expect:'把已标记照片改成无关名如 IMG_001.jpg，重新扫描后标签自动恢复并更新文件名'},
+  {id:'C01',mod:'收藏(v4.6)',name:'收藏博主链接',expect:'⭐收藏→添加收藏（选平台+粘贴主页链接+备注），列表正常显示与管理'},
+  {id:'P01',mod:'详情页(v4.4/4.5)',name:'滑动翻页+视频全屏',expect:'详情页前后滑动翻页顺滑不串图；视频全屏播放完整无遮挡可横屏'},
+  {id:'M01',mod:'音频(v4.5.3)',name:'MP3音频',expect:'MP3 可扫描入库，分类筛选🎵音频可见，详情页正常播放'}
 ];
-const DEV_STATE_KEY='dev_test_feedback_v42';
+const DEV_STATE_KEY='dev_test_feedback_v48'; // v4.8.0 起新测试周期（旧 v42 记录仍留在 localStorage 不丢失）
 function devGetState(){try{const s=JSON.parse(localStorage.getItem(DEV_STATE_KEY));if(s&&s.cases)return s}catch(e){}return{cases:{}}}
 function devSetCase(id,status,note){
   const s=devGetState();
@@ -2838,13 +2876,13 @@ if(nApi){
       if(item.type==='video'){
         const v=document.createElement('video');v.preload='metadata';v.muted=true;v.src=url;
         await new Promise(res=>{
-          v.onloadeddata=()=>{try{v.currentTime=Math.min(v.duration/2||0,1);v.onseeked=()=>{try{const c=document.createElement('canvas');c.width=v.videoWidth||160;c.height=v.videoHeight||160;c.getContext('2d').drawImage(v,0,0,c.width,c.height);const data=c.toDataURL('image/jpeg',.5);thumbCache.set(item.name,data);dbPutThumb(item.name+'@'+curDirName,data);el.innerHTML='<img src="'+data+'">';res()}catch(e){el.textContent='▶';res()}}}catch(e){el.textContent='▶';res()}};
+          v.onloadeddata=()=>{try{v.currentTime=Math.min(v.duration/2||0,1);v.onseeked=()=>{try{const c=document.createElement('canvas');c.width=v.videoWidth||160;c.height=v.videoHeight||160;c.getContext('2d').drawImage(v,0,0,c.width,c.height);const data=c.toDataURL('image/jpeg',.5);thumbCache.set(itemKey(item),data);dbPutThumb(itemKey(item)+'@'+curDirName,data);el.innerHTML='<img src="'+data+'">';res()}catch(e){el.textContent='▶';res()}}}catch(e){el.textContent='▶';res()}};
           v.onerror=()=>{el.textContent='▶';res()};
         });
       }else{
         const img=new Image();
         await new Promise(res=>{
-          img.onload=()=>{try{const maxSide=300;const r=Math.min(1,maxSide/Math.max(img.width,img.height));const w=Math.max(1,Math.round(img.width*r)),h=Math.max(1,Math.round(img.height*r));const c=document.createElement('canvas');c.width=w;c.height=h;c.getContext('2d').drawImage(img,0,0,w,h);const data=c.toDataURL('image/jpeg',.6);thumbCache.set(item.name,data);dbPutThumb(item.name+'@'+curDirName,data);el.innerHTML='<img src="'+data+'">';res()}catch(e){el.textContent='🖼';res()}};
+          img.onload=()=>{try{const maxSide=300;const r=Math.min(1,maxSide/Math.max(img.width,img.height));const w=Math.max(1,Math.round(img.width*r)),h=Math.max(1,Math.round(img.height*r));const c=document.createElement('canvas');c.width=w;c.height=h;c.getContext('2d').drawImage(img,0,0,w,h);const data=c.toDataURL('image/jpeg',.6);thumbCache.set(itemKey(item),data);dbPutThumb(itemKey(item)+'@'+curDirName,data);el.innerHTML='<img src="'+data+'">';res()}catch(e){el.textContent='🖼';res()}};
           img.onerror=()=>{el.textContent='🖼';res()};
           img.src=url;
         });
