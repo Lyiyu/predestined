@@ -1,5 +1,5 @@
 {
-  "version": "4.8.0",
-  "apkUrl": "https://github.com/Lyiyu/predestined/releases/download/v4.8.0/shiguang-v4.8.0.apk",
-  "note": "v4.8.0 同名跨目录修复+性能优化：path 主键替代 name（子文件夹不再错位）、缩略图 LRU 缓存、搜索节流、安全区旋转重探、文件操作原子性回滚、maxCount 生效"
+  "version": "4.9.0",
+  "apkUrl": "https://github.com/Lyiyu/predestined/releases/download/v4.9.0/yiyu-v4.9.0.apk",
+  "note": "v4.9.0 改名「矣欤」：全新二次元图标+启动图；新增「导出博主清单」（收藏页一键复制发助手配置自动下载）；测试面板26项"
 }
