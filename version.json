@@ -1,5 +1,5 @@
 {
-  "version": "4.9.0",
-  "apkUrl": "https://github.com/Lyiyu/predestined/releases/download/v4.9.0/yiyu-v4.9.0.apk",
-  "note": "v4.9.0 改名「矣欤」：全新二次元图标+启动图；新增「导出博主清单」（收藏页一键复制发助手配置自动下载）；测试面板26项"
+  "version": "5.0.0",
+  "apkUrl": "https://github.com/Lyiyu/predestined/releases/download/v5.0.0/yiyu-v5.0.0.apk",
+  "note": "v5.0.0 在线下载：粘贴抖音链接→云端解析→手机直接保存（视频mp4/图集图片/实况图+同名视频配对，不下BGM）；风控六防线（随机间隔5~15秒/单次20条/每日50条/失败熔断冷却/多源自动切换/解析缓存1小时）；设置可自定义全部参数"
 }
