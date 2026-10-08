@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
-<title>矣欤 v4.9.0</title>
+<title>矣欤 v5.0.0</title>
 <style>
 *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 :root{
@@ -284,7 +284,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei
   <button class="topbar-btn" onclick="toggleDrawer()" title="菜单" style="font-size:18px;padding:2px 10px">☰</button>
   <h1>📷 矣欤</h1>
   <button class="topbar-btn" onclick="location.reload()" title="刷新页面（用于重新授权文件夹）">🔄</button>
-  <span class="tag" id="topVerTag">v4.9.0</span>
+  <span class="tag" id="topVerTag">v5.0.0</span>
 </div>
 
 <div class="progress-bar" id="progressBar"><i id="progressFill"></i></div>
@@ -359,6 +359,33 @@ body{font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei
     <h3>📋 已收藏 (<span id="favCount">0</span>)</h3>
     <button class="btn-sm" style="margin-bottom:10px" onclick="exportFav()">📤 导出博主清单（发助手可配置自动下载）</button>
     <div id="favList"></div>
+  </div>
+</div>
+
+<!-- 下载页 (v5.0: 云端解析+手机直存+风控六防线) -->
+<div class="page" id="pageDl">
+  <div class="setcard">
+    <h3>📥 在线下载</h3>
+    <div style="display:flex;gap:6px">
+      <input id="dlUrl" placeholder="粘贴抖音分享链接/口令" style="flex:1;padding:10px;border:1px solid var(--line);border-radius:10px;font-size:14px;min-width:0">
+      <button class="btn-sm" style="background:var(--primary);color:#fff;border-color:var(--primary);padding:10px 14px;white-space:nowrap" onclick="dlParse()">解析</button>
+    </div>
+    <div id="dlResult"></div>
+    <div id="dlProgress"></div>
+    <div id="dlUsage" style="margin-top:8px;font-size:12px;color:#888"></div>
+  </div>
+  <div class="setcard">
+    <h3>⚙️ 下载设置（风控参数，默认为推荐值）</h3>
+    <div class="setitem"><label>批量下载间隔（秒）</label><div style="display:flex;gap:4px;align-items:center"><input type="number" id="dlSetIntervalMin" style="width:60px;padding:6px;border:1px solid var(--line);border-radius:8px">~<input type="number" id="dlSetIntervalMax" style="width:60px;padding:6px;border:1px solid var(--line);border-radius:8px"></div></div>
+    <div class="setitem"><label>单次批量上限（条）</label><input type="number" id="dlSetBatchMax" style="width:80px;padding:6px;border:1px solid var(--line);border-radius:8px"></div>
+    <div class="setitem"><label>每日下载上限（条）</label><input type="number" id="dlSetDailyMax" style="width:80px;padding:6px;border:1px solid var(--line);border-radius:8px"></div>
+    <div class="setitem"><label>每日解析上限（次）</label><input type="number" id="dlSetDailyParseMax" style="width:80px;padding:6px;border:1px solid var(--line);border-radius:8px"></div>
+    <div class="setitem"><label>失败自动重试（次）</label><input type="number" id="dlSetRetryMax" style="width:80px;padding:6px;border:1px solid var(--line);border-radius:8px"></div>
+    <div class="setitem"><label>追更检查最小间隔（分钟）</label><input type="number" id="dlSetFollowupGap" style="width:80px;padding:6px;border:1px solid var(--line);border-radius:8px"></div>
+    <div class="setitem"><label>保存目录（存储根相对路径）</label><input type="text" id="dlSetSaveDir" style="flex:1;padding:6px;border:1px solid var(--line);border-radius:8px;min-width:0"></div>
+    <div class="setitem"><label>自定义解析接口（自部署后填，优先使用）</label><input type="text" id="dlSetCustomApi" placeholder="https://你的服务地址" style="flex:1;padding:6px;border:1px solid var(--line);border-radius:8px;min-width:0"></div>
+    <button class="btn-sm" style="background:var(--primary);color:#fff;border-color:var(--primary);padding:10px" onclick="dlSaveCfgForm()">保存设置</button>
+    <div class="q-tip" style="margin-top:10px">风控说明：批量下载逐条随机间隔防机器人特征；单次/每日双重上限防触发限流；连续 3 次失败自动冷却 5 分钟；遇 429 限流全局退避 1 分钟并自动切换备用源；解析结果缓存 1 小时（同链接重复使用不再请求）；追更检查按最小间隔节流（频繁开关 App 不会重复请求）。</div>
   </div>
 </div>
 
@@ -461,6 +488,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei
 <div class="tabbar" id="tabbar">
   <button class="tab active" id="tabLib" onclick="switchTab('lib')"><span class="ic">🗂️</span>媒体库</button>
   <button class="tab" id="tabFav" onclick="switchTab('fav')"><span class="ic">⭐</span>收藏</button>
+  <button class="tab" id="tabDl" onclick="switchTab('dl')"><span class="ic">⬇️</span>下载</button>
   <button class="tab" id="tabSet" onclick="switchTab('set')"><span class="ic">⚙️</span>设置</button>
 </div>
 
@@ -578,7 +606,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei
 
 <script>
 // ==================== 状态 ====================
-const VERSION='4.9.0';
+const VERSION='5.0.0';
 const DB_NAME='offline_media_lib_v34',DB_VERSION=6;
 const STORE_MEDIA='media',STORE_THUMB='thumbs',STORE_SESSION='session',STORE_FACES='faces';
 let cfg={rule:'person_seq',tags:[],dateFormat:'YYYYMMDD',compress:true,maxCount:2000,showHidden:false,recentNameLimit:5};
@@ -1642,9 +1670,10 @@ async function doDeleteFromDisk(item){
 // ==================== Tab ====================
 function switchTab(t){
   currentTab=t;
-  ['lib','fav','set'].forEach(n=>{const pg=document.getElementById('page'+n.charAt(0).toUpperCase()+n.slice(1));const tb=document.getElementById('tab'+n.charAt(0).toUpperCase()+n.slice(1));if(pg)pg.classList.toggle('show',n===t);if(tb)tb.classList.toggle('active',n===t)});
+  ['lib','fav','dl','set'].forEach(n=>{const pg=document.getElementById('page'+n.charAt(0).toUpperCase()+n.slice(1));const tb=document.getElementById('tab'+n.charAt(0).toUpperCase()+n.slice(1));if(pg)pg.classList.toggle('show',n===t);if(tb)tb.classList.toggle('active',n===t)});
   if(t==='lib')renderLib();
   if(t==='fav')renderFav();
+  if(t==='dl')renderDlPage();
   if(t==='set'){loadSettingsForm();renderSetStats();updateQuota()}
 }
 
@@ -2669,6 +2698,224 @@ async function clearFaceData(){
   await dbClearFaces();renderFaceGroups();showToast('已清空人脸库');
 }
 
+// ==================== v5.0: 在线下载（云端解析 + 手机直存 + 风控六防线） ====================
+// 说明：解析服务未开放 CORS，浏览器无法直接调用 → 解析/下载全部走 CapacitorHttp 原生请求（App 专属）。
+const DL_UA='Mozilla/5.0 (Linux; Android 14) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Mobile Safari/537.36';
+const DL_CFG_KEY='yiyu_dl_cfg_v50';
+const DL_CFG_DEFAULT={intervalMin:5,intervalMax:15,batchMax:20,dailyMax:50,dailyParseMax:100,retryMax:1,followupGap:30,saveDir:'/DCIM/矣欤下载',customApi:''};
+function dlCfg(){try{const c=JSON.parse(storeGet(DL_CFG_KEY));return Object.assign({},DL_CFG_DEFAULT,c||{})}catch(e){return Object.assign({},DL_CFG_DEFAULT)}}
+function dlSaveCfg(c){storeSet(DL_CFG_KEY,c)}
+function dlUsage(){ // 防线①：每日计数（按日期自动重置）
+  const today=new Date().toLocaleDateString('sv');
+  let u=null;try{u=JSON.parse(storeGet('yiyu_dl_usage_'+today))}catch(e){}
+  if(!u||u.date!==today)u={date:today,parse:0,download:0};
+  return u;
+}
+function dlAddUsage(type,n){const u=dlUsage();u[type]=(u[type]||0)+(n||1);storeSet('yiyu_dl_usage_'+u.date,u);dlRenderUsage()}
+function dlCacheGet(url){ // 防线⑤：解析结果缓存1小时，同链接重复使用不再请求
+  try{const c=JSON.parse(storeGet('yiyu_dl_cache_v50')||'null')||{};const r=c[url];
+    if(r&&Date.now()-r.ts<3600000)return r.data;
+    if(r){delete c[url];storeSet('yiyu_dl_cache_v50',c)}
+  }catch(e){}
+  return null;
+}
+function dlCacheSet(url,data){try{const c=JSON.parse(storeGet('yiyu_dl_cache_v50')||'null')||{};c[url]={ts:Date.now(),data:data};storeSet('yiyu_dl_cache_v50',c)}catch(e){}}
+const DL_SRC_BUILTIN={id:'wtf',name:'公共解析(douyin.wtf)',base:'https://api.douyin.wtf',demo:{u:'demo',p:'kelp-kelp-delta-3690'}};
+const DL_STATE={blockUntil:0,cool:{}};
+function dlSources(){const cfg=dlCfg();const arr=[];if(cfg.customApi&&/^https?:\/\//.test(cfg.customApi))arr.push({id:'custom',name:'自定义源',base:cfg.customApi.replace(/\/+$/,''),demo:DL_SRC_BUILTIN.demo});arr.push(DL_SRC_BUILTIN);return arr}
+async function dlSession(src){ // 演示登录（session 7天缓存，提前1天自动续）
+  const k='yiyu_dl_session_'+src.id;
+  try{const s=JSON.parse(storeGet(k));if(s&&s.cookie&&s.exp&&Date.now()<s.exp-86400000)return s.cookie}catch(e){}
+  const r=await window.Capacitor.Plugins.CapacitorHttp.request({url:src.base+'/api/v1/auth/login',method:'POST',headers:{'Content-Type':'application/json','User-Agent':DL_UA},data:{username:src.demo.u,password:src.demo.p}});
+  const hs=(r.headers||{});const sc=hs['set-cookie']||hs['Set-Cookie']||'';
+  const m=String(sc).match(/dtk_session=[^;]+/);
+  if(!m)throw new Error('登录失败：未获得会话');
+  const cookie=m[0];storeSet(k,{cookie:cookie,exp:Date.now()+6*86400000});
+  return cookie;
+}
+async function dlApi(src,path,opt){ // 统一请求封装：带session
+  opt=opt||{};
+  const h=Object.assign({'User-Agent':DL_UA,'Accept':'application/json'},opt.headers||{});
+  const ck=await dlSession(src);if(ck)h.Cookie=ck;
+  return await window.Capacitor.Plugins.CapacitorHttp.request({url:src.base+path,method:opt.method||'GET',headers:h,data:opt.data});
+}
+function dlSafeName(s){return String(s||'').replace(/[\\/:*?"<>|\n\r#]/g,'').trim().substring(0,40)||'未命名'}
+function dlImgExt(url){return (/\.webp|webp/i.test(String(url)))?'.webp':'.jpg'}
+function dlExtract(taskData){ // 从 raw 数据提取（基于2026-10-08真实样本验证的结构）
+  const raw=taskData.raw||{};
+  const imgs=raw.images||[];
+  const isAlbum=imgs.length>0||[2,68,150].indexOf(raw.aweme_type)>=0;
+  const author=((raw.author||{}).nickname)||'';
+  const desc=String(raw.desc||'').split('\n')[0]||'';
+  const time=raw.create_time?new Date(raw.create_time*1000).toLocaleDateString('sv'):'';
+  const base=dlSafeName(author)+'_抖音_'+dlSafeName(desc)+'_'+(time||new Date().toLocaleDateString('sv'));
+  if(!isAlbum){
+    let url='';
+    const brs=((raw.video||{}).bit_rate)||[];
+    if(brs.length){const sorted=brs.slice().sort(function(a,b){return (b.bit_rate||0)-(a.bit_rate||0)});url=(((sorted[0]||{}).play_addr||{}).url_list||[''])[0]}
+    if(!url)url=((((raw.video||{}).play_addr||{}).url_list)||[''])[0];
+    if(!url)throw new Error('未取到视频直链');
+    return {kind:'video',base:base,url:url,duration:Math.round(((raw.video||{}).duration||0)/1000)};
+  }
+  const images=imgs.map(function(im){
+    const live=((((im.video||{}).play_addr||{}).url_list)||[''])[0];
+    return {img:((im.url_list)||[''])[0],live:live||''};
+  }).filter(function(x){return x.img});
+  if(!images.length)throw new Error('未取到图集数据');
+  const liveCount=images.filter(function(x){return x.live}).length;
+  return {kind:'album',base:base,images:images,liveCount:liveCount};
+}
+async function dlParseUrl(link){ // 解析（缓存→频控→多源→异步任务轮询）
+  const cached=dlCacheGet(link);if(cached)return cached;
+  const cfg=dlCfg();const u=dlUsage();
+  if(u.parse>=cfg.dailyParseMax)throw new Error('今日解析已达上限 '+cfg.dailyParseMax+' 次（风控保护，明日重置）');
+  let lastErr=null;
+  for(const src of dlSources()){
+    if(DL_STATE.cool[src.id]&&Date.now()<DL_STATE.cool[src.id])continue;
+    try{
+      dlAddUsage('parse',1);
+      const r1=await dlApi(src,'/api/v1/douyin/video?url='+encodeURIComponent(link)+'&include_raw=true');
+      const d1=r1.data;
+      if(r1.status!==200||!d1||!d1.success||!(d1.data||{}).task_id)throw new Error('解析请求失败 HTTP'+r1.status);
+      const tid=d1.data.task_id;
+      for(let i=0;i<15;i++){ // 轮询任务（2秒×15=30秒超时）
+        await new Promise(function(res){setTimeout(res,2000)});
+        const r2=await dlApi(src,'/api/v1/tasks/'+tid);
+        const d2=r2.data;
+        if(r2.status===429)throw new Error('HTTP429 限流');
+        const st=(d2&&d2.data&&d2.data.state)||'';
+        if(st==='done'){const item=dlExtract(d2.data);dlCacheSet(link,item);return item}
+        if(st==='failed'||st==='error')throw new Error('解析任务失败');
+      }
+      throw new Error('解析超时（30秒）');
+    }catch(e){
+      lastErr=e;
+      DL_STATE.cool[src.id]=Date.now()+30*60*1000; // 该源冷却30分钟（防线②）
+      if(String((e&&e.message)||'').indexOf('429')>=0)DL_STATE.blockUntil=Date.now()+60*1000; // 全局退避1分钟
+    }
+  }
+  throw lastErr||new Error('全部解析源不可用（已冷却，请稍后再试）');
+}
+let DL_CURRENT=null,DL_RUNNING=false;
+async function dlSaveFile(url,relPath){ // 原生下载（直链+移动UA+Referer，防线③行为拟真）
+  const cfg=dlCfg();
+  try{await window.Capacitor.Plugins.Filesystem.mkdir({path:cfg.saveDir,directory:'EXTERNAL_STORAGE',recursive:true})}catch(e){}
+  const r=await window.Capacitor.Plugins.CapacitorHttp.downloadFile({url:url,method:'GET',directory:'EXTERNAL_STORAGE',path:relPath,headers:{'Referer':'https://www.douyin.com/','User-Agent':DL_UA}});
+  return r;
+}
+function dlResultMsg(msg){document.getElementById('dlResult').innerHTML='<div style="padding:12px;font-size:13px;color:#666">'+escapeHtml(msg)+'</div>'}
+async function dlParse(){ // 入口：解析按钮
+  const rawTxt=document.getElementById('dlUrl').value.trim();
+  if(!rawTxt){showToast('请粘贴抖音链接');return}
+  if(!IS_NATIVE_APP){dlResultMsg('在线下载为 App 专属功能：网页浏览器受跨域限制无法调用解析服务，请在手机「矣欤」App 中使用。');return}
+  const m=rawTxt.match(/https?:\/\/[^\s，。"'']+|复制打开抖音[\s\S]{0,120}(https?:\/\/[^\s]+)/);
+  const link=m?(m[1]||m[0]):rawTxt;
+  dlResultMsg('解析中…（约2~5秒，首次登录接口约多1秒）');
+  const btn=document.getElementById('dlParseBtn');btn.disabled=true;
+  try{
+    const item=await dlParseUrl(link);
+    DL_CURRENT=item;
+    dlRenderResult(item);
+  }catch(e){
+    dlResultMsg('解析失败：'+(((e&&e.message)||String(e))));
+  }
+  btn.disabled=false;
+}
+function dlRenderResult(item){
+  const el=document.getElementById('dlResult');
+  let n=0,desc='';
+  if(item.kind==='video'){n=1;desc='🎬 视频 · '+item.duration+'秒'}
+  else{n=item.images.length+item.images.filter(function(x){return x.live}).length;desc='🖼️ 图集 · '+item.images.length+'张'+(item.liveCount?'（含实况 '+item.liveCount+' 张，将配对保存）':'')}
+  el.innerHTML='<div style="margin-top:12px;padding:12px;border:1px solid var(--line);border-radius:12px">'+
+    '<div style="font-size:12px;color:#888">'+desc+'</div>'+
+    '<div style="font-size:14px;margin:6px 0;word-break:break-all">'+escapeHtml(item.base)+'</div>'+
+    '<button class="btn-sm" style="background:var(--primary);color:#fff;border-color:var(--primary);padding:10px 16px" onclick="dlDownloadAll()">⬇️ 下载全部（'+n+' 个文件）</button>'+
+    '</div>';
+}
+function dlMark(i,txt){const el=document.getElementById('dlRow'+i);if(el){el.innerHTML=escapeHtml(txt);el.style.color=(txt.indexOf('✓')>=0?'#1a7f37':(txt.indexOf('✗')>=0?'#c53030':'#666'))}}
+function dlProgressInit(tasks){
+  document.getElementById('dlProgress').innerHTML='<div style="margin-top:10px;padding:10px;border:1px solid var(--line);border-radius:12px;font-size:13px">'+
+    '<div style="margin-bottom:6px;color:#555">下载进度（批量逐条随机间隔，防风控）</div>'+
+    tasks.map(function(t,i){return '<div id="dlRow'+i+'" style="padding:3px 0;color:#666">⏳ '+escapeHtml(t.label)+' · '+escapeHtml(t.fname.substring(0,34))+'</div>'}).join('')+'</div>';
+}
+async function dlDownloadAll(){ // 批量管线：上限截断→逐条下载→随机间隔→重试→熔断
+  const item=DL_CURRENT;
+  if(!item){showToast('请先解析');return}
+  if(!IS_NATIVE_APP){showToast('App 专属功能，请在手机 App 中使用');return}
+  if(DL_RUNNING){showToast('正在下载中…');return}
+  const cfg=dlCfg();
+  const tasks=[];
+  if(item.kind==='video'){tasks.push({label:'视频',url:item.url,fname:item.base+'.mp4'})}
+  else{
+    item.images.forEach(function(im,i){
+      const sfx=item.images.length>1?'_'+String(i+1).padStart(2,'0'):'';
+      tasks.push({label:'图'+(i+1),url:im.img,fname:item.base+sfx+dlImgExt(im.img)});
+      if(im.live)tasks.push({label:'图'+(i+1)+' 实况',url:im.live,fname:item.base+sfx+'.mp4'}); // 同名配对=实况照片
+    });
+  }
+  const u=dlUsage();
+  if(tasks.length>cfg.batchMax){tasks.length=cfg.batchMax;showToast('已按单次上限 '+cfg.batchMax+' 条截断（风控保护）')}
+  const remain=cfg.dailyMax-u.download;
+  if(remain<=0){showToast('今日下载已达上限 '+cfg.dailyMax+' 条，明日重置');return}
+  if(tasks.length>remain){tasks.length=remain;showToast('已按每日上限截断')}
+  DL_RUNNING=true;dlProgressInit(tasks);
+  let done=0,fails=0;
+  for(let i=0;i<tasks.length;i++){
+    if(Date.now()<DL_STATE.blockUntil){dlMark(i,'⛔ 冷却中已暂停');break}
+    let ok=false,errMsg='';
+    for(let att=0;att<=cfg.retryMax&&!ok;att++){
+      try{await dlSaveFile(tasks[i].url,cfg.saveDir+'/'+tasks[i].fname);ok=true;done++;dlAddUsage('download',1);dlMark(i,'✓ 完成')}
+      catch(e){errMsg=((e&&e.message)||String(e)).substring(0,60);if(att<cfg.retryMax)await new Promise(function(r2){setTimeout(r2,1500)})}
+    }
+    if(!ok){fails++;dlMark(i,'✗ '+errMsg);
+      if(fails>=3){DL_STATE.blockUntil=Date.now()+5*60*1000;dlMark(-1,'⛔ 连续3次失败，冷却5分钟（熔断）');break}
+    }
+    if(i<tasks.length-1&&Date.now()>=DL_STATE.blockUntil){ // 防线③：随机间隔
+      const gap=(cfg.intervalMin+Math.random()*(cfg.intervalMax-cfg.intervalMin))*1000;
+      const el=document.getElementById('dlRow'+i);
+      if(el&&el.textContent.indexOf('✓')>=0)el.innerHTML+=' <span style="color:#999">（'+Math.round(gap/1000)+'秒后下一条）</span>';
+      await new Promise(function(r2){setTimeout(r2,gap)});
+    }
+  }
+  DL_RUNNING=false;
+  showToast('下载结束：成功 '+done+' / 失败 '+fails+(Date.now()<DL_STATE.blockUntil?'（已熔断，稍后5分钟再试）':''));
+  dlRenderUsage();
+}
+function dlRenderUsage(){ // 防线⑥：透明化
+  const cfg=dlCfg();const u=dlUsage();
+  const el=document.getElementById('dlUsage');
+  if(el)el.textContent='今日已用：解析 '+u.parse+'/'+cfg.dailyParseMax+' · 下载 '+u.download+'/'+cfg.dailyMax+'（保存目录 '+cfg.saveDir+'）';
+}
+function renderDlPage(){dlLoadCfgForm();dlRenderUsage()}
+function dlLoadCfgForm(){
+  const c=dlCfg();
+  document.getElementById('dlSetIntervalMin').value=c.intervalMin;
+  document.getElementById('dlSetIntervalMax').value=c.intervalMax;
+  document.getElementById('dlSetBatchMax').value=c.batchMax;
+  document.getElementById('dlSetDailyMax').value=c.dailyMax;
+  document.getElementById('dlSetDailyParseMax').value=c.dailyParseMax;
+  document.getElementById('dlSetRetryMax').value=c.retryMax;
+  document.getElementById('dlSetFollowupGap').value=c.followupGap;
+  document.getElementById('dlSetSaveDir').value=c.saveDir;
+  document.getElementById('dlSetCustomApi').value=c.customApi||'';
+}
+function dlSaveCfgForm(){
+  const c=dlCfg();
+  c.intervalMin=Math.max(1,Math.min(60,parseInt(document.getElementById('dlSetIntervalMin').value)||5));
+  c.intervalMax=Math.max(c.intervalMin,Math.min(60,parseInt(document.getElementById('dlSetIntervalMax').value)||15));
+  c.batchMax=Math.max(5,Math.min(50,parseInt(document.getElementById('dlSetBatchMax').value)||20));
+  c.dailyMax=Math.max(10,Math.min(200,parseInt(document.getElementById('dlSetDailyMax').value)||50));
+  c.dailyParseMax=Math.max(20,Math.min(500,parseInt(document.getElementById('dlSetDailyParseMax').value)||100));
+  c.retryMax=Math.max(0,Math.min(3,parseInt(document.getElementById('dlSetRetryMax').value)||1));
+  c.followupGap=Math.max(10,Math.min(120,parseInt(document.getElementById('dlSetFollowupGap').value)||30));
+  c.saveDir=String(document.getElementById('dlSetSaveDir').value||'/DCIM/矣欤下载').trim()||'/DCIM/矣欤下载';
+  if(c.saveDir.charAt(0)!=='/')c.saveDir='/'+c.saveDir;
+  c.customApi=String(document.getElementById('dlSetCustomApi').value||'').trim();
+  dlSaveCfg(c);
+  dlLoadCfgForm();dlRenderUsage();
+  showToast('下载设置已保存');
+}
+
 // ==================== v4.2: 开发者模式（测试反馈面板，替代 Excel 回填） ====================
 const DEV_TEST_CASES=[
  {id:'A01',mod:'安装',name:'APK安装',expect:'安装成功，桌面出现「矣欤」图标，打开为全屏App（无浏览器地址栏）'},
@@ -2697,7 +2944,11 @@ const DEV_TEST_CASES=[
   {id:'C01',mod:'收藏(v4.6)',name:'收藏博主链接',expect:'⭐收藏→添加收藏（选平台+粘贴主页链接+备注），列表正常显示与管理'},
   {id:'C02',mod:'收藏(v4.9)',name:'导出博主清单',expect:'收藏页点「📤导出博主清单」→提示已复制→粘贴到微信内容完整（平台/博主名/链接/备注）'},
   {id:'P01',mod:'详情页(v4.4/4.5)',name:'滑动翻页+视频全屏',expect:'详情页前后滑动翻页顺滑不串图；视频全屏播放完整无遮挡可横屏'},
-  {id:'M01',mod:'音频(v4.5.3)',name:'MP3音频',expect:'MP3 可扫描入库，分类筛选🎵音频可见，详情页正常播放'}
+  {id:'M01',mod:'音频(v4.5.3)',name:'MP3音频',expect:'MP3 可扫描入库，分类筛选🎵音频可见，详情页正常播放'},
+  {id:'V01',mod:'下载(v5.0)',name:'下载Tab与解析',expect:'⬇️下载Tab打开正常；粘贴抖音链接点解析，2~8秒出结果卡（类型/标题/作者/文件数）'},
+  {id:'V02',mod:'下载(v5.0)',name:'单条视频下载',expect:'解析视频作品→下载全部→保存在 DCIM/矣欤下载/ 下的 mp4 可正常播放'},
+  {id:'V03',mod:'下载(v5.0)',name:'图集+实况配对下载',expect:'实况图集下载后：每张图 + 同名.mp4 配对（小米相册识别为实况）；普通图集只存图片，不下载BGM'},
+  {id:'V04',mod:'下载(v5.0)',name:'风控设置与用量',expect:'设置默认值（间隔5~15秒/单次20/每日50/解析100/追更30分钟）；改后保存生效；页面显示今日已用解析x·下载x'}
 ];
 const DEV_STATE_KEY='dev_test_feedback_v48'; // v4.8.0 起新测试周期（旧 v42 记录仍留在 localStorage 不丢失）
 function devGetState(){try{const s=JSON.parse(localStorage.getItem(DEV_STATE_KEY));if(s&&s.cases)return s}catch(e){}return{cases:{}}}
