@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
-<title>矣欤 v5.0.0</title>
+<title>矣欤 v5.0.1</title>
 <style>
 *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 :root{
@@ -284,7 +284,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei
   <button class="topbar-btn" onclick="toggleDrawer()" title="菜单" style="font-size:18px;padding:2px 10px">☰</button>
   <h1>📷 矣欤</h1>
   <button class="topbar-btn" onclick="location.reload()" title="刷新页面（用于重新授权文件夹）">🔄</button>
-  <span class="tag" id="topVerTag">v5.0.0</span>
+  <span class="tag" id="topVerTag">v5.0.1</span>
 </div>
 
 <div class="progress-bar" id="progressBar"><i id="progressFill"></i></div>
@@ -340,6 +340,16 @@ body{font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei
 <!-- v4.6: 收藏页 -->
 <div class="page" id="pageFav">
   <div class="setcard">
+    <h3>📥 在线下载</h3>
+    <div style="display:flex;gap:6px">
+      <input id="dlUrl" placeholder="粘贴抖音分享链接/口令" style="flex:1;padding:10px;border:1px solid var(--line);border-radius:10px;font-size:14px;min-width:0">
+      <button class="btn-sm" style="background:var(--primary);color:#fff;border-color:var(--primary);padding:10px 14px;white-space:nowrap" onclick="dlParse()">解析</button>
+    </div>
+    <div id="dlResult"></div>
+    <div id="dlProgress"></div>
+    <div id="dlUsage" style="margin-top:8px;font-size:12px;color:#888"></div>
+  </div>
+  <div class="setcard">
     <h3>⭐ 收藏博主</h3>
     <div class="sub">输入小红书/抖音/微博/X 的主页链接，收藏博主并备注。后续支持一键下载其视频。</div>
     <div style="margin-top:12px;display:flex;flex-direction:column;gap:8px">
@@ -359,20 +369,6 @@ body{font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei
     <h3>📋 已收藏 (<span id="favCount">0</span>)</h3>
     <button class="btn-sm" style="margin-bottom:10px" onclick="exportFav()">📤 导出博主清单（发助手可配置自动下载）</button>
     <div id="favList"></div>
-  </div>
-</div>
-
-<!-- 下载页 (v5.0: 云端解析+手机直存+风控六防线) -->
-<div class="page" id="pageDl">
-  <div class="setcard">
-    <h3>📥 在线下载</h3>
-    <div style="display:flex;gap:6px">
-      <input id="dlUrl" placeholder="粘贴抖音分享链接/口令" style="flex:1;padding:10px;border:1px solid var(--line);border-radius:10px;font-size:14px;min-width:0">
-      <button class="btn-sm" style="background:var(--primary);color:#fff;border-color:var(--primary);padding:10px 14px;white-space:nowrap" onclick="dlParse()">解析</button>
-    </div>
-    <div id="dlResult"></div>
-    <div id="dlProgress"></div>
-    <div id="dlUsage" style="margin-top:8px;font-size:12px;color:#888"></div>
   </div>
   <div class="setcard">
     <h3>⚙️ 下载设置（风控参数，默认为推荐值）</h3>
@@ -487,8 +483,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei
 <!-- 底部Tab -->
 <div class="tabbar" id="tabbar">
   <button class="tab active" id="tabLib" onclick="switchTab('lib')"><span class="ic">🗂️</span>媒体库</button>
-  <button class="tab" id="tabFav" onclick="switchTab('fav')"><span class="ic">⭐</span>收藏</button>
-  <button class="tab" id="tabDl" onclick="switchTab('dl')"><span class="ic">⬇️</span>下载</button>
+  <button class="tab" id="tabFav" onclick="switchTab('fav')"><span class="ic">📥</span>收藏·下载</button>
   <button class="tab" id="tabSet" onclick="switchTab('set')"><span class="ic">⚙️</span>设置</button>
 </div>
 
@@ -606,7 +601,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei
 
 <script>
 // ==================== 状态 ====================
-const VERSION='5.0.0';
+const VERSION='5.0.1';
 const DB_NAME='offline_media_lib_v34',DB_VERSION=6;
 const STORE_MEDIA='media',STORE_THUMB='thumbs',STORE_SESSION='session',STORE_FACES='faces';
 let cfg={rule:'person_seq',tags:[],dateFormat:'YYYYMMDD',compress:true,maxCount:2000,showHidden:false,recentNameLimit:5};
@@ -1670,10 +1665,9 @@ async function doDeleteFromDisk(item){
 // ==================== Tab ====================
 function switchTab(t){
   currentTab=t;
-  ['lib','fav','dl','set'].forEach(n=>{const pg=document.getElementById('page'+n.charAt(0).toUpperCase()+n.slice(1));const tb=document.getElementById('tab'+n.charAt(0).toUpperCase()+n.slice(1));if(pg)pg.classList.toggle('show',n===t);if(tb)tb.classList.toggle('active',n===t)});
+  ['lib','fav','set'].forEach(n=>{const pg=document.getElementById('page'+n.charAt(0).toUpperCase()+n.slice(1));const tb=document.getElementById('tab'+n.charAt(0).toUpperCase()+n.slice(1));if(pg)pg.classList.toggle('show',n===t);if(tb)tb.classList.toggle('active',n===t)});
   if(t==='lib')renderLib();
-  if(t==='fav')renderFav();
-  if(t==='dl')renderDlPage();
+  if(t==='fav'){renderFav();renderDlPage()}
   if(t==='set'){loadSettingsForm();renderSetStats();updateQuota()}
 }
 
@@ -2945,7 +2939,7 @@ const DEV_TEST_CASES=[
   {id:'C02',mod:'收藏(v4.9)',name:'导出博主清单',expect:'收藏页点「📤导出博主清单」→提示已复制→粘贴到微信内容完整（平台/博主名/链接/备注）'},
   {id:'P01',mod:'详情页(v4.4/4.5)',name:'滑动翻页+视频全屏',expect:'详情页前后滑动翻页顺滑不串图；视频全屏播放完整无遮挡可横屏'},
   {id:'M01',mod:'音频(v4.5.3)',name:'MP3音频',expect:'MP3 可扫描入库，分类筛选🎵音频可见，详情页正常播放'},
-  {id:'V01',mod:'下载(v5.0)',name:'下载Tab与解析',expect:'⬇️下载Tab打开正常；粘贴抖音链接点解析，2~8秒出结果卡（类型/标题/作者/文件数）'},
+  {id:'V01',mod:'下载(v5.0)',name:'收藏·下载页',expect:'📥收藏·下载 Tab 打开正常；粘贴抖音链接点解析，2~8秒出结果卡（类型/标题/作者/文件数）；收藏卡与下载设置同页可用'},
   {id:'V02',mod:'下载(v5.0)',name:'单条视频下载',expect:'解析视频作品→下载全部→保存在 DCIM/矣欤下载/ 下的 mp4 可正常播放'},
   {id:'V03',mod:'下载(v5.0)',name:'图集+实况配对下载',expect:'实况图集下载后：每张图 + 同名.mp4 配对（小米相册识别为实况）；普通图集只存图片，不下载BGM'},
   {id:'V04',mod:'下载(v5.0)',name:'风控设置与用量',expect:'设置默认值（间隔5~15秒/单次20/每日50/解析100/追更30分钟）；改后保存生效；页面显示今日已用解析x·下载x'}
