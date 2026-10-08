@@ -1,5 +1,5 @@
 {
-  "version": "5.0.1",
-  "apkUrl": "https://github.com/Lyiyu/predestined/releases/download/v5.0.1/yiyu-v5.0.1.apk",
-  "note": "v5.0.1 收藏与下载合并为一个「收藏·下载」页（下载输入→收藏博主→下载设置同页操作）；390×844 手机尺寸全页面文字截断扫描通过"
+  "version": "5.1.0",
+  "apkUrl": "https://github.com/Lyiyu/predestined/releases/download/v5.1.0/yiyu-v5.1.0.apk",
+  "note": "v5.1.0：①修复在线解析卡死bug（按钮引用错误）②支持完整分享口令自动提取链接③✕一键清空+解析分阶段进度④下载设置移入设置页⑤全部说明集中到「关于」弹窗⑥收藏平台加TikTok、图标改官方样式"
 }
