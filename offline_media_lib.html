@@ -1,11 +1,11 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="zh-CN">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
-<title>矣欤 v5.1.1</title>
+<title>矣欤 v5.1.2</title>
 <style>
 *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 :root{
@@ -284,7 +284,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei
   <button class="topbar-btn" onclick="toggleDrawer()" title="菜单" style="font-size:18px;padding:2px 10px">☰</button>
   <h1>📷 矣欤</h1>
   <button class="topbar-btn" onclick="location.reload()" title="刷新页面（用于重新授权文件夹）">🔄</button>
-  <span class="tag" id="topVerTag">v5.1.1</span>
+  <span class="tag" id="topVerTag">v5.1.2</span>
 </div>
 
 <div class="progress-bar" id="progressBar"><i id="progressFill"></i></div>
@@ -346,7 +346,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei
       <button class="btn-sm" style="background:var(--primary);color:#fff;border-color:var(--primary);padding:10px 14px;white-space:nowrap" id="dlParseBtn" onclick="dlParse()">解析</button>
       <button class="btn-sm" style="padding:10px 12px;white-space:nowrap" onclick="if(confirm('清空链接输入框？')){document.getElementById('dlUrl').value='';document.getElementById('dlResult').innerHTML='';document.getElementById('dlProgress').innerHTML=''}">✕</button>
     </div>
-    <div class="sub" style="margin-top:6px">支持直接粘贴 App 分享的完整口令（含文字），自动提取链接</div>
+    <div class="sub" style="margin-top:6px">支持粘贴完整分享口令（含文字，自动提取链接）；当前支持抖音（🎬视频/🖼️图文/📝文字/📸动图），TikTok/小红书/微博即将开放</div>
     <div id="dlResult"></div>
     <div id="dlProgress"></div>
     <div id="dlUsage" style="margin-top:8px;font-size:12px;color:#888"></div>
@@ -464,6 +464,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei
       <div class="sub" id="aboutMode" style="margin:0;font-size:13px;color:#333">检测中…</div>
       <button class="btn-ghost" onclick="checkUpdate()" style="margin-top:8px">🔔 检查更新</button>
       <button class="btn-ghost" onclick="runStorageDiag()" style="margin-top:8px">🔧 存储诊断</button>
+      <button class="btn-ghost" onclick="runInventory()" style="margin-top:8px">🔍 文件清点（数量比对）</button>
       <button class="btn-ghost" onclick="openAboutModal()" style="margin-top:8px">📖 使用说明与风控说明</button>
     </div>
   </div>
@@ -475,6 +476,18 @@ body{font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei
     <div class="modal-title" id="aboutModalTitle">📖 说明</div>
     <div id="aboutModalBody" style="max-height:60vh;overflow-y:auto;padding:0 4px"></div>
     <div class="modal-actions"><button class="btn-sm" style="background:var(--primary);color:#fff;border-color:var(--primary);padding:10px 28px" onclick="closeAboutModal()">我知道了</button></div>
+  </div>
+</div>
+
+<!-- 文件清点弹窗（v5.1.2: 扫描数量比对诊断） -->
+<div class="modal-overlay" id="invModal" onclick="if(event.target===this)closeInvModal()">
+  <div class="modal-box">
+    <div class="modal-title">🔍 文件清点（数量比对）</div>
+    <div id="invModalBody" style="max-height:65vh;overflow-y:auto;padding:0 4px"></div>
+    <div class="modal-actions">
+      <button class="btn-sm" style="padding:10px 18px" onclick="copyInvText()">📋 复制明细</button>
+      <button class="btn-sm" style="background:var(--primary);color:#fff;border-color:var(--primary);padding:10px 28px" onclick="closeInvModal()">关闭</button>
+    </div>
   </div>
 </div>
 
@@ -607,7 +620,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei
 
 <script>
 // ==================== 状态 ====================
-const VERSION='5.1.1';
+const VERSION='5.1.2';
 const DB_NAME='offline_media_lib_v34',DB_VERSION=6;
 const STORE_MEDIA='media',STORE_THUMB='thumbs',STORE_SESSION='session',STORE_FACES='faces';
 let cfg={rule:'person_seq',tags:[],dateFormat:'YYYYMMDD',compress:true,maxCount:2000,showHidden:false,recentNameLimit:5};
@@ -2801,36 +2814,66 @@ function dlExtract(taskData){ // v5.1.1: 四类型识别（视频/图文/动图/
   if(raw.aweme_type===61)return {kind:'text',base:base,images:images,liveCount:0}; // 文字作品（文字卡图集）
   return {kind:'album',base:base,images:images,liveCount:0}; // 静态图文
 }
-async function dlParseUrl(link){ // 解析（缓存→频控→多源→异步任务轮询）
+async function dlTaskDone(src,tid,opt){ // v5.1.2: 统一任务轮询——透传服务端真实错误（诊断不再只报「解析任务失败」）
+  opt=opt||{};
+  for(let i=0;i<(opt.tries||15);i++){
+    await new Promise(function(res){setTimeout(res,opt.gap||2000)});
+    const r2=await dlApi(src,'/api/v1/tasks/'+tid);
+    const d2=r2.data;
+    if(r2.status===429)throw new Error('HTTP429 限流');
+    if(r2.status===404)throw new Error('任务不存在（会话过期）');
+    const st=(d2&&d2.data&&d2.data.state)||'';
+    if(st==='done')return (opt.take||(function(x){return x}))(d2.data);
+    if(st==='failed'||st==='error'){
+      const em=((d2.data.error||{}).message)||'';
+      const det=((d2.data.error||{}).details)||{};
+      let hint='解析任务失败';
+      if(det.reason==='wrong_resource'&&det.resource==='user')hint='这是博主主页链接，不是作品链接（去「收藏博主」添加）';
+      else if(em)hint=em.substring(0,80);
+      throw new Error(hint);
+    }
+  }
+  throw new Error('解析超时（'+Math.round((opt.tries||15)*(opt.gap||2000)/1000)+'秒）');
+}
+async function dlParseUrl(link,rawTxt,forceUser){ // v5.1.2: 主页/作品自动分流；载荷层级修复；服务端判定用户主页时自动重试
   const cached=dlCacheGet(link);if(cached)return cached;
   const cfg=dlCfg();const u=dlUsage();
   if(u.parse>=cfg.dailyParseMax)throw new Error('今日解析已达上限 '+cfg.dailyParseMax+' 次（风控保护，明日重置）');
   let lastErr=null;
+  // v5.1.2: 主页识别启发式（含完整口令文本，纯URL短码无特征时由服务端落定并自动重试）
+  const txt=String(rawTxt||'')+' '+link;
+  const isUserPg=forceUser||((txt.indexOf('主页')>=0||/profile/i.test(txt)||txt.indexOf('/user/')>=0)&&!/视频|直播|推荐/.test(txt));
   for(const src of dlSources()){
     if(DL_STATE.cool[src.id]&&Date.now()<DL_STATE.cool[src.id])continue;
     try{
       dlAddUsage('parse',1);
-      const r1=await dlApi(src,'/api/v1/douyin/video?url='+encodeURIComponent(link)+'&include_raw=true');
+      const eps=isUserPg?('/api/v1/douyin/user?url='):('/api/v1/douyin/video?url=');
+      const r1=await dlApi(src,eps+encodeURIComponent(link)+(isUserPg?'':'&include_raw=true'));
       const d1=r1.data;
-      if(String(r1.status).charAt(0)!=='2'||!d1||!d1.success||!(d1.data||{}).task_id)throw new Error('解析请求失败 HTTP'+r1.status); // v5.1.1: 任务受理是202(Accepted)非200，一律放行2xx
+      if(String(r1.status).charAt(0)!=='2'||!d1||!d1.success||!(d1.data||{}).task_id)throw new Error('解析请求失败 HTTP'+r1.status); // 任务受理是202(Accepted)非200，一律放行2xx
       const tid=d1.data.task_id;
-      for(let i=0;i<15;i++){ // 轮询任务（2秒×15=30秒超时）
-        await new Promise(function(res){setTimeout(res,2000)});
-        const r2=await dlApi(src,'/api/v1/tasks/'+tid);
-        const d2=r2.data;
-        if(r2.status===429)throw new Error('HTTP429 限流');
-        const st=(d2&&d2.data&&d2.data.state)||'';
-        if(st==='done'){const item=dlExtract(d2.data);dlCacheSet(link,item);return item}
-        if(st==='failed'||st==='error')throw new Error('解析任务失败');
+      if(isUserPg){ // 主页→取博主信息→提示收藏
+        const info=await dlTaskDone(src,tid,{tries:10,take:function(td){const d=(td&&td.data)||{};return {nickname:d.nickname||'',unique_id:d.unique_id||'',follower:(d.stats&&d.stats.follower_count)||0,aweme:(d.stats&&d.stats.content_count)||0,web_url:d.web_url||''}}});
+        if(!info.nickname)throw new Error('未取到博主信息');
+        throw new Error('__USER__'+JSON.stringify(info));
       }
-      throw new Error('解析超时（30秒）');
+      // v5.1.2 关键修复：任务载荷在信封的 .data（归一化对象含raw），旧代码传整信封致 raw=undefined →「未取到视频/图集数据」
+      const tdata=await dlTaskDone(src,tid,{tries:15,take:function(td){return td&&td.data}});
+      const item=dlExtract(tdata);dlCacheSet(link,item);return item;
     }catch(e){
+      const em=String((e&&e.message)||'');
+      if(em.indexOf('__USER__')===0)throw e; // v5.1.2: 主页信息信号直接上抛（不冷却、不试其它源）
+      // v5.1.2: 服务端判定这是用户主页链接→换 user 端点重试（源本身健康，不冷却）
+      if(!forceUser&&em.indexOf('博主主页')>=0){
+        if(u.parse<cfg.dailyParseMax)return dlParseUrl(link,rawTxt,true);
+        throw lastErr=e;
+      }
       lastErr=e;
-      // v5.1.1: 冷却分级，不再一刀切30分钟——429限流30分钟；403封禁30分钟；其余(401/超时/网络/解析失败)仅1分钟，避免误伤后无法重试
-      const em=String((e&&e.message)||'');const hm=(em.match(/HTTP(\d{3})/)||[])[1]||'';
+      // v5.1.1: 冷却分级——429限流/403封禁长冷却(可配coolMin)；其余仅0分钟
+      const hm=(em.match(/HTTP(\d{3})/)||[])[1]||'';
       let coolMs=60*1000;
-      if(hm==='429'){coolMs=Math.max(0,parseInt(cfg.coolMin,10)||0)*60*1000;DL_STATE.blockUntil=Date.now()+60*1000} // 限流：冷却时长可配置（默认30分钟）+全局退避1分钟
-      else if(hm==='403'){coolMs=Math.max(0,parseInt(cfg.coolMin,10)||0)*60*1000} // 被拒：同样可配置
+      if(hm==='429'){coolMs=Math.max(0,parseInt(cfg.coolMin,10)||0)*60*1000;DL_STATE.blockUntil=Date.now()+60*1000}
+      else if(hm==='403'){coolMs=Math.max(0,parseInt(cfg.coolMin,10)||0)*60*1000}
       DL_STATE.cool[src.id]=Date.now()+coolMs;
     }
   }
@@ -2852,24 +2895,62 @@ async function dlParse(){ // 入口：解析按钮（v5.1 修复取不到按钮�
   // v5.1: 兼容完整分享口令——先取全部 http(s) 链接，取不到再原文当作链接
   const m=rawTxt.match(/https?:\/\/[^\s，。"''\uFF08\uFF09]+/);
   const link=m?m[0]:rawTxt;
+  // v5.1.2: 未开放平台提前明确提示（避免拿去解析报莫名错误）
+  if(/tiktok\.com/i.test(link)){dlResultMsg('🚧 TikTok 解析尚未开放，当前支持抖音链接（TikTok 将在后续版本支持）');return}
+  if(/xiaohongshu\.com|xhslink\.com/i.test(link)){dlResultMsg('🚧 小红书解析尚未开放，当前支持抖音链接');return}
+  if(/weibo\.(cn|com)/i.test(link)){dlResultMsg('🚧 微博解析尚未开放，当前支持抖音链接');return}
+  if(!/douyin\.com|iesdouyin\.com|iegtd|douyin/i.test(link)){dlResultMsg('🚧 看不僮这个链接——请粘贴抖音作品分享链接（支持整段口令）');return}
   const btn=document.getElementById('dlParseBtn');
   const steps=['解析中…登录解析服务','解析中…提交解析任务（约2秒）','解析中…等待结果（最长30秒）'];
   dlResultMsg(steps[0]);let si=1;
   const tick=setInterval(function(){if(si<steps.length)dlResultMsg(steps[si++])},4000);
   if(btn){btn.disabled=true;btn.textContent='解析中…'}
   try{
-    const item=await dlParseUrl(link);
+    const item=await dlParseUrl(link,rawTxt);
     DL_CURRENT=item;
     dlRenderResult(item);
   }catch(e){
-    dlResultMsg('解析失败：'+(((e&&e.message)||String(e))));
+    const em=String((e&&e.message)||e);
+    if(em.indexOf('__USER__')===0){ // v5.1.2: 主页链接→博主信息卡+一键收藏
+      clearInterval(tick);
+      if(btn){btn.disabled=false;btn.textContent='解析'}
+      try{dlRenderUserCard(JSON.parse(em.substring(8)),link)}catch(e2){dlResultMsg('解析失败：主页数据异常')}
+      return;
+    }
+    dlResultMsg('解析失败：'+em);
   }
   clearInterval(tick);
   if(btn){btn.disabled=false;btn.textContent='解析'}
 }
+let DL_USER_INFO=null;
+function dlRenderUserCard(info,link){ // v5.1.2: 主页解析结果——博主信息+一键收藏（修复收藏短码无名字）
+  const el=document.getElementById('dlResult');
+  const exist=getFav().some(function(f){return f.url===link});
+  el.innerHTML='<div style="margin-top:12px;padding:12px;border:1px solid var(--line);border-radius:12px">'+
+    '<div style="font-size:12px;color:#888">👤 这是博主主页（下载单作品请粘作品链接）</div>'+
+    '<div style="font-size:15px;font-weight:600;margin-top:6px">'+escapeHtml(info.nickname||'未知昵称')+'</div>'+
+    '<div style="font-size:12px;color:#888;margin-top:2px">粉丝 '+info.follower+' · 作品 '+info.aweme+(info.unique_id?' · 抖音号 '+escapeHtml(String(info.unique_id)):'')+'</div>'+
+    '<div style="margin-top:10px">'+
+    (exist?'<div style="font-size:13px;color:#1a7f37">✓ 已在收藏列表</div>'
+          :'<button class="btn-sm" style="background:var(--primary);color:#fff;border-color:var(--primary);padding:10px 16px" onclick="dlFavUser()">⭐ 收藏该博主</button>')+
+    '</div></div>';
+  DL_USER_INFO={info:info,link:link};
+}
+function dlFavUser(){ // v5.1.2: 下载页一键收藏（自动带昵称+去重）
+  if(!DL_USER_INFO){showToast('请先解析主页链接');return}
+  const info=DL_USER_INFO.info,link=DL_USER_INFO.link;
+  const name=info.nickname||'';
+  const entry={id:'fav'+Date.now(),platform:'dy',url:link,name:name,note:('粉丝'+info.follower+' · 作品'+info.aweme),savedAt:Date.now()};
+  const list=getFav();
+  if(list.some(function(f){return f.url===link})){showToast('已在收藏列表');return}
+  list.unshift(entry);saveFav(list);
+  renderFav();
+  dlRenderUserCard(info,link);
+  showToast('已收藏：'+(name||'未知昵称'));
+}
 function dlRenderResult(item){
   const el=document.getElementById('dlResult');
-  let n=0,desc='';
+  let n=0,desc=(item&&item.kind)||'';
   if(item.kind==='video'){n=1;desc='🎬 视频 · '+(item.duration||'?')+'秒'}
   else if(item.kind==='live'){ // v5.1.1: 动图——动态存视频、静态存图片
     const st=item.images.filter(function(x){return !x.live}).length;
@@ -2947,11 +3028,11 @@ function renderDlPage(){dlLoadCfgForm();dlRenderUsage()}
 // ==================== v5.1: 关于弹窗（所有说明集中于此） ====================
 const ABOUT_CONTENT=[
   ['📥 在线下载使用说明',[
-    '1. 抖音点「分享 → 复制链接」，把整段口令直接粘贴到下载框（含文字没关系，会自动提取链接）',
+    '1. 抖音点「分享 → 复制链接」，把整段口令直接粘贴到下载框（含文字没关系，会自动提取链接。TikTok/小红书/微博暂未开放，当前仅支持抖音）',
     '2. 点「解析」按钮（约2~5秒）→ 出现作品卡片 → 点「下载全部」保存到手机',
     '3. 自动识别作品类型：🎬 视频存 .mp4；🖼️ 图文逐张存图片；📝 文字存文字图；📸 动图（实况）动效保存为视频（不存静态图）；不下载BGM',
     '4. 文件保存目录：默认 /DCIM/矣欤下载（可在设置→下载设置中改）',
-    '5. 在线下载为 App 专属功能，网页版受跨域限制不可用'
+    '5. 在线下载为 App 专属功能，网页版受跨域限制不可用',
   ]],
   ['🛡️ 风控说明（为何下载有间隔）',[
     '批量下载逐条随机间隔 5~15 秒——防机器人特征',
@@ -2970,7 +3051,8 @@ const ABOUT_CONTENT=[
     '扫描范围：图片（jpg/png/webp/heic/gif）、视频（mp4/mov/mkv/avi等14种）、音频（mp3/flac等8种）',
     '固定跳过名叫 Android 和 .thumbnails 的文件夹；点开头隐藏文件默认不扫（设置可开）',
     '「设置→最大可导入数量」达到上限后停止入库（扫描提示"已达上限"时去调大）',
-    '文件在系统文件管理器改名/移动后，重新扫描会自动恢复人名标签'
+    '文件在系统文件管理器改名/移动后，重新扫描会自动恢复人名标签',
+    '数量对不上？设置→🔍文件清点：按扩展名直接看到差额在哪,'
   ]],
   ['💾 数据与隐私',[
     '所有数据（标签/收藏/设置）仅保存在本机（IndexedDB/localStorage），不上传云端',
@@ -2987,6 +3069,71 @@ function openAboutModal(){
   document.getElementById('aboutModal').classList.add('show');
 }
 function closeAboutModal(){document.getElementById('aboutModal').classList.remove('show')}
+// ==================== v5.1.2: 文件清点（扫描数量比对诊断） ====================
+let INV_TEXT='';
+function closeInvModal(){document.getElementById('invModal').classList.remove('show')}
+function invExtOK(n){ // 与扫描白名单同口径（图片5种+视频14种+音频8种）
+  const l=String(n).toLowerCase();
+  return /(\.jpg|\.jpeg|\.png|\.webp|\.heic|\.gif)$/.test(l)||VIDO_EXT_RE.test(l)||AUDIO_EXT_RE.test(l);
+}
+async function invWalk(handle,pathArr,stats){ // 全量遍历计数（不受白名单/上限限制）
+  try{
+    for await(const entry of handle.values()){
+      const nm=entry.name;
+      if(entry.kind==='directory'){
+        await invWalk(entry,pathArr.concat(nm),stats);
+        continue;
+      }
+      stats.total++;
+      if(nm.startsWith('.')){stats.hidden++;continue} // 隐藏文件优先归类
+      const inSkip=pathArr.indexOf('Android')>=0||pathArr.indexOf('.thumbnails')>=0;
+      if(inSkip){stats.inSkip++;continue}
+      const dot=nm.lastIndexOf('.');const ext=dot>=0?nm.slice(dot).toLowerCase():'(无扩展名)';
+      if(!invExtOK(nm)){stats.badExt++;stats.bad[ext]=(stats.bad[ext]||0)+1;continue}
+      stats.imported++;stats.okExt[ext]=(stats.okExt[ext]||0)+1;
+    }
+  }catch(e){try{stats.errs.push((pathArr.join('/')||'根目录')+'：'+((e&&e.message)||String(e)))}catch(e2){}}
+}
+async function runInventory(){ // 扫描数量与文件管理器对不上时，一键拆出差额在哪
+  if(!curDir){showToast('请先选择文件夹再清点');return}
+  const body=document.getElementById('invModalBody');
+  body.innerHTML='<div style="padding:24px;text-align:center;color:#888">🔍 正在全量清点，请稍候…</div>';
+  document.getElementById('invModal').classList.add('show');
+  const stats={total:0,hidden:0,inSkip:0,imported:0,badExt:0,okExt:{},bad:{},errs:[]};
+  await invWalk(curDir,[],stats);
+  const mx=parseInt(cfg.maxCount,10)||0;
+  const badArr=Object.keys(stats.bad).map(function(k){return [k,stats.bad[k]]}).sort(function(a,b){return b[1]-a[1]});
+  const okArr=Object.keys(stats.okExt).map(function(k){return [k,stats.okExt[k]]}).sort(function(a,b){return b[1]-a[1]});
+  let h='<div style="font-size:13px;line-height:2">';
+  h+='<div style="font-weight:700;font-size:15px">📁 '+escapeHtml(curDir.name)+'</div>';
+  h+='<div>全部文件：<b>'+stats.total+'</b> 个'+(stats.errs.length?' <span style="color:#c53030">（⚠ '+stats.errs.length+' 个目录读取失败）</span>':'')+'</div>';
+  h+='<div>✅ 将入库：<b style="color:#1a7f37">'+stats.imported+'</b> 个'+(mx&&stats.imported>=mx?' <span style="color:#c53030">（已达上限 '+mx+'！设置→最大可导入数量 可调大）</span>':'（App 扫描应显示此数）')+'</div>';
+  h+='<div>🚫 不支持扩展名：<b style="color:#c53030">'+stats.badExt+'</b> 个'+(stats.hidden?'｜🙈 隐藏文件('+stats.hidden+')':'')+(stats.inSkip?'｜⤵️ Android/.thumbnails 目录('+stats.inSkip+')':'')+'</div>';
+  h+='<div style="font-size:12px;color:#888">四个数字之和=全部文件。与文件管理器对数时用「全部文件」比对，再在下方看差额类型。</div>';
+  if(badArr.length){
+    h+='<div style="margin-top:8px;font-weight:700">不支持扩展名明细（对不上的主因）：</div><div style="font-size:12px">';
+    badArr.slice(0,20).forEach(function(x){h+='<span style="display:inline-block;background:#f4f2f7;border-radius:6px;padding:2px 8px;margin:2px">'+escapeHtml(x[0])+' × '+x[1]+'</span>'});
+    h+='</div>';
+  }
+  if(okArr.length){
+    h+='<div style="margin-top:8px;font-weight:700">将入库的类型分布：</div><div style="font-size:12px">';
+    okArr.slice(0,15).forEach(function(x){h+='<span style="display:inline-block;background:#eef7ee;border-radius:6px;padding:2px 8px;margin:2px">'+escapeHtml(x[0])+' × '+x[1]+'</span>'});
+    h+='</div>';
+  }
+  if(stats.errs.length){
+    h+='<div style="margin-top:8px;font-weight:700;color:#c53030">读取失败的目录：</div>';
+    stats.errs.slice(0,8).forEach(function(e){h+='<div style="font-size:12px;color:#c53030">'+escapeHtml(e)+'</div>'});
+  }
+  h+='<div style="margin-top:10px;font-size:12px;color:#888">💡 常见差额：.heif(小米实况/RAW) .dng .avif .bmp .svg .wma 不在支持列表；上限 2000 达到后停止扫描。需要支持更多类型发给助手加白名单。</div>';
+  h+='</div>';
+  body.innerHTML=h;
+  INV_TEXT='【矣欤文件清点】目录：'+curDir.name+'\r\n全部文件 '+stats.total+' = 入库 '+stats.imported+' + 不支持扩展名 '+stats.badExt+'（'+badArr.map(function(x){return x[0]+'x'+x[1]}).join(' ')+') + 隐藏 '+stats.hidden+' + 跳过目录 '+stats.inSkip+'\r\n读取失败目录 '+stats.errs.length+' 个';
+}
+function copyInvText(){
+  if(!INV_TEXT){showToast('请先运行清点');return}
+  try{navigator.clipboard.writeText(INV_TEXT).then(function(){showToast('已复制，可发给助手分析')},function(){showToast('复制失败，可在弹窗文字上长按手动复制')})}
+  catch(e){showToast('复制失败，可在弹窗文字上长按手动复制')}
+}
 function dlLoadCfgForm(){
   const c=dlCfg();
   document.getElementById('dlSetIntervalMin').value=c.intervalMin;
