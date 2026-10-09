@@ -1,11 +1,11 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="zh-CN">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
-<title>矣欤 v5.1.0</title>
+<title>矣欤 v5.1.1</title>
 <style>
 *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 :root{
@@ -284,7 +284,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei
   <button class="topbar-btn" onclick="toggleDrawer()" title="菜单" style="font-size:18px;padding:2px 10px">☰</button>
   <h1>📷 矣欤</h1>
   <button class="topbar-btn" onclick="location.reload()" title="刷新页面（用于重新授权文件夹）">🔄</button>
-  <span class="tag" id="topVerTag">v5.1.0</span>
+  <span class="tag" id="topVerTag">v5.1.1</span>
 </div>
 
 <div class="progress-bar" id="progressBar"><i id="progressFill"></i></div>
@@ -354,13 +354,8 @@ body{font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei
   <div class="setcard">
     <h3>⭐ 收藏博主</h3>
     <div style="margin-top:12px;display:flex;flex-direction:column;gap:8px">
-      <select id="favPlatform" style="padding:8px 10px;border:1px solid var(--line);border-radius:8px;font-size:14px;font-family:inherit">
-        <option value="dy">🎵 抖音</option>
-        <option value="xhs">📕 小红书</option>
-        <option value="wb">微博（蓝V标）</option>
-        <option value="tt">🎵 TikTok</option>
-        <option value="x">✖ X(Twitter)</option>
-      </select>
+      <div id="favPlatformPick" style="display:flex;gap:6px;flex-wrap:wrap"></div>
+      <input type="hidden" id="favPlatform" value="dy">
       <input type="text" id="favUrl" placeholder="粘贴主页链接" style="padding:8px 10px;border:1px solid var(--line);border-radius:8px;font-size:14px">
       <input type="text" id="favName" placeholder="博主名（可留空，自动从链接提取）" style="padding:8px 10px;border:1px solid var(--line);border-radius:8px;font-size:14px">
       <textarea id="favNote" placeholder="备注（可选）" rows="2" style="padding:8px 10px;border:1px solid var(--line);border-radius:8px;font-size:14px;font-family:inherit;resize:vertical"></textarea>
@@ -445,6 +440,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei
     <div class="setitem"><label>每日下载上限（条）</label><input type="number" id="dlSetDailyMax" style="width:80px;padding:6px;border:1px solid var(--line);border-radius:8px"></div>
     <div class="setitem"><label>每日解析上限（次）</label><input type="number" id="dlSetDailyParseMax" style="width:80px;padding:6px;border:1px solid var(--line);border-radius:8px"></div>
     <div class="setitem"><label>失败自动重试（次）</label><input type="number" id="dlSetRetryMax" style="width:80px;padding:6px;border:1px solid var(--line);border-radius:8px"></div>
+    <div class="setitem"><label>解析源冷却时长（分钟，0=不冷却）</label><input type="number" id="dlSetCoolMin" style="width:80px;padding:6px;border:1px solid var(--line);border-radius:8px"></div>
     <div class="setitem"><label>追更检查最小间隔（分钟）</label><input type="number" id="dlSetFollowupGap" style="width:80px;padding:6px;border:1px solid var(--line);border-radius:8px"></div>
     <div class="setitem"><label>保存目录（存储根相对路径）</label><input type="text" id="dlSetSaveDir" style="flex:1;padding:6px;border:1px solid var(--line);border-radius:8px;min-width:0"></div>
     <div class="setitem"><label>自定义解析接口（自部署后填，优先使用）</label><input type="text" id="dlSetCustomApi" placeholder="https://你的服务地址" style="flex:1;padding:6px;border:1px solid var(--line);border-radius:8px;min-width:0"></div>
@@ -611,7 +607,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei
 
 <script>
 // ==================== 状态 ====================
-const VERSION='5.1.0';
+const VERSION='5.1.1';
 const DB_NAME='offline_media_lib_v34',DB_VERSION=6;
 const STORE_MEDIA='media',STORE_THUMB='thumbs',STORE_SESSION='session',STORE_FACES='faces';
 let cfg={rule:'person_seq',tags:[],dateFormat:'YYYYMMDD',compress:true,maxCount:2000,showHidden:false,recentNameLimit:5};
@@ -1327,8 +1323,37 @@ window.__handleBackButton=function(){
 const FAV_KEY='favCreators';
 function getFav(){try{return JSON.parse(localStorage.getItem(FAV_KEY)||'[]')}catch(e){return[]}}
 function saveFav(list){storeSet(FAV_KEY,list)} // v4.7: 安全写入封装
-const FAV_ICONS={xhs:'📕',dy:'🎵',wb:'🅥',tt:'🎵',x:'𝕏'};
+const FAV_SVG={
+dy:{d:"M12.525.02c1.31-.02 2.61-.01 3.91-.02.08 1.53.63 3.09 1.75 4.17 1.12 1.11 2.7 1.62 4.24 1.79v4.03c-1.44-.05-2.89-.35-4.2-.97-.57-.26-1.1-.59-1.62-.93-.01 2.92.01 5.84-.02 8.75-.08 1.4-.54 2.79-1.35 3.94-1.31 1.92-3.58 3.17-5.91 3.21-1.43.08-2.86-.31-4.08-1.03-2.02-1.19-3.44-3.37-3.65-5.71-.02-.5-.03-1-.01-1.49.18-1.9 1.12-3.72 2.58-4.96 1.66-1.44 3.98-2.13 6.15-1.72.02 1.48-.04 2.96-.04 4.44-.99-.32-2.15-.23-3.02.37-.63.41-1.11 1.04-1.36 1.75-.21.51-.15 1.07-.14 1.61.24 1.64 1.82 3.02 3.5 2.87 1.12-.01 2.19-.66 2.77-1.61.19-.33.4-.67.41-1.06.1-1.79.06-3.57.07-5.36.01-4.03-.01-8.05.02-12.07z",c:'#000000'},
+tt:{d:"M12.525.02c1.31-.02 2.61-.01 3.91-.02.08 1.53.63 3.09 1.75 4.17 1.12 1.11 2.7 1.62 4.24 1.79v4.03c-1.44-.05-2.89-.35-4.2-.97-.57-.26-1.1-.59-1.62-.93-.01 2.92.01 5.84-.02 8.75-.08 1.4-.54 2.79-1.35 3.94-1.31 1.92-3.58 3.17-5.91 3.21-1.43.08-2.86-.31-4.08-1.03-2.02-1.19-3.44-3.37-3.65-5.71-.02-.5-.03-1-.01-1.49.18-1.9 1.12-3.72 2.58-4.96 1.66-1.44 3.98-2.13 6.15-1.72.02 1.48-.04 2.96-.04 4.44-.99-.32-2.15-.23-3.02.37-.63.41-1.11 1.04-1.36 1.75-.21.51-.15 1.07-.14 1.61.24 1.64 1.82 3.02 3.5 2.87 1.12-.01 2.19-.66 2.77-1.61.19-.33.4-.67.41-1.06.1-1.79.06-3.57.07-5.36.01-4.03-.01-8.05.02-12.07z",c:'#000000'},
+wb:{d:"M10.098 20.323c-3.977.391-7.414-1.406-7.672-4.02-.259-2.609 2.759-5.047 6.74-5.441 3.979-.394 7.413 1.404 7.671 4.018.259 2.6-2.759 5.049-6.737 5.439l-.002.004zM9.05 17.219c-.384.616-1.208.884-1.829.602-.612-.279-.793-.991-.406-1.593.379-.595 1.176-.861 1.793-.601.622.263.82.972.442 1.592zm1.27-1.627c-.141.237-.449.353-.689.253-.236-.09-.313-.361-.177-.586.138-.227.436-.346.672-.24.239.09.315.36.18.601l.014-.028zm.176-2.719c-1.893-.493-4.033.45-4.857 2.118-.836 1.704-.026 3.591 1.886 4.21 1.983.64 4.318-.341 5.132-2.179.8-1.793-.201-3.642-2.161-4.149zm7.563-1.224c-.346-.105-.57-.18-.405-.615.375-.977.42-1.804 0-2.404-.781-1.112-2.915-1.053-5.364-.03 0 0-.766.331-.571-.271.376-1.217.315-2.224-.27-2.809-1.338-1.337-4.869.045-7.888 3.08C1.309 10.87 0 13.273 0 15.348c0 3.981 5.099 6.395 10.086 6.395 6.536 0 10.888-3.801 10.888-6.82 0-1.822-1.547-2.854-2.915-3.284v.01zm1.908-5.092c-.766-.856-1.908-1.187-2.96-.962-.436.09-.706.511-.616.932.09.42.511.691.932.602.511-.105 1.067.044 1.442.465.376.421.466.977.316 1.473-.136.406.089.856.51.992.405.119.857-.105.992-.512.33-1.021.12-2.178-.646-3.035l.03.045zm2.418-2.195c-1.576-1.757-3.905-2.419-6.054-1.968-.496.104-.812.587-.706 1.081.104.496.586.813 1.082.707 1.532-.331 3.185.15 4.296 1.383 1.112 1.246 1.429 2.943.947 4.416-.165.48.106 1.007.586 1.157.479.165.991-.104 1.157-.586.675-2.088.241-4.478-1.338-6.235l.03.045z",c:'#E6162D'},
+xhs:{inner:'<rect x="0" y="0" width="24" height="24" rx="5.5" fill="#FF2442"/><path fill="#fff" d="M18 2H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zM6 4h5v8l-2.5-1.5L6 12V4z"/>',c:'#FF2442'},
+x:{d:"M14.234 10.162 22.977 0h-2.072l-7.591 8.824L7.251 0H.258l9.168 13.343L.258 24H2.33l8.016-9.318L16.749 24h6.993zm-2.837 3.299-.929-1.329L3.076 1.56h3.182l5.965 8.532.929 1.329 7.754 11.09h-3.182z",c:'#000000'}
+};
 const FAV_NAMES={xhs:'小红书',dy:'抖音',wb:'微博',tt:'TikTok',x:'X'};
+// v5.1.1: 官方SVG图标渲染 + 自定义平台选择器（替代原生下拉，避免图文选项难看）
+function favSvgIcon(p,size){
+  const s=FAV_SVG[p];if(!s)return '🔗';
+  const inner=s.inner||('<path d="'+s.d+'" fill="'+(s.c||'#333')+'"/>'); // inner=复合图形(如小红书红底白书)，d=单path品牌图标
+  return '<svg viewBox="0 0 24 24" width="'+(size||20)+'" height="'+(size||20)+'" xmlns="http://www.w3.org/2000/svg" style="flex:none;display:block;margin:0 auto">'+inner+'</svg>';
+}
+function favPickInit(){ // 渲染官方图标网格，选中高亮；值写入隐藏 input#favPlatform 保持 addFav 兼容
+  const wrap=document.getElementById('favPlatformPick');if(!wrap)return;
+  const cur=document.getElementById('favPlatform').value||'dy';
+  wrap.innerHTML=Object.keys(FAV_SVG).map(function(p){
+    const s=FAV_SVG[p];const c=(s&&s.c)||'#333';const on=p===cur;
+    return '<div data-p="'+p+'" style="flex:1;min-width:52px;max-width:64px;text-align:center;padding:7px 2px 5px;border:1.5px solid '+(on?c:'#e2e0ea')+';border-radius:10px;cursor:pointer;background:'+(on?'rgba(0,0,0,.05)':'#fff')+'">'+favSvgIcon(p,18)+'<div style="font-size:10px;color:'+(on?'#333':'#888')+';margin-top:3px;line-height:1">'+FAV_NAMES[p]+'</div></div>';
+  }).join('');
+  wrap.onclick=function(e){
+    const it=e.target.closest('[data-p]');if(!it)return;
+    document.getElementById('favPlatform').value=it.getAttribute('data-p');
+    Array.prototype.forEach.call(wrap.children,function(c){
+      const on=c===it;const s=FAV_SVG[c.getAttribute('data-p')];const col=(s&&s.c)||'#333';
+      c.style.borderColor=on?col:'#e2e0ea';c.style.background=on?'rgba(0,0,0,.05)':'#fff';
+      const nm=c.querySelector('div');if(nm)nm.style.color=on?'#333':'#888';
+    });
+  };
+}
 function addFav(){
   const platform=document.getElementById('favPlatform').value;
   let url=document.getElementById('favUrl').value.trim();
@@ -1349,7 +1374,7 @@ function addFav(){
   const list=getFav();list.unshift(entry);saveFav(list);
   document.getElementById('favUrl').value='';document.getElementById('favName').value='';document.getElementById('favNote').value='';
   renderFav();
-  showToast('已收藏：'+FAV_ICONS[platform]+' '+name);
+  showToast('已收藏：'+(FAV_NAMES[platform]||platform)+' '+name);
 }
 function delFav(id){
   if(!confirm('确认删除此收藏？'))return;
@@ -1385,7 +1410,7 @@ function renderFav(){
   const el=document.getElementById('favList');
   if(!list.length){el.innerHTML='<div style="color:var(--sub);font-size:13px;padding:16px 0">还没有收藏的博主，在上方添加。</div>';return}
   el.innerHTML=list.map(f=>{
-    const icon=FAV_ICONS[f.platform]||'🔗';
+    const icon=favSvgIcon(f.platform,24);
     const pfName=FAV_NAMES[f.platform]||'';
     const date=new Date(f.savedAt).toLocaleDateString();
     return '<div class="setitem fav-card" data-id="'+f.id+'" data-url="'+escapeHtml(f.url)+'" style="flex-direction:column;align-items:stretch;padding:12px">'+
@@ -1690,6 +1715,7 @@ function switchTab(t){
   const aboutEl=document.getElementById('aboutMode');
   if(aboutEl)aboutEl.textContent='矣欤 v'+VERSION+'（'+(RUNTIME_MODE==='app'?'App 模式':'网页版')+'）';
   bindDevEntry(); // v4.2: 版本文字连点7次进入测试反馈面板
+  favPickInit(); // v5.1.1: 平台图标选择器
   document.getElementById('showHidden').checked=cfg.showHidden;
   try{await loadLibrary()}catch(e){}
   await updateQuota();
@@ -2706,7 +2732,7 @@ async function clearFaceData(){
 // 说明：解析服务未开放 CORS，浏览器无法直接调用 → 解析/下载全部走 CapacitorHttp 原生请求（App 专属）。
 const DL_UA='Mozilla/5.0 (Linux; Android 14) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Mobile Safari/537.36';
 const DL_CFG_KEY='yiyu_dl_cfg_v50';
-const DL_CFG_DEFAULT={intervalMin:5,intervalMax:15,batchMax:20,dailyMax:50,dailyParseMax:100,retryMax:1,followupGap:30,saveDir:'/DCIM/矣欤下载',customApi:''};
+const DL_CFG_DEFAULT={intervalMin:5,intervalMax:15,batchMax:20,dailyMax:50,dailyParseMax:100,retryMax:1,followupGap:30,saveDir:'/DCIM/矣欤下载',customApi:'',coolMin:30};
 function dlCfg(){try{const c=JSON.parse(storeGet(DL_CFG_KEY));return Object.assign({},DL_CFG_DEFAULT,c||{})}catch(e){return Object.assign({},DL_CFG_DEFAULT)}}
 function dlSaveCfg(c){storeSet(DL_CFG_KEY,c)}
 function dlUsage(){ // 防线①：每日计数（按日期自动重置）
@@ -2737,37 +2763,43 @@ async function dlSession(src){ // 演示登录（session 7天缓存，提前1天
   const cookie=m[0];storeSet(k,{cookie:cookie,exp:Date.now()+6*86400000});
   return cookie;
 }
-async function dlApi(src,path,opt){ // 统一请求封装：带session
+async function dlApi(src,path,opt){ // 统一请求封装：带session；v5.1.1 会话失效(401/403)→清缓存重登重试1次
   opt=opt||{};
   const h=Object.assign({'User-Agent':DL_UA,'Accept':'application/json'},opt.headers||{});
-  const ck=await dlSession(src);if(ck)h.Cookie=ck;
-  return await window.Capacitor.Plugins.CapacitorHttp.request({url:src.base+path,method:opt.method||'GET',headers:h,data:opt.data});
+  let ck=await dlSession(src);if(ck)h.Cookie=ck;
+  let r=await window.Capacitor.Plugins.CapacitorHttp.request({url:src.base+path,method:opt.method||'GET',headers:h,data:opt.data});
+  if(r.status===401||r.status===403){ // 会话失效（服务端session被清理/轮换）→ 丢弃本地缓存重新登录再试
+    try{storeSet('yiyu_dl_session_'+src.id,'')}catch(e){}
+    const ck2=await dlSession(src);if(ck2)h.Cookie=ck2;
+    r=await window.Capacitor.Plugins.CapacitorHttp.request({url:src.base+path,method:opt.method||'GET',headers:h,data:opt.data});
+  }
+  return r;
 }
 function dlSafeName(s){return String(s||'').replace(/[\\/:*?"<>|\n\r#]/g,'').trim().substring(0,40)||'未命名'}
 function dlImgExt(url){return (/\.webp|webp/i.test(String(url)))?'.webp':'.jpg'}
-function dlExtract(taskData){ // 从 raw 数据提取（基于2026-10-08真实样本验证的结构）
+function dlExtract(taskData){ // v5.1.1: 四类型识别（视频/图文/动图/文字）——动图动态部分仅存视频（用户确认）
   const raw=taskData.raw||{};
   const imgs=raw.images||[];
-  const isAlbum=imgs.length>0||[2,68,150].indexOf(raw.aweme_type)>=0;
   const author=((raw.author||{}).nickname)||'';
   const desc=String(raw.desc||'').split('\n')[0]||'';
   const time=raw.create_time?new Date(raw.create_time*1000).toLocaleDateString('sv'):'';
   const base=dlSafeName(author)+'_抖音_'+dlSafeName(desc)+'_'+(time||new Date().toLocaleDateString('sv'));
-  if(!isAlbum){
-    let url='';
-    const brs=((raw.video||{}).bit_rate)||[];
-    if(brs.length){const sorted=brs.slice().sort(function(a,b){return (b.bit_rate||0)-(a.bit_rate||0)});url=(((sorted[0]||{}).play_addr||{}).url_list||[''])[0]}
-    if(!url)url=((((raw.video||{}).play_addr||{}).url_list)||[''])[0];
-    if(!url)throw new Error('未取到视频直链');
-    return {kind:'video',base:base,url:url,duration:Math.round(((raw.video||{}).duration||0)/1000)};
-  }
   const images=imgs.map(function(im){
     const live=((((im.video||{}).play_addr||{}).url_list)||[''])[0];
     return {img:((im.url_list)||[''])[0],live:live||''};
   }).filter(function(x){return x.img});
-  if(!images.length)throw new Error('未取到图集数据');
+  if(!images.length){ // 无图集 → 视频类
+    let url='';
+    const brs=((raw.video||{}).bit_rate)||[];
+    if(brs.length){const sorted=brs.slice().sort(function(a,b){return (b.bit_rate||0)-(a.bit_rate||0)});url=(((sorted[0]||{}).play_addr||{}).url_list||[''])[0]}
+    if(!url)url=((((raw.video||{}).play_addr||{}).url_list)||[''])[0];
+    if(!url)throw new Error('未取到视频/图集数据');
+    return {kind:'video',base:base,url:url,duration:Math.round(((raw.video||{}).duration||0)/1000)};
+  }
   const liveCount=images.filter(function(x){return x.live}).length;
-  return {kind:'album',base:base,images:images,liveCount:liveCount};
+  if(liveCount>0)return {kind:'live',base:base,images:images,liveCount:liveCount}; // 动图：动效保存为视频
+  if(raw.aweme_type===61)return {kind:'text',base:base,images:images,liveCount:0}; // 文字作品（文字卡图集）
+  return {kind:'album',base:base,images:images,liveCount:0}; // 静态图文
 }
 async function dlParseUrl(link){ // 解析（缓存→频控→多源→异步任务轮询）
   const cached=dlCacheGet(link);if(cached)return cached;
@@ -2780,7 +2812,7 @@ async function dlParseUrl(link){ // 解析（缓存→频控→多源→异步�
       dlAddUsage('parse',1);
       const r1=await dlApi(src,'/api/v1/douyin/video?url='+encodeURIComponent(link)+'&include_raw=true');
       const d1=r1.data;
-      if(r1.status!==200||!d1||!d1.success||!(d1.data||{}).task_id)throw new Error('解析请求失败 HTTP'+r1.status);
+      if(String(r1.status).charAt(0)!=='2'||!d1||!d1.success||!(d1.data||{}).task_id)throw new Error('解析请求失败 HTTP'+r1.status); // v5.1.1: 任务受理是202(Accepted)非200，一律放行2xx
       const tid=d1.data.task_id;
       for(let i=0;i<15;i++){ // 轮询任务（2秒×15=30秒超时）
         await new Promise(function(res){setTimeout(res,2000)});
@@ -2794,11 +2826,16 @@ async function dlParseUrl(link){ // 解析（缓存→频控→多源→异步�
       throw new Error('解析超时（30秒）');
     }catch(e){
       lastErr=e;
-      DL_STATE.cool[src.id]=Date.now()+30*60*1000; // 该源冷却30分钟（防线②）
-      if(String((e&&e.message)||'').indexOf('429')>=0)DL_STATE.blockUntil=Date.now()+60*1000; // 全局退避1分钟
+      // v5.1.1: 冷却分级，不再一刀切30分钟——429限流30分钟；403封禁30分钟；其余(401/超时/网络/解析失败)仅1分钟，避免误伤后无法重试
+      const em=String((e&&e.message)||'');const hm=(em.match(/HTTP(\d{3})/)||[])[1]||'';
+      let coolMs=60*1000;
+      if(hm==='429'){coolMs=Math.max(0,parseInt(cfg.coolMin,10)||0)*60*1000;DL_STATE.blockUntil=Date.now()+60*1000} // 限流：冷却时长可配置（默认30分钟）+全局退避1分钟
+      else if(hm==='403'){coolMs=Math.max(0,parseInt(cfg.coolMin,10)||0)*60*1000} // 被拒：同样可配置
+      DL_STATE.cool[src.id]=Date.now()+coolMs;
     }
   }
-  throw lastErr||new Error('全部解析源不可用（已冷却，请稍后再试）');
+  const waitMin=Object.keys(DL_STATE.cool).map(function(id){return Math.max(1,Math.round((DL_STATE.cool[id]-Date.now())/60000))}).join('/');
+  throw lastErr||new Error('解析源全部冷却中（剩余约 '+(waitMin||'1')+' 分钟），请稍后再试');
 }
 let DL_CURRENT=null,DL_RUNNING=false;
 async function dlSaveFile(url,relPath){ // 原生下载（直链+移动UA+Referer，防线③行为拟真）
@@ -2833,8 +2870,14 @@ async function dlParse(){ // 入口：解析按钮（v5.1 修复取不到按钮�
 function dlRenderResult(item){
   const el=document.getElementById('dlResult');
   let n=0,desc='';
-  if(item.kind==='video'){n=1;desc='🎬 视频 · '+item.duration+'秒'}
-  else{n=item.images.length+item.images.filter(function(x){return x.live}).length;desc='🖼️ 图集 · '+item.images.length+'张'+(item.liveCount?'（含实况 '+item.liveCount+' 张，将配对保存）':'')}
+  if(item.kind==='video'){n=1;desc='🎬 视频 · '+(item.duration||'?')+'秒'}
+  else if(item.kind==='live'){ // v5.1.1: 动图——动态存视频、静态存图片
+    const st=item.images.filter(function(x){return !x.live}).length;
+    n=item.liveCount+st;
+    desc='📸 动图 · '+item.liveCount+'个动效（将保存为视频）'+(st?' + '+st+'张静态图':'');
+  }
+  else if(item.kind==='text'){n=item.images.length;desc='📝 文字 · '+item.images.length+'张文字图'}
+  else{n=item.images.length;desc='🖼️ 图文 · '+item.images.length+'张静态图'}
   el.innerHTML='<div style="margin-top:12px;padding:12px;border:1px solid var(--line);border-radius:12px">'+
     '<div style="font-size:12px;color:#888">'+desc+'</div>'+
     '<div style="font-size:14px;margin:6px 0;word-break:break-all">'+escapeHtml(item.base)+'</div>'+
@@ -2858,8 +2901,8 @@ async function dlDownloadAll(){ // 批量管线：上限截断→逐条下载→
   else{
     item.images.forEach(function(im,i){
       const sfx=item.images.length>1?'_'+String(i+1).padStart(2,'0'):'';
-      tasks.push({label:'图'+(i+1),url:im.img,fname:item.base+sfx+dlImgExt(im.img)});
-      if(im.live)tasks.push({label:'图'+(i+1)+' 实况',url:im.live,fname:item.base+sfx+'.mp4'}); // 同名配对=实况照片
+      if(im.live){tasks.push({label:'动图'+(i+1),url:im.live,fname:item.base+sfx+'.mp4'})} // v5.1.1: 动图仅存视频（不再同名配对）
+      else{tasks.push({label:'图'+(i+1),url:im.img,fname:item.base+sfx+dlImgExt(im.img)})}
     });
   }
   const u=dlUsage();
@@ -2890,10 +2933,15 @@ async function dlDownloadAll(){ // 批量管线：上限截断→逐条下载→
   showToast('下载结束：成功 '+done+' / 失败 '+fails+(Date.now()<DL_STATE.blockUntil?'（已熔断，稍后5分钟再试）':''));
   dlRenderUsage();
 }
-function dlRenderUsage(){ // 防线⑥：透明化
+function dlRenderUsage(){ // 防线⑥：透明化 + 手动解锁入口
   const cfg=dlCfg();const u=dlUsage();
   const el=document.getElementById('dlUsage');
-  if(el)el.textContent='今日已用：解析 '+u.parse+'/'+cfg.dailyParseMax+' · 下载 '+u.download+'/'+cfg.dailyMax+'（保存目录 '+cfg.saveDir+'）';
+  if(el)el.innerHTML='今日已用：解析 '+u.parse+'/'+cfg.dailyParseMax+' · 下载 '+u.download+'/'+cfg.dailyMax+'（保存目录 '+cfg.saveDir+'）'+
+    '<div><button class="btn-sm" style="margin-top:6px;padding:5px 10px;font-size:12px" onclick="dlResetCool()">🔓 解锁冷却（立即重试）</button></div>';
+}
+function dlResetCool(){ // v5.1.1: 手动解锁（冷却为内存态，重启App同样自动清除）
+  DL_STATE.cool={};DL_STATE.blockUntil=0;
+  showToast('已解锁，可立即重试');dlRenderUsage();
 }
 function renderDlPage(){dlLoadCfgForm();dlRenderUsage()}
 // ==================== v5.1: 关于弹窗（所有说明集中于此） ====================
@@ -2901,14 +2949,15 @@ const ABOUT_CONTENT=[
   ['📥 在线下载使用说明',[
     '1. 抖音点「分享 → 复制链接」，把整段口令直接粘贴到下载框（含文字没关系，会自动提取链接）',
     '2. 点「解析」按钮（约2~5秒）→ 出现作品卡片 → 点「下载全部」保存到手机',
-    '3. 视频保存为 .mp4；图集逐张保存图片；实况图集自动保存 图片+同名视频 配对（相册长按可看到动效）；不下载BGM',
+    '3. 自动识别作品类型：🎬 视频存 .mp4；🖼️ 图文逐张存图片；📝 文字存文字图；📸 动图（实况）动效保存为视频（不存静态图）；不下载BGM',
     '4. 文件保存目录：默认 /DCIM/矣欤下载（可在设置→下载设置中改）',
     '5. 在线下载为 App 专属功能，网页版受跨域限制不可用'
   ]],
   ['🛡️ 风控说明（为何下载有间隔）',[
     '批量下载逐条随机间隔 5~15 秒——防机器人特征',
     '单次上限 20 条 + 每日上限 50 下载/100 解析——防触发平台限流',
-    '连续 3 次失败自动冷却 5 分钟；遇 429 限流全局退避并自动切换备用解析源',
+    '连续 3 次失败自动冷却 5 分钟；遇 429/403 解析源冷却时长可在 设置→下载设置 调整（默认30分钟，0=不冷却）',
+    '下载页可点「🔓 解锁冷却」立即重试；冷却仅存于内存，重启 App 即自动清除',
     '解析结果缓存 1 小时——同一链接重复使用不再请求',
     '全部参数可在 设置→下载设置 中自定义，默认值即推荐值'
   ]],
@@ -2946,6 +2995,7 @@ function dlLoadCfgForm(){
   document.getElementById('dlSetDailyMax').value=c.dailyMax;
   document.getElementById('dlSetDailyParseMax').value=c.dailyParseMax;
   document.getElementById('dlSetRetryMax').value=c.retryMax;
+  document.getElementById('dlSetCoolMin').value=c.coolMin;
   document.getElementById('dlSetFollowupGap').value=c.followupGap;
   document.getElementById('dlSetSaveDir').value=c.saveDir;
   document.getElementById('dlSetCustomApi').value=c.customApi||'';
@@ -2958,6 +3008,7 @@ function dlSaveCfgForm(){
   c.dailyMax=Math.max(10,Math.min(200,parseInt(document.getElementById('dlSetDailyMax').value)||50));
   c.dailyParseMax=Math.max(20,Math.min(500,parseInt(document.getElementById('dlSetDailyParseMax').value)||100));
   c.retryMax=Math.max(0,Math.min(3,parseInt(document.getElementById('dlSetRetryMax').value)||1));
+  c.coolMin=Math.max(0,Math.min(120,parseInt(document.getElementById('dlSetCoolMin').value)||30));
   c.followupGap=Math.max(10,Math.min(120,parseInt(document.getElementById('dlSetFollowupGap').value)||30));
   c.saveDir=String(document.getElementById('dlSetSaveDir').value||'/DCIM/矣欤下载').trim()||'/DCIM/矣欤下载';
   if(c.saveDir.charAt(0)!=='/')c.saveDir='/'+c.saveDir;
@@ -2998,7 +3049,7 @@ const DEV_TEST_CASES=[
   {id:'M01',mod:'音频(v4.5.3)',name:'MP3音频',expect:'MP3 可扫描入库，分类筛选🎵音频可见，详情页正常播放'},
   {id:'V01',mod:'下载(v5.0)',name:'收藏·下载页',expect:'📥收藏·下载 Tab 打开正常；粘贴抖音链接点解析，2~8秒出结果卡（类型/标题/作者/文件数）；收藏卡与下载设置同页可用'},
   {id:'V02',mod:'下载(v5.0)',name:'单条视频下载',expect:'解析视频作品→下载全部→保存在 DCIM/矣欤下载/ 下的 mp4 可正常播放'},
-  {id:'V03',mod:'下载(v5.0)',name:'图集+实况配对下载',expect:'实况图集下载后：每张图 + 同名.mp4 配对（小米相册识别为实况）；普通图集只存图片，不下载BGM'},
+  {id:'V03',mod:'下载(v5.1)',name:'四类型识别下载',expect:'解析后自动识别并提示：🎬视频/🖼️图文/📝文字/📸动图；动图动效仅存.mp4视频、静态图不重复存；普通图集只存图片，不下载BGM'},
   {id:'V04',mod:'下载(v5.0)',name:'风控设置与用量',expect:'设置默认值（间隔5~15秒/单次20/每日50/解析100/追更30分钟）；改后保存生效；页面显示今日已用解析x·下载x'}
 ];
 const DEV_STATE_KEY='dev_test_feedback_v48'; // v4.8.0 起新测试周期（旧 v42 记录仍留在 localStorage 不丢失）
