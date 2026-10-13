@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
-<title>矣欤 v5.1.7</title>
+<title>矣欤 v5.1.8</title>
 <style>
 *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 :root{
@@ -284,7 +284,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei
   <button class="topbar-btn" onclick="toggleDrawer()" title="菜单" style="font-size:18px;padding:2px 10px">☰</button>
   <h1>📷 矣欤</h1>
   <button class="topbar-btn" onclick="location.reload()" title="刷新页面（用于重新授权文件夹）">🔄</button>
-  <span class="tag" id="topVerTag">v5.1.7</span>
+  <span class="tag" id="topVerTag">v5.1.8</span>
 </div>
 
 <div class="progress-bar" id="progressBar"><i id="progressFill"></i></div>
@@ -620,7 +620,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei
 
 <script>
 // ==================== 状态 ====================
-const VERSION='5.1.7';
+const VERSION='5.1.8';
 const DB_NAME='offline_media_lib_v34',DB_VERSION=6;
 const STORE_MEDIA='media',STORE_THUMB='thumbs',STORE_SESSION='session',STORE_FACES='faces';
 let cfg={rule:'person_seq',tags:[],dateFormat:'YYYYMMDD',compress:true,maxCount:2000,showHidden:false,recentNameLimit:5};
@@ -1394,6 +1394,11 @@ async function addFav(){
   let name=document.getElementById('favName').value.trim();
   const note=document.getElementById('favNote').value.trim();
   if(!url){showToast('请粘贴主页链接');return}
+  // v5.1.8: 输入的是抖音号而非链接→明确引导（当前解析服务无按号搜索端点，做不到纯号收藏）
+  if(!/^https?:\/\//i.test(url)){
+    if(/^[A-Za-z0-9._-]{4,30}$/.test(url)){showToast('暂不支持直接输抖音号收藏——抖音→博主主页→右上角分享→复制链接，粘贴这里会自动带出昵称',6000);return}
+    showToast('请粘贴主页分享链接');return
+  }
   const entry={id:'fav'+Date.now(),platform,url,name,note,savedAt:Date.now(),auto:true};
   // v5.1.4: 名字留空→调解析接口取真实昵称（修复收藏显示短码无名字）
   if(!name){
@@ -2881,6 +2886,7 @@ async function dlTaskDone(src,tid,opt){ // v5.1.2: 统一任务轮询——透�
       const det=((d2.data.error||{}).details)||{};
       let hint='解析任务失败';
       if(det.reason==='wrong_resource'&&det.resource==='user')hint='这是博主主页链接，不是作品链接（去「收藏博主」添加）';
+      else if(/风控|自动化|verify|captcha|robot|risk_control|sliding/i.test(em+' '+JSON.stringify(det)))hint='平台风控限流（公共服务高峰期常见）——已自动冷却，请稍后或错峰再试'; // v5.1.8: 风控类错误归类引导
       else if(em)hint=em.substring(0,80);
       throw new Error(hint);
     }
@@ -2921,10 +2927,11 @@ async function dlParseUrl(link,rawTxt,forceUser){ // v5.1.2: 主页/作品自动
         throw lastErr=e;
       }
       lastErr=e;
-      // v5.1.1: 冷却分级——429限流/403封禁长冷却(可配coolMin)；其余仅0分钟
+      // v5.1.1: 冷却分级——429限流/403封禁长冷却(可配coolMin)；v5.1.8: 风控错误同429待遇；其余仅1分钟
       const hm=(em.match(/HTTP(\d{3})/)||[])[1]||'';
+      const isRisk=/平台风控/.test(em); // v5.1.8: dlTaskDone 归类的风控错误→长冷却+全局退避，兑现提示语「已自动冷却」
       let coolMs=60*1000;
-      if(hm==='429'){coolMs=Math.max(0,parseInt(cfg.coolMin,10)||0)*60*1000;DL_STATE.blockUntil=Date.now()+60*1000}
+      if(hm==='429'||isRisk){coolMs=Math.max(0,parseInt(cfg.coolMin,10)||0)*60*1000;DL_STATE.blockUntil=Date.now()+60*1000}
       else if(hm==='403'){coolMs=Math.max(0,parseInt(cfg.coolMin,10)||0)*60*1000}
       DL_STATE.cool[src.id]=Date.now()+coolMs;
     }
@@ -3164,6 +3171,7 @@ async function dlUserBatch(){ // v5.1.4: 主页批量下载——分页拉全部
       }
       if(!td.has_more||!td.cursor){break}
       cursor=td.cursor;
+      await new Promise(function(r2){setTimeout(r2,2000+Math.random()*2000)}); // v5.1.8: 拉页间隔随机2~4秒——连续翻页是自动化特征，主动降速降低风控概率
     }
   }catch(e){
     showToast('拉取作品列表失败：'+(((e&&e.message)||String(e)).substring(0,60)));
