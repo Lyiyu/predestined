@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
-<title>矣欤 v5.1.10</title>
+<title>矣欤 v5.1.11</title>
 <style>
 *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 :root{
@@ -284,7 +284,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei
   <button class="topbar-btn" onclick="toggleDrawer()" title="菜单" style="font-size:18px;padding:2px 10px">☰</button>
   <h1>📷 矣欤</h1>
   <button class="topbar-btn" onclick="location.reload()" title="刷新页面（用于重新授权文件夹）">🔄</button>
-  <span class="tag" id="topVerTag">v5.1.10</span>
+  <span class="tag" id="topVerTag">v5.1.11</span>
 </div>
 
 <div class="progress-bar" id="progressBar"><i id="progressFill"></i></div>
@@ -621,7 +621,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei
 
 <script>
 // ==================== 状态 ====================
-const VERSION='5.1.10';
+const VERSION='5.1.11';
 const DB_NAME='offline_media_lib_v34',DB_VERSION=6;
 const STORE_MEDIA='media',STORE_THUMB='thumbs',STORE_SESSION='session',STORE_FACES='faces';
 let cfg={rule:'person_seq',tags:[],dateFormat:'YYYYMMDD',compress:true,maxCount:2000,showHidden:false,recentNameLimit:5};
@@ -3199,7 +3199,9 @@ function dlTplName(tpl,meta){ // v5.1.9: 命名模板引擎——{备注名}{作
     .replace(/\{标题\}/g,dlSafeName(meta.desc||''))
     .replace(/\{日期\}/g,meta.date||'')
     .replace(/\{序号\}/g,meta.seq?String(meta.seq).padStart(3,'0'):'');
-  return dlSafeName(s);
+  s=String(s).replace(/[\\/:*?"<>|\n\r#]/g,'').trim()||'未命名'; // v5.1.11审查修复: 只清理非法字符不整串截断——v5.1.9 的 return dlSafeName(s) 整串截40在长标题场景把尾部日期砍残（_26.10.08→_26），高频P2回归
+  let b=0,out='';for(const ch of s){const w=ch.codePointAt(0)>255?3:1;if(b+w>240)break;out+=ch;b+=w} // 文件名字节上限兑底（ext4/f2fs 255字节，留余量；各变量段内已有40字符限制）
+  return out;
 }
 function dlDefaultTpl(alias){return alias?'{备注名}_抖音_{标题}_{日期}':'{作者}_抖音_{标题}_{日期}'} // v5.1.9: 默认模板=v5.1.8 现行格式；有备注名自动替换作者位
 function dlAskConfirm(maxWorks,defVal,sampleMeta,hasCount){ // hasCount=false 为单作品场景（不显示数量输入）
