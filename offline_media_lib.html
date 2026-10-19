@@ -72,6 +72,9 @@ body{font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei
 .tabbar .tab .ic{font-size:20px;line-height:1;height:22px;display:flex;align-items:center;justify-content:center}
 .tabbar .tab.active{color:var(--primary);font-weight:600}
 .filters{display:flex;gap:8px;margin:12px 0;flex-wrap:wrap;align-items:center}
+.op-grid{display:grid;grid-template-columns:repeat(6,1fr);gap:8px;margin:12px 0 4px}
+.op-grid .btn-sm{background:#fff;color:var(--primary);border-color:var(--primary);white-space:nowrap;width:100%;padding:7px 2px;font-size:12px}
+@media(max-width:620px){.op-grid{grid-template-columns:repeat(3,1fr)}}
 .filters select{padding:8px 10px;border:1px solid var(--line);border-radius:10px;font-size:13px;background:#fff;flex:0 0 auto;width:auto;max-width:32%;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .filters select.person-select{max-width:100%;min-width:0;width:auto;text-overflow:ellipsis}
 .filters .sort-dir{width:38px;padding:8px 0;text-align:center}
@@ -323,18 +326,18 @@ body{font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei
       <input type="text" id="libSearch" placeholder="搜索文件名" oninput="onSearchInput()">
       <span class="count-tip" id="libCount"></span>
     </div>
-    <div class="filters" style="margin-top:0">
-      <button class="btn-sm" onclick="selectAllFiltered()" style="background:#fff;color:var(--primary);border-color:var(--primary);white-space:nowrap">☑️ 全选</button>
-      <button class="btn-sm" onclick="findDuplicates()" style="background:#fff;color:var(--primary);border-color:var(--primary)">🔍 重复</button>
-      <button class="btn-sm" onclick="openFacePanel()" style="background:#fff;color:var(--primary);border-color:var(--primary)">😊 人脸</button>
-      <button class="btn-sm" onclick="organizeByPerson()" style="background:#fff;color:var(--primary);border-color:var(--primary)">📁 整理</button>
-      <button class="btn-sm" onclick="organizeByPersonMedia()" style="background:#fff;color:var(--primary);border-color:var(--primary)">🗂️ 聚合</button>
-    </div>
+    <div class="op-grid">
+      <button class="btn-sm" onclick="selectAllFiltered()">☑️ 全选</button>
+      <button class="btn-sm" onclick="findDuplicates()">🔍 重复</button>
+      <button class="btn-sm" onclick="openFacePanel()">😊 人脸</button>
+      <button class="btn-sm" onclick="organizeByPerson()">📁 整理</button>
+      <button class="btn-sm" onclick="organizeByPersonMedia()">🗂️ 聚合</button>
+      <button class="btn-sm" onclick="rescanDir(true)">🔄 重扫</button>
+    </div> <!-- v5.1.11改: 六格对称（手机3+3、宽屏6列） -->
     <div class="subdir-bar" id="subdirBar" style="display:none"></div>
     <div class="tag-chips light" id="libTagChips" style="margin-bottom:10px"></div>
     <div class="grid" id="libGrid"></div>
     <div class="empty" id="libEmpty" style="display:none"><div class="icon">🗂️</div>没有匹配的文件<br><small>选择文件夹后，所有文件会显示在这里</small></div>
-    <div class="hint">点缩略图打开大图详情 → 选人名→标签→日期→确认重命名</div>
   </div>
 </div>
 
@@ -1101,7 +1104,7 @@ async function loadDetailImage(item){
     const openBtn=(IS_NATIVE_APP&&nApi&&item.handle&&item.handle._rel!==undefined)
       ?'<button class="btn-sm" style="background:var(--primary);color:#fff;border-color:var(--primary);margin-top:14px;padding:10px 22px;font-size:14px" onclick="dOpenExternal()">▶ 选择播放器打开</button>'
       :'';
-    set('<div style="text-align:center;padding:20px"><div style="font-size:52px">🎬</div><div style="color:#ddd;font-size:14px;margin-top:8px;word-break:break-all">'+escapeHtml(item.name)+'</div><div style="color:#999;font-size:12px;margin-top:10px;line-height:1.9">'+ext+' 格式暂不支持在 App 内播放<br>（受 WebView 解码器限制）<br>标记 / 重命名 / 整理等操作不受影响</div>'+openBtn+'</div>');
+    set('<div style="text-align:center;padding:20px"><div style="font-size:52px">🎬</div><div style="color:#ddd;font-size:14px;margin-top:8px;word-break:break-all">'+escapeHtml(item.name)+'</div><div style="color:#999;font-size:12px;margin-top:10px;line-height:1.9">'+ext+' 格式暂不支持播放<br>可标记 / 重命名 / 整理</div>'+openBtn+'</div>');
     return;
   }
   // v4.5.3: 音频播放（mp3/wav/flac 等）——内置 <audio> 播放器 + 重命名/整理全链路支持
@@ -1111,7 +1114,7 @@ async function loadDetailImage(item){
       const ext=getExt(item.name).toUpperCase();
       const openBtn=(IS_NATIVE_APP&&item.handle&&item.handle._rel!==undefined)
         ?'<button class="btn-sm" style="background:var(--primary);color:#fff;border-color:var(--primary);margin-top:14px;padding:10px 22px;font-size:14px" onclick="dOpenExternal()">▶ 选择播放器打开</button>':'';
-      set('<div style="text-align:center;padding:20px"><div style="font-size:52px">🎵</div><div style="color:#ddd;font-size:14px;margin-top:8px;word-break:break-all">'+escapeHtml(item.name)+'</div><div style="color:#999;font-size:12px;margin-top:10px;line-height:1.9">'+ext+' 格式暂不支持在 App 内播放<br>（受 WebView 解码器限制）<br>标记 / 重命名 / 整理等操作不受影响</div>'+openBtn+'</div>');
+      set('<div style="text-align:center;padding:20px"><div style="font-size:52px">🎵</div><div style="color:#ddd;font-size:14px;margin-top:8px;word-break:break-all">'+escapeHtml(item.name)+'</div><div style="color:#999;font-size:12px;margin-top:10px;line-height:1.9">'+ext+' 格式暂不支持播放<br>可标记 / 重命名 / 整理</div>'+openBtn+'</div>');
       return;
     }
     if(IS_NATIVE_APP&&nApi&&item.handle._rel!==undefined){
@@ -1424,7 +1427,7 @@ async function addFav(){
   if(!url){showToast('请粘贴主页链接');return}
   // v5.1.8: 输入的是抖音号而非链接→明确引导（当前解析服务无按号搜索端点，做不到纯号收藏）
   if(!/^https?:\/\//i.test(url)){
-    if(/^[A-Za-z0-9._-]{4,30}$/.test(url)){showToast('暂不支持直接输抖音号收藏——抖音→博主主页→右上角分享→复制链接，粘贴这里会自动带出昵称',6000);return}
+    if(/^[A-Za-z0-9._-]{4,30}$/.test(url)){showToast('请粘贴博主主页链接（不支持抖音号）');return}
     showToast('请粘贴主页分享链接');return
   }
   const entry={id:'fav'+Date.now(),platform,url,name,note,savedAt:Date.now(),auto:true};
@@ -2147,7 +2150,7 @@ function organizeByPerson(){
   if(!curDir){showToast('请先选择文件夹');return}
   const allTagged=items.filter(i=>i.renamed&&i.person);
   const tagged=allTagged.filter(i=>i.handle);
-  if(allTagged.length>tagged.length){showToast('提示：'+(allTagged.length-tagged.length)+' 个文件因未恢复授权暂不能整理，点击「恢复授权」后可全部处理')}
+  if(allTagged.length>tagged.length){showToast((allTagged.length-tagged.length)+' 个文件未授权，点「恢复授权」处理')}
   if(!tagged.length){showToast('没有已标记人名的文件可整理');return}
   const persons=[...new Set(tagged.map(i=>i.person))];
   const personCounts={};
@@ -2166,7 +2169,7 @@ function organizeByPerson(){
     const skipCnt=toMove.length-willMove.length;
     if(!willMove.length){showToast('所选文件均已在目标位置，无需移动');return}
     showMoveConfirm('确认移动文件',
-      '即将把 '+willMove.length+' 个文件真实移入对应人名文件夹'+(skipCnt?'（另 '+skipCnt+' 个已在目标位置将跳过）':'')+'。如不确定请点「取消」先检查文件。',
+      '将移动 '+willMove.length+' 个文件到 人名/ 目录'+(skipCnt?'（'+skipCnt+' 个已就位跳过）':''),
       selectedPersons.map(p=>{const cnt=willMove.filter(i=>i.person===p).length;return '<div class="modal-item" style="cursor:default"><div class="mi-name">📁 '+escapeHtml(p)+'/</div><div class="mi-count">'+cnt+' 个</div></div>'}).join(''),
       async function(){await doOrganizeByPerson(toMove,selectedPersons)});
   };
@@ -2264,7 +2267,7 @@ function organizeByPersonMedia(){
   if(!curDir){showToast('请先选择文件夹');return}
   const allTagged=items.filter(i=>i.renamed&&i.person);
   const tagged=allTagged.filter(i=>i.handle);
-  if(allTagged.length>tagged.length){showToast('提示：'+(allTagged.length-tagged.length)+' 个文件因未恢复授权暂不能聚合，点击「恢复授权」后可全部处理')}
+  if(allTagged.length>tagged.length){showToast((allTagged.length-tagged.length)+' 个文件未授权，点「恢复授权」处理')}
   if(!tagged.length){showToast('没有已标记人名的文件可整理');return}
   const persons=[...new Set(tagged.map(i=>i.person))];
   const personCounts={};
@@ -2283,7 +2286,7 @@ function organizeByPersonMedia(){
     const skipCnt=toMove.length-realWill.length;
     if(!realWill.length){showToast('所选文件均已在目标位置，无需移动');return}
     showMoveConfirm('确认聚合文件',
-      '即将把 '+realWill.length+' 个文件真实移入「人名/照片」「人名/视频」目录'+(skipCnt?'（另 '+skipCnt+' 个已在目标位置将跳过）':'')+'。如不确定请点「取消」先检查文件。',
+      '将移动 '+realWill.length+' 个文件到 人名/照片|视频 目录'+(skipCnt?'（'+skipCnt+' 个已就位跳过）':''),
       selectedPersons.map(p=>{const ph=realWill.filter(i=>i.person===p&&i.type!=='video').length,vd=realWill.filter(i=>i.person===p&&i.type==='video').length;return '<div class="modal-item" style="cursor:default"><div class="mi-name">📁 '+escapeHtml(p)+'/</div><div class="mi-count">照片 '+ph+' · 视频 '+vd+'</div></div>'}).join(''),
       async function(){await doOrganizeByPersonMedia(toMove,selectedPersons)},'确认聚合');
   };
@@ -2947,7 +2950,7 @@ async function dlTaskDone(src,tid,opt){ // v5.1.2: 统一任务轮询——透�
       const det=((d2.data.error||{}).details)||{};
       let hint='解析任务失败';
       if(det.reason==='wrong_resource'&&det.resource==='user')hint='这是博主主页链接，不是作品链接（去「收藏博主」添加）';
-      else if(/风控|自动化|verify|captcha|robot|risk_control|sliding/i.test(em+' '+JSON.stringify(det)))hint='平台风控限流（公共服务高峰期常见）——已自动冷却，请稍后或错峰再试'; // v5.1.8: 风控类错误归类引导
+      else if(/风控|自动化|verify|captcha|robot|risk_control|sliding/i.test(em+' '+JSON.stringify(det)))hint='平台风控限流，已自动冷却'; // v5.1.8: 风控类错误归类引导
       else if(em)hint=em.substring(0,80);
       throw new Error(hint);
     }
@@ -3032,6 +3035,50 @@ async function dlSaveFile(url,relPath){ // v5.1.6: 改用原生 DownloadFile 插
   return r;
 }
 function dlResultMsg(msg){document.getElementById('dlResult').innerHTML='<div style="padding:12px;font-size:13px;color:#666">'+escapeHtml(msg)+'</div>'}
+function dlXhsGuide(link){ // v5.1.11改: 小红书——复制链接→网页解析（浏览器）→回 App 导入
+  document.getElementById('dlResult').innerHTML='<div style="padding:12px">'+
+    '<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px">'+
+    '<button class="btn-sm" id="xhsCopy" style="background:#fff;color:var(--primary);border-color:var(--primary)">📋 复制链接</button>'+
+    '<button class="btn-sm" id="xhsOpen" style="background:var(--primary);color:#fff;border-color:var(--primary)">🌐 网页解析</button>'+
+    '<button class="btn-sm" id="xhsImp" style="background:#fff;color:var(--primary);border-color:var(--primary)">📥 导入下载</button>'+
+    '</div></div>';
+  document.getElementById('xhsCopy').onclick=function(){if(navigator.clipboard&&navigator.clipboard.writeText){navigator.clipboard.writeText(link).then(function(){showToast('已复制')}).catch(function(){fallbackCopyFav(link,function(){showToast('已复制')})})}else fallbackCopyFav(link,function(){showToast('已复制')})};
+  document.getElementById('xhsOpen').onclick=function(){openFavUrl('https://www.hellotik.app/zh/rednote')};
+  document.getElementById('xhsImp').onclick=function(){xhsImport()};
+}
+async function xhsImport(){ // v5.1.11改: 扫描浏览器下载目录→勾选→重命名→移入下载目录（重名自动_2）
+  const F=window.Capacitor&&window.Capacitor.Plugins&&window.Capacitor.Plugins.Filesystem;
+  if(!F||!F.readdir){showToast('组件未就绪');return}
+  let names=[];
+  try{const r=await F.readdir({path:'/Download',directory:'EXTERNAL_STORAGE'});names=(r.files||[]).map(function(x){return x.name||String(x)}).filter(function(nm){return /\.(mp4|mov|webm|jpg|jpeg|png|webp)$/i.test(nm)})}catch(e){}
+  if(!names.length){showToast('下载目录没有可导入文件');return}
+  const stats=[];
+  for(const nm of names.slice(0,40)){let mt=0,sz=0;try{const st=await F.stat({path:'/Download/'+nm,directory:'EXTERNAL_STORAGE'});mt=st.mtime||0;sz=st.size||0}catch(e){}stats.push({name:nm,mtime:mt,size:sz})}
+  stats.sort(function(a,b){return b.mtime-a.mtime});
+  const list=document.getElementById('modalList');
+  list.innerHTML='<div style="max-height:46vh;overflow:auto">'+stats.map(function(f,i){return '<label style="display:flex;align-items:center;gap:8px;padding:7px 4px;border-bottom:1px solid var(--line);font-size:13px;word-break:break-all"><input type="checkbox" class="xhsPick" data-n="'+escapeHtml(f.name)+'"'+(i<1?' checked':'')+'><span style="flex:1">'+escapeHtml(f.name)+'</span><span style="color:#999;font-size:11px;white-space:nowrap">'+(f.size?fmtSize(f.size):'')+'</span></label>'}).join('')+'</div>';
+  document.getElementById('modalTitle').textContent='导入浏览器下载';
+  document.getElementById('modalDesc').textContent='';
+  const btn=document.getElementById('modalConfirmBtn');
+  btn.style.display='block';btn.classList.remove('danger');btn.textContent='✅ 导入';
+  modalCallback=async function(){
+    const picks=Array.from(list.querySelectorAll('.xhsPick:checked')).map(function(c){return c.dataset.n});
+    closeModal();
+    if(!picks.length){showToast('未选择文件');return}
+    const cfg=dlCfg();let ok=0;
+    for(const nm of picks){
+      const ext=(nm.match(/\.[^.]+$/)||[''])[0];
+      const stem=nm.substring(0,nm.length-ext.length);
+      let renamed=stem;
+      try{renamed=await new Promise(function(res){promptAsk('重命名 '+nm,'',stem,function(v){res((v&&v.trim())||stem)})})}catch(e){}
+      let to=cfg.saveDir+'/'+renamed+'_'+dlShortDate(new Date())+ext;
+      try{to=await dlUniquePath(to)}catch(e){}
+      try{await F.rename({from:'/Download/'+nm,to:to,directory:'EXTERNAL_STORAGE'});ok++}catch(e){}
+    }
+    showToast('已导入 '+ok+' 个');
+  };
+  document.getElementById('modalOverlay').classList.add('show');
+}
 async function dlParse(){ // 入口：解析按钮（v5.1 修复取不到按钮导致卡"解析中"的 bug；进度分阶段提示）
   const rawTxt=document.getElementById('dlUrl').value.trim();
   if(!rawTxt){showToast('请粘贴抖音链接');return}
@@ -3040,9 +3087,9 @@ async function dlParse(){ // 入口：解析按钮（v5.1 修复取不到按钮�
   const m=rawTxt.match(/https?:\/\/[^\s，。"''\uFF08\uFF09]+/);
   const link=m?m[0]:rawTxt;
   // v5.1.2: 未开放平台提前明确提示（避免拿去解析报莫名错误）
-  if(/tiktok\.com/i.test(link)){dlResultMsg('🚧 TikTok 解析尚未开放，当前支持抖音链接（TikTok 将在后续版本支持）');return}
-  if(/xiaohongshu\.com|xhslink\.com/i.test(link)){dlResultMsg('🚧 小红书解析尚未开放，当前支持抖音链接');return}
-  if(/weibo\.(cn|com)/i.test(link)){dlResultMsg('🚧 微博解析尚未开放，当前支持抖音链接');return}
+  if(/tiktok\.com/i.test(link)){dlResultMsg('🚧 TikTok 暂未开放');return}
+  if(/xiaohongshu\.com|xhslink\.com/i.test(link)){dlXhsGuide(link);return} // v5.1.11改: 小红书=网页解析+导入
+  if(/weibo\.(cn|com)/i.test(link)){dlResultMsg('🚧 微博暂未开放');return}
   if(!/douyin\.com|iesdouyin\.com|iegtd|douyin/i.test(link)){dlResultMsg('🚧 看不僮这个链接——请粘贴抖音作品分享链接（支持整段口令）');return}
   const btn=document.getElementById('dlParseBtn');
   const steps=['解析中…登录解析服务','解析中…提交解析任务（约2秒）','解析中…等待结果（最长30秒）'];
@@ -3113,7 +3160,7 @@ function dlRenderResult(item){
 function dlMark(i,txt){const el=document.getElementById('dlRow'+i);if(el){el.innerHTML=escapeHtml(txt);el.style.color=(txt.indexOf('✓')>=0?'#1a7f37':(txt.indexOf('✗')>=0?'#c53030':'#666'))}}
 function dlProgressInit(tasks){
   document.getElementById('dlProgress').innerHTML='<div style="margin-top:10px;padding:10px;border:1px solid var(--line);border-radius:12px;font-size:13px">'+
-    '<div style="margin-bottom:6px;color:#555">下载进度（批量逐条随机间隔，防风控）</div>'+
+    '<div style="margin-bottom:6px;color:#555">下载进度</div>'+
     tasks.map(function(t,i){return '<div id="dlRow'+i+'" style="padding:3px 0;color:#666">⏳ '+escapeHtml(t.label)+' · '+escapeHtml(t.fname.substring(0,34))+'</div>'}).join('')+'</div>';
 }
 async function dlDownloadAll(){ // 单作品批量管线（上限截断→逐条下载→随机间隔→重试→熔断）；v5.1.9: 下载前弹窗确认命名模板
@@ -3143,10 +3190,10 @@ async function dlDownloadTasks(tasks,opts){ // v5.1.4: 通用批量下载管线�
   const cfg=dlCfg();
   const u=dlUsage();
   if(!tasks.length){showToast('没有可下载的文件');return}
-  if(!(opts&&opts.skipBatchMax)&&tasks.length>cfg.batchMax){tasks.length=cfg.batchMax;showToast('已按单次上限 '+cfg.batchMax+' 条截断（风控保护）')} // v5.1.6: 用户显式选择数量时跳过截断（主页下载）
+  if(!(opts&&opts.skipBatchMax)&&tasks.length>cfg.batchMax){tasks.length=cfg.batchMax;showToast('已截断至单次上限 '+cfg.batchMax+' 条')} // v5.1.6: 用户显式选择数量时跳过截断（主页下载）
   const remain=cfg.dailyMax-u.download;
   if(remain<=0){showToast('今日下载已达上限 '+cfg.dailyMax+' 条，明日重置');return}
-  if(tasks.length>remain){tasks.length=remain;showToast('已按每日上限截断，本次 '+tasks.length+' 条')}
+  if(tasks.length>remain){tasks.length=remain;showToast('已达每日上限，本次 '+tasks.length+' 条')}
   DL_RUNNING=true;dlProgressInit(tasks);
   let done=0,fails=0;
   for(let i=0;i<tasks.length;i++){
@@ -3157,7 +3204,7 @@ async function dlDownloadTasks(tasks,opts){ // v5.1.4: 通用批量下载管线�
       catch(e){errMsg=((e&&e.message)||String(e)).substring(0,60);if(att<cfg.retryMax)await new Promise(function(r2){setTimeout(r2,1500)})}
     }
     if(!ok){fails++;dlMark(i,'✗ '+errMsg);
-      if(fails>=3){DL_STATE.blockUntil=Date.now()+5*60*1000;dlMark(i,'⛔ 连续3次失败，冷却5分钟（熔断）');break}
+      if(fails>=3){DL_STATE.blockUntil=Date.now()+5*60*1000;dlMark(i,'⛔ 连续3次失败，冷却5分钟');break}
     }
     if(i<tasks.length-1&&Date.now()>=DL_STATE.blockUntil){ // 防线③：随机间隔
       const gap=(cfg.intervalMin+Math.random()*(cfg.intervalMax-cfg.intervalMin))*1000;
@@ -3167,7 +3214,7 @@ async function dlDownloadTasks(tasks,opts){ // v5.1.4: 通用批量下载管线�
     }
   }
   DL_RUNNING=false;
-  showToast('下载结束：成功 '+done+' / 失败 '+fails+(Date.now()<DL_STATE.blockUntil?'（已熔断，5分钟后再试）':''));
+  showToast('下载结束：成功 '+done+' / 失败 '+fails);
   dlRenderUsage();
 }
 function dlRenderUsage(){ // 防线⑥：透明化 + 手动解锁入口
@@ -3209,8 +3256,8 @@ function dlAskConfirm(maxWorks,defVal,sampleMeta,hasCount){ // hasCount=false �
     _dlAskResolve=resolve;
     const list=document.getElementById('modalList');
     const defTpl=dlDefaultTpl(sampleMeta.alias);
-    list.innerHTML=(hasCount?'<div style="padding:6px 0"><input type="number" id="dlCountInput" min="1" max="'+maxWorks+'" value="'+defVal+'" style="width:100%;padding:10px;border:1px solid var(--line);border-radius:8px;font-size:15px"><div style="font-size:11px;color:var(--sub);margin-top:4px">共 '+maxWorks+' 个作品，输入下载数（1~'+maxWorks+'，0 或留空 = 全部）</div></div>':'')+
-      '<div style="padding:6px 0"><input type="text" id="dlTplInput" value="'+escapeHtml(defTpl)+'" style="width:100%;box-sizing:border-box;padding:10px;border:1px solid var(--line);border-radius:8px;font-size:14px"><div style="font-size:11px;color:var(--sub);margin-top:4px;line-height:1.6">命名模板，可用变量：<b>{备注名}</b> <b>{作者}</b> <b>{标题}</b> <b>{日期}</b> <b>{序号}</b>（序号=作品顺序 001/002…，多图自动加 _01 后缀）</div>'+
+    list.innerHTML=(hasCount?'<div style="padding:6px 0"><input type="number" id="dlCountInput" min="1" max="'+maxWorks+'" value="'+defVal+'" placeholder="数量（0=全部）" style="width:100%;padding:10px;border:1px solid var(--line);border-radius:8px;font-size:15px"></div>':'')+ // v5.1.11改: 文案极简
+      '<div style="padding:6px 0"><input type="text" id="dlTplInput" value="'+escapeHtml(defTpl)+'" placeholder="命名模板 {备注名}{作者}{标题}{日期}{序号}" style="width:100%;box-sizing:border-box;padding:10px;border:1px solid var(--line);border-radius:8px;font-size:14px">'+
       '<div id="dlNamePreview" style="font-size:12px;color:#1a7f37;margin-top:6px;word-break:break-all"></div></div>';
     document.getElementById('modalTitle').textContent='确认下载';
     document.getElementById('modalDesc').textContent='';
@@ -3252,7 +3299,7 @@ async function dlUserBatch(){ // v5.1.4: 主页批量下载——分页拉全部
   const src=dlSources()[0];
   const perWorks=[];let cursor='';let pageNo=0;let total=0,fails=0;
   const MAX_ITEMS=500;
-  dlResultMsg('📥 正在读取博主作品列表（每页50条）…');
+  dlResultMsg('读取作品列表…');
   try{
     while(true){
       if(pageNo>=10||total>=MAX_ITEMS)break;
@@ -3301,7 +3348,7 @@ async function dlUserBatch(){ // v5.1.4: 主页批量下载——分页拉全部
       });
     }
   });
-  dlResultMsg('主页作品 '+total+' 个，本次下载 '+perWorks.length+' 个作品 / '+tasks.length+' 个文件，开始下载…');
+  dlResultMsg('开始下载 '+tasks.length+' 个文件…');
   await dlDownloadTasks(tasks,{skipBatchMax:pick>0});
 }
 // ==================== v5.1.4: 自动更新（每博主开关 + 增量检查） ====================
@@ -3349,11 +3396,12 @@ async function dlAutoCheckAll(){ // v5.1.4: 全收藏自动更新（仅开启的
 // ==================== v5.1: 关于弹窗（所有说明集中于此） ====================
 const ABOUT_CONTENT=[
   ['📥 在线下载使用说明',[
-    '1. 抖音点「分享 → 复制链接」，把整段口令直接粘贴到下载框（含文字没关系，会自动提取链接。TikTok/小红书/微博暂未开放，当前仅支持抖音）',
+    '1. 抖音点「分享 → 复制链接」，把整段口令直接粘贴到下载框（含文字没关系，会自动提取链接）；TikTok/微博暂未开放',
     '2. 点「解析」按钮（约2~5秒）→ 出现作品卡片 → 点「下载全部」保存到手机',
     '3. 自动识别作品类型：🎬 视频存 .mp4；🖼️ 图文逐张存图片；📝 文字存文字图；📸 动图（实况）动效保存为视频（不存静态图）；不下载BGM',
     '4. 文件保存目录：默认 /.1/矣欤下载（点开头=隐藏目录，不进系统相册；可在设置→下载设置中改）',
     '5. 在线下载为 App 专属功能，网页版受跨域限制不可用',
+    '6. 小红书：粘贴链接后「复制链接」→「网页解析」在浏览器下载→回 App 点「📥 导入下载」，文件自动改名移入下载目录',
   ]],
   ['🛡️ 风控说明（为何下载有间隔）',[
     '批量下载逐条随机间隔 5~15 秒——防机器人特征',
