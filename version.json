@@ -1,5 +1,5 @@
 {
-  "version": "5.3.1",
-  "apkUrl": "https://github.com/Lyiyu/predestined/releases/download/v5.3.1/yiyu-v5.3.1.apk",
-  "note": "v5.3.1 紧急修复启动闪退：v5.2.1/v5.3.0 的启动主题改动在真机崩溃，已回退到 v5.2.0 稳定方案。v5.3.0 图库功能（沉浸浏览/幻灯片/随机播放/时间线）全部保留。若之前因闪退卸载过，直接安装本包即可；开屏图显示暂缓，待真机排查后单独修复"
+  "version": "5.3.2",
+  "apkUrl": "https://github.com/Lyiyu/predestined/releases/download/v5.3.2/yiyu-v5.3.2.apk",
+  "note": "v5.3.2 闪退根治：真凶实锤为 v5.1.11 引入的 APK 瘦身（R8 混淆+资源收缩），v5.1.10 稳定版从未瘦身。本版已回退到 v5.1.10 同款构建链，APK 恢复 20MB（不再瘦身），图库功能全部保留。直接覆盖安装即可"
 }
