@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
-<title>矣欤 v5.2.1</title>
+<title>矣欤 v5.3.0</title>
 <style>
 *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 :root{
@@ -297,6 +297,20 @@ body{font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei
 .op-grid .btn-sm:active{background:#eef1ff}
 /* 统计数字渐变色 */
 .stat .num{background:linear-gradient(135deg,var(--primary),var(--primary2));-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent}
+/* ==================== v5.3.0 图库浏览模式（替代系统图库） ==================== */
+.dt-tool{color:#fff;font-size:17px;cursor:pointer;width:32px;height:32px;display:flex;align-items:center;justify-content:center;flex:0 0 auto;background:rgba(255,255,255,.15);border-radius:50%;transition:transform .15s}
+.dt-tool:active{transform:scale(.9)}
+body.browse .detail-top{display:none}
+body.browse .detail-panel{display:none!important} /* !important 压过 showDetailSlide 的内联 display:block */
+body.browse .d-nav{opacity:.3}
+body.browse .d-counter{opacity:.6}
+.browse-exit{position:fixed;top:calc(10px + var(--safe-t));right:10px;z-index:515;width:38px;height:38px;border-radius:50%;background:rgba(0,0,0,.45);color:#fff;font-size:21px;display:none;align-items:center;justify-content:center;cursor:pointer}
+body.browse .browse-exit{display:flex}
+.browse-ctrl{position:fixed;bottom:calc(14px + var(--safe-b));right:12px;z-index:515;display:none;gap:10px}
+body.browse .browse-ctrl{display:flex}
+.browse-ctrl button{width:46px;height:46px;border-radius:50%;border:none;background:rgba(0,0,0,.45);color:#fff;font-size:20px;cursor:pointer}
+.browse-ctrl button:active{transform:scale(.92)}
+.tl-head{grid-column:1/-1;font-size:13px;font-weight:700;color:#444;margin:10px 0 -2px;padding-left:2px}
 /* ===== 媒体库筛选两行 grid（防折行）===== */
 .filters-grid{display:grid;grid-template-columns:1fr 1fr 1fr 40px;gap:8px;margin:12px 0 0;align-items:center}
 .filters-grid select{padding:8px 6px;border:1px solid var(--line);border-radius:var(--radius-sm);font-size:13px;background:#fff;min-width:0;width:100%;text-overflow:ellipsis;white-space:nowrap;overflow:hidden}
@@ -328,7 +342,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei
   <button class="topbar-btn" onclick="toggleDrawer()" title="菜单" style="font-size:18px;padding:2px 10px">☰</button>
   <h1>📷 矣欤</h1>
   <button class="topbar-btn" onclick="location.reload()" title="刷新页面（用于重新授权文件夹）">🔄</button>
-  <span class="tag" id="topVerTag">v5.2.1</span>
+  <span class="tag" id="topVerTag">v5.3.0</span>
 </div>
 
 <div class="progress-bar" id="progressBar"><i id="progressFill"></i></div>
@@ -459,6 +473,11 @@ body{font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei
       <input type="number" id="setNameLimit" min="1" max="20" value="5" onchange="saveSettings()">
       <div class="sub">详情页最多显示几个人名，默认 5</div>
     </div>
+    <div class="setitem">
+      <label>幻灯片间隔（秒）</label>
+      <input type="number" id="setSsGap" min="1" max="30" value="4" onchange="saveSettings()">
+      <div class="sub">图库浏览幻灯片每张停留时长</div>
+    </div>
   </div>
   <div class="setcard">
     <h3>📦 存储与导入</h3>
@@ -582,8 +601,14 @@ body{font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei
 <div class="detail-overlay" id="detailOverlay">
   <div class="detail-top">
     <div class="dt-title" id="detailTitle">文件名</div>
+    <div class="dt-tool" onclick="dShuffle()" title="随机播放">🎲</div>
+    <div class="dt-tool" id="dtSlideBtn2" onclick="dSlideshowToggle()" title="幻灯片">▶</div>
+    <div class="dt-tool" onclick="dBrowseToggle()" title="全屏浏览">⛶</div>
     <div class="dt-close" onclick="closeDetail()">×</div>
   </div>
+  <!-- v5.3.0: 浏览模式悬浮控制（退出/幻灯片/随机） -->
+  <div class="browse-exit" onclick="dBrowseToggle(false)">×</div>
+  <div class="browse-ctrl"><button id="dSlideBtn" onclick="dSlideshowToggle()">▶</button><button onclick="dShuffle()">🎲</button></div>
   <div class="detail-img" id="detailImg"></div>
   <!-- v4.4: 相册化导航（前后切换按钮 + 序号指示） -->
   <div class="d-nav" id="dPrevBtn" onclick="dNav(-1)">‹</div>
@@ -667,10 +692,10 @@ body{font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei
 
 <script>
 // ==================== 状态 ====================
-const VERSION='5.2.1';
+const VERSION='5.3.0';
 const DB_NAME='offline_media_lib_v34',DB_VERSION=6;
 const STORE_MEDIA='media',STORE_THUMB='thumbs',STORE_SESSION='session',STORE_FACES='faces';
-let cfg={rule:'person_seq',tags:[],dateFormat:'YYYYMMDD',compress:true,maxCount:2000,showHidden:false,recentNameLimit:5};
+let cfg={rule:'person_seq',tags:[],dateFormat:'YYYYMMDD',compress:true,maxCount:2000,showHidden:false,recentNameLimit:5,ssGap:4}; // v5.3.0: ssGap=幻灯片间隔秒
 // v4.0 解耦：默认配置零个人数据（标签为空，无下载服务地址）；配置仅存于本机 localStorage，云端不存任何用户数据
 let _firstRun=false; // v4.0：首次运行检测（无任何历史配置时为 true）
 let detailTagOrder=[]; // v3.3: 详情页标签拖动排序数组
@@ -1232,7 +1257,8 @@ function renderTagChips(){
 function toggleDetailTag(t){if(detailTags.has(t))detailTags.delete(t);else detailTags.add(t);renderTagChips();updatePreviewName()}
 // updatePreviewName 和 detailConfirm 已移至文件末尾 v3.2 区域
 document.getElementById('detailDate').addEventListener('input',function(){const d=this.value?new Date(this.value):new Date();detailDateStr=fmtDate(d);updatePreviewName()});
-function closeDetail(){document.getElementById('detailOverlay').classList.remove('show');detailIdx=-1;document.getElementById('dPrevBtn').classList.remove('show');document.getElementById('dNextBtn').classList.remove('show');document.getElementById('dCounter').classList.remove('show');revokeAllBlobUrls()} // v4.7: 关闭详情页释放 blob URL 防泄漏
+function closeDetail(){dSlideshowStop();dBrowseToggle(false);if(dOrigList){dNavList=dOrigList;dOrigList=null}document.getElementById('detailOverlay').classList.remove('show');detailIdx=-1; // v5.3.0: 退出即停幻灯片/浏览模式/还原随机队列
+document.getElementById('dPrevBtn').classList.remove('show');document.getElementById('dNextBtn').classList.remove('show');document.getElementById('dCounter').classList.remove('show');revokeAllBlobUrls()} // v4.7: 关闭详情页释放 blob URL 防泄漏
 // detailConfirm 已移至文件末尾 v3.2 区域
 function detailNext(){
   // v4.4: 保存并下一张跟随滑动导航列表（与滑动切换一致）
@@ -1254,6 +1280,53 @@ function dClampPan(){
   const lim=Math.max(0,(dZoom-1)*Math.min(box.clientWidth,box.clientHeight)/2)+40;
   dPx=Math.max(-lim,Math.min(lim,dPx));dPy=Math.max(-lim,Math.min(lim,dPy));
 }
+// ==================== v5.3.0: 图库浏览模式（沉浸查看/幻灯片/随机播放，替代系统图库） ====================
+let dBrowseOn=false,dSlideTimer=null,dOrigList=null;
+function dBrowseToggle(on){ // 沉浸浏览：隐藏标题栏+标签面板，全屏看图/视频
+  dBrowseOn=(on===undefined)?!dBrowseOn:!!on;
+  document.body.classList.toggle('browse',dBrowseOn);
+}
+function dPreviewable(it){return !!it&&((it.type==='image')||(it.type==='video'&&VID_PREVIEW_RE.test(it.name))||(it.type==='audio'&&AUDIO_PREVIEW_RE.test(it.name)))}
+function dSlideshowToggle(){dSlideTimer?dSlideshowStop():dSlideStart()}
+function dSlideStart(){
+  dBrowseToggle(true); // 幻灯片自动进入浏览模式
+  const gap=Math.max(1,parseInt(cfg.ssGap,10)||4)*1000;
+  dSlideTimer=setInterval(dSlideTick,gap);
+  document.getElementById('dSlideBtn').textContent='⏸';
+  showToast('幻灯片开始（'+(cfg.ssGap||4)+'秒/张），⏸ 暂停');
+}
+function dSlideshowStop(){
+  if(dSlideTimer){clearInterval(dSlideTimer);dSlideTimer=null}
+  const b=document.getElementById('dSlideBtn');if(b)b.textContent='▶';
+}
+function dSlideTick(){ // 到点推进；视频/音频播放中跳过本拍（播完 onended 自动切）
+  if(!dSlideTimer)return;
+  const me=document.getElementById('detailImg').querySelector('video,audio');
+  if(me){
+    try{me.onended=function(){if(dSlideTimer)setTimeout(dSlideNext,600)}}catch(e){}
+    if(!me.paused&&!me.ended)return;
+    if(me.paused&&me.currentTime<0.1){try{me.play().catch(function(){})}catch(e){}}
+    if(!me.paused&&!me.ended)return;
+  }
+  dSlideNext();
+}
+function dSlideNext(){
+  if(dNavList.length<2){dSlideshowStop();return}
+  let ni=(dNavIdx+1)%dNavList.length,guard=0; // 循环播放
+  while(guard++<dNavList.length&&!dPreviewable(dNavList[ni]))ni=(ni+1)%dNavList.length; // 跳过不可预览格式
+  dNavIdx=ni;showDetailSlide(dNavList[ni]);
+}
+function dShuffle(){ // 随机播放：洗牌当前列表→幻灯片；退出详情页自动还原原顺序
+  dOrigList=dOrigList||dNavList.slice();
+  const cur=dNavList[dNavIdx];
+  const arr=dOrigList.slice();
+  for(let i=arr.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));const t=arr[i];arr[i]=arr[j];arr[j]=t}
+  dNavList=arr;
+  dNavIdx=Math.max(0,arr.findIndex(function(x){return cur&&x.id===cur.id}));
+  showToast('🎲 随机播放');
+  dSlideStart();
+}
+
 function dNav(dir){
   if(dNavList.length<2){showToast('没有其他文件');return}
   const ni=dNavIdx+dir;
@@ -1386,7 +1459,10 @@ window.__handleBackButton=function(){
   if(document.getElementById('modalOverlay').classList.contains('show')){closeModal();return true}
   if(document.getElementById('dupOverlay').classList.contains('show')){closeDupOverlay();return true}
   const fo=document.getElementById('faceOverlay');if(fo&&fo.classList.contains('show')){closeFacePanel();return true}
-  if(document.getElementById('detailOverlay').classList.contains('show')){closeDetail();return true}
+  if(document.getElementById('detailOverlay').classList.contains('show')){ // v5.3.0: 返回键分级——先停幻灯片→再退出浏览模式→最后关详情页
+    if(dSlideTimer){dSlideshowStop();return true}
+    if(dBrowseOn){dBrowseToggle(false);return true}
+    closeDetail();return true}
   const am=document.getElementById('aboutModal');if(am&&am.classList.contains('show')){closeAboutModal();return true} // v5.1.8改: 补 v4.6 后新增浮层
   const im2=document.getElementById('invModal');if(im2&&im2.classList.contains('show')){closeInvModal();return true}
   const dv=document.getElementById('devOverlay');if(dv&&dv.classList.contains('show')){closeDevPanel();return true}
@@ -1765,6 +1841,8 @@ function saveSettings(){
   cfg.maxCount=Math.max(50,Math.min(5000,maxCount));
   const nl=parseInt(document.getElementById('setNameLimit').value)||5;
   cfg.recentNameLimit=Math.max(1,Math.min(20,nl));
+  const sg=parseInt(document.getElementById('setSsGap').value)||4;
+  cfg.ssGap=Math.max(1,Math.min(30,sg));
   localStorage.setItem('ff_settings_v34',JSON.stringify(cfg));
   document.getElementById('setMaxCountVal').textContent=cfg.maxCount;
 }
@@ -1776,6 +1854,7 @@ function loadSettingsForm(){
   document.getElementById('setMaxCountVal').textContent=cfg.maxCount||2000;
   document.getElementById('setCompress').checked=cfg.compress!==false;
   document.getElementById('setNameLimit').value=cfg.recentNameLimit||5;
+  document.getElementById('setSsGap').value=cfg.ssGap||4;
 }
 function toggleSwitch(id){const el=document.getElementById(id);el.checked=!el.checked;if(id==='setCompress'){cfg.compress=el.checked;saveSettings()}}
 document.getElementById('setMaxCount').addEventListener('input',function(){document.getElementById('setMaxCountVal').textContent=this.value});
@@ -2487,6 +2566,18 @@ function renderLib(){
       '<div class="name" title="'+escapeHtml(p.name)+'">'+(personStr?personStr+escapeHtml(smartEllipsis(p.name.replace(p.person+'_',''),6,12)):escapeHtml(smartEllipsis(p.name,7,17)))+displayTags+'</div>'+ // v5.2.0改: 双端省略，尾部日期/序号可见
     '</div>';
   }).join('');
+  if(sortMode==='date'&&list.length){ // v5.3.0: 时间线视图——按月分组头（图库时光流）。DOM 后处理零侵入原渲染
+    const byId=new Map(list.map(x=>[x.id,x]));
+    const frag=document.createDocumentFragment();let lastMk='';
+    grid.querySelectorAll('.cell').forEach(function(c){
+      const p=byId.get(c.dataset.id)||{};
+      const dt=new Date(p.lastModified||p.savedAt||0);
+      const mk=dt.getFullYear()+'年'+(dt.getMonth()+1)+'月';
+      if(mk!==lastMk){const h=document.createElement('div');h.className='tl-head';h.textContent=mk;frag.appendChild(h);lastMk=mk}
+      frag.appendChild(c);
+    });
+    grid.innerHTML='';grid.appendChild(frag);
+  }
   initObserver();
   grid.querySelectorAll('.media[data-id]').forEach(el=>ioObserver.observe(el));
   updateActionBar();
