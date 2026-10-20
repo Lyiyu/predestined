@@ -1,5 +1,5 @@
 {
-  "version": "5.3.2",
-  "apkUrl": "https://github.com/Lyiyu/predestined/releases/download/v5.3.2/yiyu-v5.3.2.apk",
-  "note": "v5.3.2 闪退根治：真凶实锤为 v5.1.11 引入的 APK 瘦身（R8 混淆+资源收缩），v5.1.10 稳定版从未瘦身。本版已回退到 v5.1.10 同款构建链，APK 恢复 20MB（不再瘦身），图库功能全部保留。直接覆盖安装即可"
+  "version": "5.3.3",
+  "apkUrl": "https://github.com/Lyiyu/predestined/releases/download/v5.3.3/yiyu-v5.3.3.apk",
+  "note": "v5.3.3 纯重排瘦身版：内容字节零变化（无R8无资源收缩，仅zip紧凑重排+重签），20MB→约9MB，真机验证用。如正常可长期使用；若异常回退 v5.3.2 即可"
 }
