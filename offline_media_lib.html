@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
-<title>矣欤 v5.1.11</title>
+<title>矣欤 v5.2.0</title>
 <style>
 *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 :root{
@@ -279,6 +279,47 @@ body{font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei
 .dev-case textarea{width:100%;min-height:44px;border:1px solid var(--line);border-radius:8px;padding:8px;font-size:13px;font-family:inherit;resize:vertical;box-sizing:border-box}
 .dev-actions{display:flex;gap:10px;padding:12px 16px;background:#fff;border-top:1px solid var(--line)}
 .dev-actions button{flex:1}
+/* ==================== v5.2.0 系统性视觉翻新 ==================== */
+:root{--radius-sm:10px;--shadow:0 1px 3px rgba(31,35,51,.05);--shadow-lg:0 6px 20px rgba(31,35,51,.12)}
+/* 卡片：轻阴影+细描边（现代细腻风） */
+.setcard,.dir-card,.stat,.quota,.tool-card,.dup-group,.dev-case{box-shadow:var(--shadow);border:1px solid var(--line)}
+.cell{box-shadow:var(--shadow)}
+/* 顶栏微调 */
+.topbar h1{letter-spacing:.5px}
+.topbar .tag{background:rgba(255,255,255,.28);letter-spacing:.4px}
+/* tab 指示条 + 图标动效 */
+.tabbar .tab{position:relative;transition:color .18s}
+.tabbar .tab.active::before{content:'';position:absolute;top:0;left:26%;right:26%;height:3px;border-radius:0 0 3px 3px;background:linear-gradient(90deg,var(--primary),var(--primary2))}
+.tabbar .tab.active .ic{transform:translateY(-1px) scale(1.1)}
+/* 主按钮/确认按钮渐变统一 */
+.modal-box .modal-actions .btn-ok{background:linear-gradient(135deg,var(--primary),var(--primary2))}
+.op-grid .btn-sm{border-radius:var(--radius-sm);font-weight:600;background:#fff;transition:background .15s}
+.op-grid .btn-sm:active{background:#eef1ff}
+/* 统计数字渐变色 */
+.stat .num{background:linear-gradient(135deg,var(--primary),var(--primary2));-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent}
+/* ===== 媒体库筛选两行 grid（防折行）===== */
+.filters-grid{display:grid;grid-template-columns:1fr 1fr 1fr 40px;gap:8px;margin:12px 0 0;align-items:center}
+.filters-grid select{padding:8px 6px;border:1px solid var(--line);border-radius:var(--radius-sm);font-size:13px;background:#fff;min-width:0;width:100%;text-overflow:ellipsis;white-space:nowrap;overflow:hidden}
+.filters-grid .sort-dir{padding:8px 0;border:1px solid var(--line);border-radius:var(--radius-sm);background:#fff;font-size:14px;cursor:pointer;color:var(--text);text-align:center;line-height:1.3}
+.filters-search{display:flex;gap:8px;margin:8px 0 12px;align-items:center}
+.filters-search input{flex:1;padding:8px 12px;border:1px solid var(--line);border-radius:var(--radius-sm);font-size:13px;background:#fff;min-width:0}
+.filters-search .count-tip{font-size:12px;color:var(--sub);white-space:nowrap;flex:0 0 auto}
+/* ===== 收藏卡（防折行+整齐）===== */
+.fav-ic{width:40px;height:40px;border-radius:12px;background:linear-gradient(135deg,#eef1ff,#f6f3ff);display:flex;align-items:center;justify-content:center;flex:0 0 auto}
+.fav-url{font-size:10px;color:#9aa0b5;margin-top:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.fav-ops{display:grid;grid-template-columns:repeat(6,1fr);gap:6px;margin-top:8px}
+.fav-ops .btn-sm{padding:6px 2px;font-size:11px;border-radius:var(--radius-sm);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;width:100%;min-width:0;background:#fff;border:1px solid var(--line);color:var(--text);font-weight:500}
+.fav-ops .fav-del{border-color:#fecdd3;color:var(--danger)}
+.fav-ops .fav-auto.on{background:linear-gradient(135deg,#4a7de7,#5b6cff);color:#fff;border-color:transparent;font-weight:700}
+/* 平台选择器激活增强 */
+#favPlatformPick [data-p]{transition:transform .15s,box-shadow .15s}
+#favPlatformPick [data-p]:active{transform:scale(.95)}
+/* 空状态 */
+.empty .icon{font-size:56px;margin-bottom:14px;opacity:.92}
+/* 网格名称区（配合 JS 双端省略） */
+.cell .name{padding:7px 8px;font-size:10.5px;line-height:1.45;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;min-height:30px;word-break:break-all;white-space:normal} /* v5.2.0改: white-space:normal 覆盖原58行 nowrap，两行省略才生效 */  /* v5.2.0改: 两行自适应+JS双端省略，尾部日期/序号完整可见 */
+/* 下载进度条节奏感 */
+#dlProgress>div{border-radius:var(--radius-sm);border:1px solid var(--line);padding:10px 12px}
 </style>
 </head>
 <body>
@@ -287,7 +328,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei
   <button class="topbar-btn" onclick="toggleDrawer()" title="菜单" style="font-size:18px;padding:2px 10px">☰</button>
   <h1>📷 矣欤</h1>
   <button class="topbar-btn" onclick="location.reload()" title="刷新页面（用于重新授权文件夹）">🔄</button>
-  <span class="tag" id="topVerTag">v5.1.11</span>
+  <span class="tag" id="topVerTag">v5.2.0</span>
 </div>
 
 <div class="progress-bar" id="progressBar"><i id="progressFill"></i></div>
@@ -312,9 +353,9 @@ body{font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei
 
   <div id="libArea" style="display:none">
     <div class="stats" id="libStats"></div>
-    <div class="filters">
+    <div class="filters-grid"> <!-- v5.2.0改: 固定两行grid，绝不折行 -->
       <select id="libType" onchange="renderLib()"><option value="">全部</option><option value="image">图片</option><option value="video">视频</option><option value="audio">🎵 音频</option><option value="tagged">已标记</option><option value="untagged">未标记</option></select>
-      <select id="libPerson" onchange="renderLib()" class="person-select"><option value="">全部人名</option></select>
+      <select id="libPerson" onchange="renderLib()" title="按人名筛选"><option value="">全部人名</option></select>
       <select id="libSort" onchange="renderLib()">
         <option value="name">文件名</option>
         <option value="date">修改时间</option>
@@ -322,8 +363,10 @@ body{font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei
         <option value="size">大小</option>
         <option value="type">类型</option>
       </select>
-      <button class="btn-sm sort-dir" id="btnSortDir" onclick="toggleSortDir()" title="切换排序方向">↓</button>
-      <input type="text" id="libSearch" placeholder="搜索文件名" oninput="onSearchInput()">
+      <button class="sort-dir" id="btnSortDir" onclick="toggleSortDir()" title="切换排序方向">↓</button>
+    </div>
+    <div class="filters-search">
+      <input type="text" id="libSearch" placeholder="🔍 搜索文件名" oninput="onSearchInput()">
       <span class="count-tip" id="libCount"></span>
     </div>
     <div class="op-grid">
@@ -624,7 +667,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei
 
 <script>
 // ==================== 状态 ====================
-const VERSION='5.1.11';
+const VERSION='5.2.0';
 const DB_NAME='offline_media_lib_v34',DB_VERSION=6;
 const STORE_MEDIA='media',STORE_THUMB='thumbs',STORE_SESSION='session',STORE_FACES='faces';
 let cfg={rule:'person_seq',tags:[],dateFormat:'YYYYMMDD',compress:true,maxCount:2000,showHidden:false,recentNameLimit:5};
@@ -1506,21 +1549,21 @@ function renderFav(){
     const date=new Date(f.savedAt).toLocaleDateString();
     return '<div class="setitem fav-card" data-id="'+f.id+'" data-url="'+escapeHtml(f.url)+'" style="flex-direction:column;align-items:stretch;padding:12px;width:100%;box-sizing:border-box;min-width:0;overflow:hidden">'+ // v5.1.6: overflow:hidden 切断 nowrap 长名的 min-content 撑开（412 宽真机复现：长名 426px 撑开 .page 致整页右溢出）
       '<div style="display:flex;align-items:center;gap:8px;min-width:0">'+
-        '<span style="font-size:24px;flex:0 0 auto">'+icon+'</span>'+
+        '<span class="fav-ic" title="'+escapeHtml(pfName)+'">'+icon+'</span>'+ 
         '<div style="flex:1;min-width:0">'+
           '<div style="font-weight:600;font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+escapeHtml(f.alias||f.name)+'</div>'+
           '<div title="'+escapeHtml(pfName+' · '+date+(f.alias?' · 原名：'+f.name:'')+(f.info&&f.info.follower?' · 粉丝 '+f.info.follower:'')+(f.info&&f.info.aweme?' · 作品 '+f.info.aweme:''))+'" style="font-size:11px;color:var(--sub);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+(f.alias?'原名 '+escapeHtml(f.name)+' · ':'')+((f.info&&(f.info.follower||f.info.aweme))?((f.info.follower?'粉丝 '+favNumShort(f.info.follower):'')+(f.info.follower&&f.info.aweme?' · ':'')+(f.info.aweme?'作品 '+f.info.aweme:'')):(pfName+(date?' · '+date:'')))+'</div>'+ // v5.1.9: 备注名替换博主名显示，原名列副行前缀；v5.1.8改: 粉丝/作品优先可见
         '</div>'+
-        '<button class="btn-sm fav-open" style="background:#fff;border:1px solid var(--line);padding:4px 8px;font-size:12px;flex:0 0 auto">🔗 打开</button>'+
       '</div>'+
-      (f.note?'<div style="font-size:12px;color:#555;margin-top:6px;padding:6px 8px;background:#f5f3ff;border-radius:6px;word-break:break-all">'+escapeHtml(f.note)+'</div>':'')+
-      '<div style="font-size:10px;color:#999;margin-top:4px;word-break:break-all">'+escapeHtml(f.url)+'</div>'+
-      '<div style="margin-top:8px;display:flex;gap:6px;flex-wrap:wrap;width:100%">'+
-        '<button class="btn-sm fav-auto" style="background:'+(f.auto!==false?'#e8f4ff':'#fff')+';border:1px solid '+(f.auto!==false?'#4a7de7':'var(--line)')+';color:'+(f.auto!==false?'#2261e7':'#888')+';padding:4px 10px;font-size:12px">'+(f.auto!==false?'🔄 自动更新：开':'🔄 自动更新：关')+'</button>'+
-        '<button class="btn-sm fav-dl" style="background:#fff;border:1px solid var(--line);padding:4px 10px;font-size:12px">📥 立即下载</button>'+
-        '<button class="btn-sm fav-copy" style="background:#fff;border:1px solid var(--line);padding:4px 10px;font-size:12px">📋 复制名</button>'+
-        '<button class="btn-sm fav-note" style="background:#fff;border:1px solid var(--line);padding:4px 10px;font-size:12px">🏷️ 备注名</button>'+
-        '<button class="btn-sm fav-del" style="background:#fff;border:1px solid #e53e3e;color:#e53e3e;padding:4px 10px;font-size:12px">🗑️ 删除</button>'+
+      (f.note?'<div style="font-size:12px;color:#555;margin-top:6px;padding:6px 8px;background:#f5f3ff;border-radius:8px;word-break:break-all">📝 '+escapeHtml(f.note)+'</div>':'')+
+      '<div class="fav-url" title="'+escapeHtml(f.url)+'">'+escapeHtml(f.url)+'</div>'+ // v5.2.0改: 单行省略+悬浮全文（原break-all占三行）
+      '<div class="fav-ops">'+ // v5.2.0改: 六列固定grid，整齐一行不折行
+        '<button class="btn-sm fav-open" title="在浏览器打开主页">🔗 打开</button>'+
+        '<button class="btn-sm fav-auto'+(f.auto!==false?' on':'')+'" title="自动更新：'+(f.auto!==false?'开':'关')+'">'+(f.auto!==false?'🔄 追更':'⏸ 追更')+'</button>'+
+        '<button class="btn-sm fav-dl" title="立即下载主页作品">📥 下载</button>'+
+        '<button class="btn-sm fav-copy" title="复制名字（备注名优先）">📋 复制</button>'+
+        '<button class="btn-sm fav-note" title="设置备注名（替换博主名显示）">🏷️ 备注</button>'+
+        '<button class="btn-sm fav-del" title="删除此收藏">🗑️ 删除</button>'+
       '</div>'+
     '</div>';
   }).join('');
@@ -2441,7 +2484,7 @@ function renderLib(){
       '<div class="media" data-id="'+p.id+'" style="display:flex;align-items:center;justify-content:center;color:#bbb;font-size:20px">···</div>'+
       doneMark+typeMark+
       '<div class="sel '+(isSel?'on':'')+'" onclick="event.stopPropagation();toggleSel(\''+p.id+'\')">'+(isSel?'✓':'')+'</div>'+
-      '<div class="name">'+(personStr||escapeHtml(p.name))+displayTags+'</div>'+
+      '<div class="name" title="'+escapeHtml(p.name)+'">'+(personStr?personStr+escapeHtml(smartEllipsis(p.name.replace(p.person+'_',''),6,12)):escapeHtml(smartEllipsis(p.name,7,17)))+displayTags+'</div>'+ // v5.2.0改: 双端省略，尾部日期/序号可见
     '</div>';
   }).join('');
   initObserver();
@@ -2909,6 +2952,11 @@ async function dlApi(src,path,opt){ // 统一请求封装：带session；v5.1.1 
 function dlSafeName(s){return String(s||'').replace(/[\\/:*?"<>|\n\r#]/g,'').trim().substring(0,40)||'未命名'}
 function dlShortDate(d){const y=String(d.getFullYear()).slice(-2),m=String(d.getMonth()+1).padStart(2,'0'),dd=String(d.getDate()).padStart(2,'0');return y+'.'+m+'.'+dd} // v5.1.8改: 文件名求短——日期 YY.MM.DD
 function dlImgExt(url){return (/\.webp|webp/i.test(String(url)))?'.webp':'.jpg'}
+function smartEllipsis(str,head,tail){ // v5.2.0改: 双端省略——保头保尾，长文件名的尾部日期/序号永远可见（防截断看不到关键信息）
+  str=String(str||'');head=head||14;tail=tail||14;
+  if(str.length<=head+tail+1)return str;
+  return str.substring(0,head)+'…'+str.substring(str.length-tail);
+}
 function dlExtract(taskData){ // v5.1.1: 四类型识别（视频/图文/动图/文字）——动图动态部分仅存视频（用户确认）；v5.1.9: 返回值附 author/desc/date 结构化字段（供命名模板替换）
   const raw=taskData.raw||{};
   const imgs=raw.images||[];
@@ -3161,7 +3209,7 @@ function dlMark(i,txt){const el=document.getElementById('dlRow'+i);if(el){el.inn
 function dlProgressInit(tasks){
   document.getElementById('dlProgress').innerHTML='<div style="margin-top:10px;padding:10px;border:1px solid var(--line);border-radius:12px;font-size:13px">'+
     '<div style="margin-bottom:6px;color:#555">下载进度</div>'+
-    tasks.map(function(t,i){return '<div id="dlRow'+i+'" style="padding:3px 0;color:#666">⏳ '+escapeHtml(t.label)+' · '+escapeHtml(t.fname.substring(0,34))+'</div>'}).join('')+'</div>';
+    tasks.map(function(t,i){return '<div id="dlRow'+i+'" style="padding:3px 0;color:#666">⏳ '+escapeHtml(t.label)+' · '+escapeHtml(smartEllipsis(t.fname,18,20))+'</div>'}).join('')+'</div>';
 }
 async function dlDownloadAll(){ // 单作品批量管线（上限截断→逐条下载→随机间隔→重试→熔断）；v5.1.9: 下载前弹窗确认命名模板
   const item=DL_CURRENT;
