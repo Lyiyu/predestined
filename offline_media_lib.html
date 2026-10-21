@@ -72,9 +72,8 @@ body{font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei
 .tabbar .tab .ic{font-size:20px;line-height:1;height:22px;display:flex;align-items:center;justify-content:center}
 .tabbar .tab.active{color:var(--primary);font-weight:600}
 .filters{display:flex;gap:8px;margin:12px 0;flex-wrap:wrap;align-items:center}
-.op-grid{display:grid;grid-template-columns:repeat(6,1fr);gap:8px;margin:12px 0 4px}
-.op-grid .btn-sm{background:#fff;color:var(--primary);border-color:var(--primary);white-space:nowrap;width:100%;padding:7px 2px;font-size:12px}
-@media(max-width:620px){.op-grid{grid-template-columns:repeat(3,1fr)}}
+.op-grid{display:grid;grid-template-columns:repeat(6,1fr);gap:6px;margin:12px 0 4px}
+.op-grid .btn-sm{background:#fff;color:var(--primary);border-color:var(--primary);white-space:nowrap;width:100%;padding:7px 1px;font-size:11px;overflow:hidden;text-overflow:ellipsis}
 .filters select{padding:8px 10px;border:1px solid var(--line);border-radius:10px;font-size:13px;background:#fff;flex:0 0 auto;width:auto;max-width:32%;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .filters select.person-select{max-width:100%;min-width:0;width:auto;text-overflow:ellipsis}
 .filters .sort-dir{width:38px;padding:8px 0;text-align:center}
@@ -383,18 +382,18 @@ body.browse .browse-ctrl{display:flex}
       <input type="text" id="libSearch" placeholder="🔍 搜索文件名" oninput="onSearchInput()">
       <span class="count-tip" id="libCount"></span>
     </div>
-    <div class="op-grid">
-      <button class="btn-sm" onclick="selectAllFiltered()">☑️ 全选</button>
-      <button class="btn-sm" onclick="findDuplicates()">🔍 重复</button>
-      <button class="btn-sm" onclick="openFacePanel()">😊 人脸</button>
-      <button class="btn-sm" onclick="organizeByPerson()">📁 整理</button>
-      <button class="btn-sm" onclick="organizeByPersonMedia()">🗂️ 聚合</button>
-      <button class="btn-sm" onclick="rescanDir(true)">🔄 重扫</button>
-    </div> <!-- v5.1.11改: 六格对称（手机3+3、宽屏6列） -->
+    <div class="op-grid"> <!-- v5.3.3改: 六格单行对称（去emoji缩宽，窄屏不断行） -->
+      <button class="btn-sm" onclick="selectAllFiltered()">全选</button>
+      <button class="btn-sm" onclick="findDuplicates()">重复</button>
+      <button class="btn-sm" onclick="openFacePanel()">人脸</button>
+      <button class="btn-sm" onclick="organizeByPerson()">整理</button>
+      <button class="btn-sm" onclick="organizeByPersonMedia()">聚合</button>
+      <button class="btn-sm" onclick="rescanDir(true)">重扫</button>
+    </div>
     <div class="subdir-bar" id="subdirBar" style="display:none"></div>
     <div class="tag-chips light" id="libTagChips" style="margin-bottom:10px"></div>
     <div class="grid" id="libGrid"></div>
-    <div class="empty" id="libEmpty" style="display:none"><div class="icon">🗂️</div>没有匹配的文件<br><small>选择文件夹后，所有文件会显示在这里</small></div>
+    <div class="empty" id="libEmpty" style="display:none"><div class="icon">🗂️</div>没有匹配的文件</div>
   </div>
 </div>
 
@@ -672,7 +671,7 @@ body.browse .browse-ctrl{display:flex}
       <span class="close" onclick="closeDupOverlay()">×</span>
     </div>
     <div class="dup-body" id="dupBody">
-      <div style="text-align:center;color:var(--sub);padding:40px 20px">点击「查找重复」按钮开始检测<br><small>按文件大小匹配，找出疑似重复的图片和视频</small></div>
+      <div style="text-align:center;color:var(--sub);padding:40px 20px">点击「查找重复」按钮开始检测</div>
     </div>
   </div>
 </div>
@@ -681,7 +680,7 @@ body.browse .browse-ctrl{display:flex}
 <div class="modal-overlay" id="modalOverlay">
   <div class="modal-box">
     <h3 id="modalTitle">选择要整理的人名</h3>
-    <div style="font-size:13px;color:var(--sub);margin-bottom:10px" id="modalDesc">勾选需要创建文件夹并移动的人名，未勾选的将保留在原位置。</div>
+    <div style="font-size:13px;color:var(--sub);margin-bottom:10px" id="modalDesc"></div>置。</div>
     <div class="modal-list" id="modalList"></div>
     <div class="modal-actions">
       <button class="btn-cancel" onclick="closeModal()">取消</button>
@@ -1765,7 +1764,7 @@ async function checkUpdate(){
         const list=document.getElementById('modalList');
         list.innerHTML='<div style="font-size:13px;line-height:1.9;color:#444">发现新版本 <b>v'+escapeHtml(info.version)+'</b>'+escapeHtml(note)+'<br><a href="'+escapeHtml(info.apkUrl)+'" style="color:var(--primary);word-break:break-all">下载新版 APK</a></div>';
         document.getElementById('modalTitle').textContent='🔔 有可用更新';
-        document.getElementById('modalDesc').textContent='建议下载新版 APK 安装后重新打开。';
+        document.getElementById('modalDesc').textContent='请更新 App';
         document.getElementById('modalConfirmBtn').textContent='知道了';
         modalCallback=function(){};
         document.getElementById('modalOverlay').classList.add('show');
@@ -1880,7 +1879,7 @@ function askDeleteCurrent(){
   const list=document.getElementById('modalList');
   list.innerHTML='<div class="modal-item selected" data-person="__confirm" onclick="toggleModalItem(this)"><input type="checkbox" checked><div class="mi-name">确认删除</div><div class="mi-count">'+escapeHtml(item.name)+'</div></div>';
   document.getElementById('modalTitle').textContent='🗑️ 删除文件';
-  document.getElementById('modalDesc').textContent='将从本地文件夹永久删除该文件，此操作不可恢复！';
+  document.getElementById('modalDesc').textContent='永久删除，不可恢复';
   document.getElementById('modalConfirmBtn').textContent='确认删除';
   document.getElementById('modalConfirmBtn').classList.add('danger');
   modalCallback=async function(selectedPersons){
@@ -2281,7 +2280,7 @@ function organizeByPerson(){
   const list=document.getElementById('modalList');
   list.innerHTML=persons.map(p=>'<div class="modal-item selected" data-person="'+escapeHtml(p)+'" onclick="toggleModalItem(this)"><input type="checkbox" checked><div class="mi-name">'+escapeHtml(p)+'</div><div class="mi-count">'+personCounts[p]+' 张</div></div>').join('');
   document.getElementById('modalTitle').textContent='选择要整理的人名';
-  document.getElementById('modalDesc').textContent='勾选要移动的人名，未勾选保留原位置。';
+  document.getElementById('modalDesc').textContent='';
   document.getElementById('modalConfirmBtn').textContent='确认移动';
   modalCallback=async function(selectedPersons){
     if(!selectedPersons.length){showToast('未选择任何人名');return}
@@ -2398,7 +2397,7 @@ function organizeByPersonMedia(){
   const list=document.getElementById('modalList');
   list.innerHTML=persons.map(p=>'<div class="modal-item selected" data-person="'+escapeHtml(p)+'" onclick="toggleModalItem(this)"><input type="checkbox" checked><div class="mi-name">'+escapeHtml(p)+'</div><div class="mi-count">'+personCounts[p]+' 个</div></div>').join('');
   document.getElementById('modalTitle').textContent='选择要聚合的人名';
-  document.getElementById('modalDesc').textContent='按「人名/照片」「人名/视频」分类聚合，未勾选保留原位置。';
+  document.getElementById('modalDesc').textContent='';
   document.getElementById('modalConfirmBtn').textContent='确认聚合';
   modalCallback=async function(selectedPersons){
     if(!selectedPersons.length){showToast('未选择任何人名');return}
@@ -3185,7 +3184,7 @@ function dlXhsGuide(link){ // v5.1.11改: 小红书——复制链接→网页�
   document.getElementById('xhsOpen').onclick=function(){openFavUrl('https://www.hellotik.app/zh/rednote')};
   document.getElementById('xhsImp').onclick=function(){xhsImport()};
 }
-async function xhsImport(){ // v5.1.11改: 扫描浏览器下载目录→勾选→重命名→移入下载目录（重名自动_2）
+async function xhsImport(){ // v5.3.3改: 跳转网页解析下载→回App导入：作者/标题一次输入批量命名（与抖音同规则同目录）
   const F=window.Capacitor&&window.Capacitor.Plugins&&window.Capacitor.Plugins.Filesystem;
   if(!F||!F.readdir){showToast('组件未就绪');return}
   let names=[];
@@ -3195,22 +3194,28 @@ async function xhsImport(){ // v5.1.11改: 扫描浏览器下载目录→勾选�
   for(const nm of names.slice(0,40)){let mt=0,sz=0;try{const st=await F.stat({path:'/Download/'+nm,directory:'EXTERNAL_STORAGE'});mt=st.mtime||0;sz=st.size||0}catch(e){}stats.push({name:nm,mtime:mt,size:sz})}
   stats.sort(function(a,b){return b.mtime-a.mtime});
   const list=document.getElementById('modalList');
-  list.innerHTML='<div style="max-height:46vh;overflow:auto">'+stats.map(function(f,i){return '<label style="display:flex;align-items:center;gap:8px;padding:7px 4px;border-bottom:1px solid var(--line);font-size:13px;word-break:break-all"><input type="checkbox" class="xhsPick" data-n="'+escapeHtml(f.name)+'"'+(i<1?' checked':'')+'><span style="flex:1">'+escapeHtml(f.name)+'</span><span style="color:#999;font-size:11px;white-space:nowrap">'+(f.size?fmtSize(f.size):'')+'</span></label>'}).join('')+'</div>';
-  document.getElementById('modalTitle').textContent='导入浏览器下载';
+  list.innerHTML='<div style="display:flex;gap:8px;margin-bottom:10px">'+
+    '<input id="xhsAuthor" placeholder="作者" style="flex:1;padding:9px 10px;border:1px solid var(--line);border-radius:10px;font-size:14px;min-width:0">'+
+    '<input id="xhsTitle" placeholder="标题" style="flex:1.4;padding:9px 10px;border:1px solid var(--line);border-radius:10px;font-size:14px;min-width:0">'+
+    '</div>'+
+    '<div style="max-height:42vh;overflow:auto">'+stats.map(function(f,i){return '<label style="display:flex;align-items:center;gap:8px;padding:7px 4px;border-bottom:1px solid var(--line);font-size:13px;word-break:break-all"><input type="checkbox" class="xhsPick" data-n="'+escapeHtml(f.name)+'"'+(i<1?' checked':'')+'><span style="flex:1">'+escapeHtml(f.name)+'</span><span style="color:#999;font-size:11px;white-space:nowrap">'+(f.size?fmtSize(f.size):'')+'</span></label>'}).join('')+'</div>';
+  document.getElementById('modalTitle').textContent='导入小红书下载';
   document.getElementById('modalDesc').textContent='';
   const btn=document.getElementById('modalConfirmBtn');
-  btn.style.display='block';btn.classList.remove('danger');btn.textContent='✅ 导入';
+  btn.style.display='block';btn.classList.remove('danger');btn.textContent='导入';
   modalCallback=async function(){
     const picks=Array.from(list.querySelectorAll('.xhsPick:checked')).map(function(c){return c.dataset.n});
-    closeModal();
     if(!picks.length){showToast('未选择文件');return}
+    const author=((document.getElementById('xhsAuthor').value||'').trim()||'未命名').replace(/[\\\/:*?"<>|]/g,'');
+    const title=((document.getElementById('xhsTitle').value||'').trim()||'无题').replace(/[\\\/:*?"<>|]/g,'');
+    const date=dlShortDate(new Date());
+    closeModal();
     const cfg=dlCfg();let ok=0;
-    for(const nm of picks){
+    for(let i=0;i<picks.length;i++){
+      const nm=picks[i];
       const ext=(nm.match(/\.[^.]+$/)||[''])[0];
-      const stem=nm.substring(0,nm.length-ext.length);
-      let renamed=stem;
-      try{renamed=await new Promise(function(res){promptAsk('重命名 '+nm,'',stem,function(v){res((v&&v.trim())||stem)})})}catch(e){}
-      let to=cfg.saveDir+'/'+renamed+'_'+dlShortDate(new Date())+ext;
+      const seqPart=picks.length>1?'_'+String(i+1).padStart(2,'0'):'';
+      let to=cfg.saveDir+'/'+author+'_小红书_'+title+'_'+date+seqPart+ext;
       try{to=await dlUniquePath(to)}catch(e){}
       try{await F.rename({from:'/Download/'+nm,to:to,directory:'EXTERNAL_STORAGE'});ok++}catch(e){}
     }
@@ -3221,7 +3226,7 @@ async function xhsImport(){ // v5.1.11改: 扫描浏览器下载目录→勾选�
 async function dlParse(){ // 入口：解析按钮（v5.1 修复取不到按钮导致卡"解析中"的 bug；进度分阶段提示）
   const rawTxt=document.getElementById('dlUrl').value.trim();
   if(!rawTxt){showToast('请粘贴抖音链接');return}
-  if(!IS_NATIVE_APP){dlResultMsg('在线下载为 App 专属功能：网页浏览器受跨域限制无法调用解析服务，请在手机「矣欤」App 中使用。');return}
+  if(!IS_NATIVE_APP){dlResultMsg('在线下载需在手机「矣欤」App 中使用');return}
   // v5.1: 兼容完整分享口令——先取全部 http(s) 链接，取不到再原文当作链接
   const m=rawTxt.match(/https?:\/\/[^\s，。"''\uFF08\uFF09]+/);
   const link=m?m[0]:rawTxt;
@@ -3965,7 +3970,7 @@ if(nApi){
     // v4.3.7: 一键跳转系统「所有文件访问」设置页（原生插件 AllFilesAccess.open），不再让用户手动找
     list.innerHTML='<div style="font-size:13px;line-height:2;color:#444">需要「<b>所有文件访问</b>」权限：<br>仅开“照片和视频”权限时，部分文件夹（如点开头的隐藏目录）里的照片会被系统隐藏，导致扫描不到。<br><br>1. 点下方「一键去开启」<br>2. 在系统页面打开「<b>允许管理所有文件</b>」<br>3. 返回本 App，点「我已开启，重试」<br><br><button class="btn-sm" style="background:var(--primary);color:#fff;border-color:var(--primary)" onclick="nOpenAllFilesSettings()">🚀 一键去开启</button></div>';
     document.getElementById('modalTitle').textContent='🔐 需要文件权限';
-    document.getElementById('modalDesc').textContent='仅用于整理你手机里的照片和视频，不上传任何数据。';
+    document.getElementById('modalDesc').textContent='';
     const btn=document.getElementById('modalConfirmBtn');
     btn.textContent='我已开启，重试';
     modalCallback=async function(){retryFn&&retryFn()};
@@ -3992,7 +3997,7 @@ if(nApi){
     nPickState={rel,cb:null};
     // v4.3.1 修复：App 端点击"选择文件夹"无反应——之前漏掉显示 modalOverlay
     document.getElementById('modalTitle').textContent='📂 选择文件夹';
-    document.getElementById('modalDesc').textContent='选择包含照片/视频的文件夹，可进入子文件夹';
+    document.getElementById('modalDesc').textContent='';
     document.getElementById('modalConfirmBtn').style.display='none';
     document.getElementById('modalOverlay').classList.add('show');
     renderNativePicker(rel,'');
@@ -4015,7 +4020,7 @@ if(nApi){
     try{entries=await nReaddir(rel)}catch(e){readErr=true;readErrMsg=(e&&e.message)||String(e)}
     if(readErr){
       // v4.3.3: 读取失败不再伪装成"无子文件夹"，给出明确指引；v4.3.6: 附上原始错误信息便于定位
-      html+='<div style="color:#c53030;font-size:13px;line-height:1.9;padding:8px 0">⚠️ 无法读取该目录<br><small>通常是未授予「所有文件访问」权限<br>错误详情：'+escapeHtml(readErrMsg)+'</small></div><div style="margin-top:6px"><button class="btn-sm" style="background:var(--primary);color:#fff;border-color:var(--primary)" data-permguide="1">🔐 去开启权限</button></div>';
+      html+='<div style="color:#c53030;font-size:13px;line-height:1.9;padding:8px 0">⚠️ 无法读取该目录</div><div style="margin-top:6px"><button class="btn-sm" style="background:var(--primary);color:#fff;border-color:var(--primary)" data-permguide="1">🔐 去开启权限</button></div>';
     }else{
       let dirs=entries.filter(e=>e.isDir).map(e=>e.name).sort((a,b)=>a.localeCompare(b,'zh'));
       if(!showHidden)dirs=dirs.filter(d=>!d.startsWith('.'));
@@ -4160,7 +4165,7 @@ if(nApi){
     _diagReport=L.join('\n');
     // 复用 modalOverlay 展示报告
     document.getElementById('modalTitle').textContent='🔧 存储诊断报告';
-    document.getElementById('modalDesc').textContent='点击下方按钮复制报告，粘贴到微信发给助手即可';
+    document.getElementById('modalDesc').textContent='';
     document.getElementById('modalList').innerHTML='<pre style="font-size:12px;line-height:1.7;white-space:pre-wrap;word-break:break-all;color:#333;margin:0">'+escapeHtml(_diagReport)+'</pre>';
     const btn=document.getElementById('modalConfirmBtn');
     btn.style.display='block';btn.classList.remove('danger');btn.textContent='📋 复制报告';
