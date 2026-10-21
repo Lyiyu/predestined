@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
-<title>矣欤 v5.3.4</title>
+<title>矣欤 v5.3.5</title>
 <style>
 *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 :root{
@@ -341,7 +341,7 @@ body.browse .browse-ctrl{display:flex}
   <button class="topbar-btn" onclick="toggleDrawer()" title="菜单" style="font-size:18px;padding:2px 10px">☰</button>
   <h1>📷 矣欤</h1>
   <button class="topbar-btn" onclick="location.reload()" title="刷新页面（用于重新授权文件夹）">🔄</button>
-  <span class="tag" id="topVerTag">v5.3.4</span>
+  <span class="tag" id="topVerTag">v5.3.5</span>
 </div>
 
 <div class="progress-bar" id="progressBar"><i id="progressFill"></i></div>
@@ -691,7 +691,7 @@ body.browse .browse-ctrl{display:flex}
 
 <script>
 // ==================== 状态 ====================
-const VERSION='5.3.4';
+const VERSION='5.3.5';
 const DB_NAME='offline_media_lib_v34',DB_VERSION=6;
 const STORE_MEDIA='media',STORE_THUMB='thumbs',STORE_SESSION='session',STORE_FACES='faces';
 let cfg={rule:'person_seq',tags:[],dateFormat:'YYYYMMDD',compress:true,maxCount:2000,showHidden:false,recentNameLimit:5,ssGap:4}; // v5.3.0: ssGap=幻灯片间隔秒
@@ -1288,6 +1288,7 @@ function dBrowseToggle(on){ // 沉浸浏览：隐藏标题栏+标签面板，全
 function dPreviewable(it){return !!it&&((it.type==='image')||(it.type==='video'&&VID_PREVIEW_RE.test(it.name))||(it.type==='audio'&&AUDIO_PREVIEW_RE.test(it.name)))}
 function dSlideshowToggle(){dSlideTimer?dSlideshowStop():dSlideStart()}
 function dSlideStart(){
+  if(dSlideTimer)return; // v5.3.5改: 防重入——dShuffle 等重复调用时不再叠加定时器（叠加会倍速切换）
   dBrowseToggle(true); // 幻灯片自动进入浏览模式
   const gap=Math.max(1,parseInt(cfg.ssGap,10)||4)*1000;
   dSlideTimer=setInterval(dSlideTick,gap);
