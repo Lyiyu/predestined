@@ -1,5 +1,5 @@
 {
-  "version": "5.3.4",
-  "apkUrl": "https://github.com/Lyiyu/predestined/releases/download/v5.3.4/yiyu-v5.3.4.apk",
-  "note": "v5.3.4：①文件清点新增缺失明细——直接列出应入库但不在媒体库的文件名（定位371 vs 370差额）②图片白名单补 .heif/.avif③缩略图根治——WebView 解不了的图（超大原图/HEIC/特殊JPEG）自动切原生解码（与系统相册同源）。如异常回退 v5.3.3"
+  "version": "5.3.5",
+  "apkUrl": "https://github.com/Lyiyu/predestined/releases/download/v5.3.5/yiyu-v5.3.5.apk",
+  "note": "v5.3.5 修复幻灯片变速 bug：开着幻灯片时点🎲随机会叠加新定时器，导致切换越来越快（且停止后残留定时器还在切）。已加防重入——点🎲只换顺序不换速度。如异常回退 v5.3.4"
 }
