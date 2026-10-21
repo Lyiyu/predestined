@@ -1,5 +1,5 @@
 {
-  "version": "5.3.5",
-  "apkUrl": "https://github.com/Lyiyu/predestined/releases/download/v5.3.5/yiyu-v5.3.5.apk",
-  "note": "v5.3.5 修复幻灯片变速 bug：开着幻灯片时点🎲随机会叠加新定时器，导致切换越来越快（且停止后残留定时器还在切）。已加防重入——点🎲只换顺序不换速度。如异常回退 v5.3.4"
+  "version": "5.3.6",
+  "apkUrl": "https://github.com/Lyiyu/predestined/releases/download/v5.3.6/yiyu-v5.3.6.apk",
+  "note": "v5.3.6 修复原生缩略图中文路径 bug：nUri 返回的路径是 URL 编码的（中文目录如「素菜」→%E7%B4%A0…），原生 new File 打不开——改用未编码原始路径。否则中文目录下 WebView 解不了的图切换原生的兑底会失败。含 v5.3.4/5.3.5 全部功能。如异常回退 v5.3.5"
 }
