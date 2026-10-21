@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
-<title>矣欤 v5.3.5</title>
+<title>矣欤 v5.3.6</title>
 <style>
 *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 :root{
@@ -341,7 +341,7 @@ body.browse .browse-ctrl{display:flex}
   <button class="topbar-btn" onclick="toggleDrawer()" title="菜单" style="font-size:18px;padding:2px 10px">☰</button>
   <h1>📷 矣欤</h1>
   <button class="topbar-btn" onclick="location.reload()" title="刷新页面（用于重新授权文件夹）">🔄</button>
-  <span class="tag" id="topVerTag">v5.3.5</span>
+  <span class="tag" id="topVerTag">v5.3.6</span>
 </div>
 
 <div class="progress-bar" id="progressBar"><i id="progressFill"></i></div>
@@ -691,7 +691,7 @@ body.browse .browse-ctrl{display:flex}
 
 <script>
 // ==================== 状态 ====================
-const VERSION='5.3.5';
+const VERSION='5.3.6';
 const DB_NAME='offline_media_lib_v34',DB_VERSION=6;
 const STORE_MEDIA='media',STORE_THUMB='thumbs',STORE_SESSION='session',STORE_FACES='faces';
 let cfg={rule:'person_seq',tags:[],dateFormat:'YYYYMMDD',compress:true,maxCount:2000,showHidden:false,recentNameLimit:5,ssGap:4}; // v5.3.0: ssGap=幻灯片间隔秒
@@ -3921,7 +3921,10 @@ if(nApi){
     const nativeImgFallback=async function(){
       try{
         const p=nAllFilesApi();
-        const abs=url||('/storage/emulated/0/'+item.handle._rel);
+        // v5.3.6改: 原生需未编码路径——nUri 返回 URL 编码（素菜→%E7%B4%A0…），new File(编码路径)必不存在；_rel 是 readdir 原始名拼接，优先用它
+        let abs='';
+        if(item.handle&&item.handle._rel){abs='/storage/emulated/0/'+item.handle._rel}
+        else if(url){try{abs=decodeURIComponent(url)}catch(e2){abs=url}}
         if(!p||!p.getThumb||!abs)return false;
         const r=await p.getThumb({path:abs,maxSide:300});
         if(r&&r.data){thumbCache.set(itemKey(item),r.data);try{dbPutThumb(itemKey(item)+'@'+curDirName,r.data)}catch(e){};el.innerHTML='<img src="'+r.data+'">';return true}
