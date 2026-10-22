@@ -1,5 +1,5 @@
 {
-  "version": "5.4.0",
-  "apkUrl": "https://github.com/Lyiyu/predestined/releases/download/v5.4.0/yiyu-v5.4.0.apk",
-  "note": "v5.4.0 新增「作品」聚合页：同作品的图集/动图按命名规则自动聚成一条作品（还原抖音刷视频的感觉）——作品卡网格、左右滑换图、上下滑切作品、动图自动循环、jpg大图即点即看、顶部统计+搜索；底部导航改四Tab（媒体库/收藏·下载/作品/设置）。修一个switchTab重复调用残渣。如异常回退 v5.3.7"
+  "version": "1.0.13",
+  "apkUrl": "https://github.com/Lyiyu/predestined/releases/download/v1.0.13/yuzang-v1.0.13.apk",
+  "note": "v1.0.13 全新「羽藏」：App 更名羽藏；四Tab重构（鹇雩=作品聚合/攵欤=媒体库/大同=下载/规矩=设置）；作品聚合升级为任意文件夹同名去尾序聚合（不再限抖音）+手动刷新重建；下载页多平台链接自动识别渠道（抖音/小红书/TikTok/X/微博）；设置页高级下载参数折叠、新增导出使用日志反馈。如异常回退 v5.4.0"
 }
