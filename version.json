@@ -1,5 +1,5 @@
 {
-  "version": "5.3.7",
-  "apkUrl": "https://github.com/Lyiyu/predestined/releases/download/v5.3.7/yiyu-v5.3.7.apk",
-  "note": "v5.3.7 修复确认弹窗错位 bug：v5.3.3 文案清理时残留的\"置。\"+多余闭合标签让弹窗提前断开——删除收藏/整理/聚合等所有确认弹窗的按钮都跑到弹窗外。已修复，按钮回到弹窗内正常并排。如异常回退 v5.3.6"
+  "version": "5.4.0",
+  "apkUrl": "https://github.com/Lyiyu/predestined/releases/download/v5.4.0/yiyu-v5.4.0.apk",
+  "note": "v5.4.0 新增「作品」聚合页：同作品的图集/动图按命名规则自动聚成一条作品（还原抖音刷视频的感觉）——作品卡网格、左右滑换图、上下滑切作品、动图自动循环、jpg大图即点即看、顶部统计+搜索；底部导航改四Tab（媒体库/收藏·下载/作品/设置）。修一个switchTab重复调用残渣。如异常回退 v5.3.7"
 }
