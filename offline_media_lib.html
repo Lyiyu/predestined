@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
-<title>矣欤 v5.4.0</title>
+<title>羽藏 v1.0.13</title>
 <style>
 *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 :root{
@@ -72,7 +72,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei
 .tabbar .tab .ic{font-size:20px;line-height:1;height:22px;display:flex;align-items:center;justify-content:center}
 .tabbar .tab.active{color:var(--primary);font-weight:600}
 .filters{display:flex;gap:8px;margin:12px 0;flex-wrap:wrap;align-items:center}
-.op-grid{display:grid;grid-template-columns:repeat(6,1fr);gap:6px;margin:12px 0 4px}
+.op-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:6px;margin:12px 0 4px} /* v1.0.13: 五格单行对称（去掉重扫） */
 .op-grid .btn-sm{background:#fff;color:var(--primary);border-color:var(--primary);white-space:nowrap;width:100%;padding:7px 1px;font-size:11px;overflow:hidden;text-overflow:ellipsis}
 .filters select{padding:8px 10px;border:1px solid var(--line);border-radius:10px;font-size:13px;background:#fff;flex:0 0 auto;width:auto;max-width:32%;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .filters select.person-select{max-width:100%;min-width:0;width:auto;text-overflow:ellipsis}
@@ -358,7 +358,7 @@ body.browse .browse-ctrl{display:flex}
 
 <div class="topbar">
   <button class="topbar-btn" onclick="toggleDrawer()" title="菜单" style="font-size:18px;padding:2px 10px">☰</button>
-  <h1>📷 矣欤</h1>
+  <h1>羽藏</h1>
   <button class="topbar-btn" onclick="location.reload()" title="刷新页面（用于重新授权文件夹）">🔄</button>
   <span class="tag" id="topVerTag">v5.4.0</span>
 </div>
@@ -401,13 +401,12 @@ body.browse .browse-ctrl{display:flex}
       <input type="text" id="libSearch" placeholder="🔍 搜索文件名" oninput="onSearchInput()">
       <span class="count-tip" id="libCount"></span>
     </div>
-    <div class="op-grid"> <!-- v5.3.3改: 六格单行对称（去emoji缩宽，窄屏不断行） -->
+    <div class="op-grid"> <!-- v5.3.3改: 六格单行对称；v1.0.13: 去掉「重扫」（与顶部重复），改五格单行对称 -->
       <button class="btn-sm" onclick="selectAllFiltered()">全选</button>
       <button class="btn-sm" onclick="findDuplicates()">重复</button>
       <button class="btn-sm" onclick="openFacePanel()">人脸</button>
       <button class="btn-sm" onclick="organizeByPerson()">整理</button>
       <button class="btn-sm" onclick="organizeByPersonMedia()">聚合</button>
-      <button class="btn-sm" onclick="rescanDir(true)">重扫</button>
     </div>
     <div class="subdir-bar" id="subdirBar" style="display:none"></div>
     <div class="tag-chips light" id="libTagChips" style="margin-bottom:10px"></div>
@@ -416,16 +415,16 @@ body.browse .browse-ctrl{display:flex}
   </div>
 </div>
 
-<!-- v4.6: 收藏页 -->
+<!-- v4.6: 大同页（下载+收藏） -->
 <div class="page" id="pageFav">
   <div class="setcard">
     <h3>📥 在线下载</h3>
     <div style="display:flex;gap:6px">
-      <input id="dlUrl" placeholder="粘贴抖音分享链接/口令" style="flex:1;padding:10px;border:1px solid var(--line);border-radius:10px;font-size:14px;min-width:0">
+      <input id="dlUrl" placeholder="粘贴抖音/TikTok/X/微博/小红书 链接或口令" style="flex:1;padding:10px;border:1px solid var(--line);border-radius:10px;font-size:14px;min-width:0">
       <button class="btn-sm" style="background:var(--primary);color:#fff;border-color:var(--primary);padding:10px 14px;white-space:nowrap" id="dlParseBtn" onclick="dlParse()">解析</button>
       <button class="btn-sm" style="padding:10px 12px;white-space:nowrap" onclick="confirmAsk('清空链接输入框？',function(){document.getElementById('dlUrl').value='';document.getElementById('dlResult').innerHTML='';document.getElementById('dlProgress').innerHTML=''},'✅ 清空')">✕</button>
     </div>
-    <div class="sub" style="margin-top:6px">支持粘贴完整分享口令（含文字，自动提取链接）；当前支持抖音（🎬视频/🖼️图文/📝文字/📸动图），TikTok/小红书/微博即将开放</div>
+    <div class="sub" style="margin-top:6px">粘贴链接或完整分享口令（自动提取并识别渠道）：抖音/小红书/TikTok/X/微博；小红书跳转网页下载后回本页导入，命名路径与抖音一致</div>
     <div id="dlResult"></div>
     <div id="dlProgress"></div>
     <div id="dlUsage" style="margin-top:8px;font-size:12px;color:#888"></div>
@@ -448,16 +447,17 @@ body.browse .browse-ctrl{display:flex}
   </div>
 </div>
 
-<!-- v5.4.0: 作品聚合页（抖音内容按作品聚合浏览） -->
+<!-- v1.0.13: 作品聚合页（任意来源，同名图序聚合浏览） -->
 <div class="page" id="pageView">
-  <div class="tip">🎞️ 同作品的图集/动图按命名自动聚成一条作品（左右滑看图，上下滑切换作品）。</div>
+  <div class="tip">🎞️ 同作品的图集/动图按命名自动聚成一条（左右滑看图，上下滑切换作品）。在媒体库重命名后点下方「刷新聚合」重建分组。</div>
   <div class="stats" id="viewStats"></div>
   <div class="filters-search">
     <input type="text" id="viewSearch" placeholder="🔍 搜索作品标题/作者" oninput="onViewSearch()">
+    <button class="btn-sm" style="white-space:nowrap;background:var(--primary);color:#fff;border-color:var(--primary);padding:10px 12px" onclick="renderView()">🔄 刷新聚合</button>
     <span class="count-tip" id="viewCount"></span>
   </div>
   <div class="grid" id="viewGrid"></div>
-  <div class="empty" id="viewEmpty" style="display:none"><div class="icon">🎞️</div>暂无抖音聚合作品<br><span style="font-size:12px;color:#9aa0b5">到「收藏·下载」页下载图文/动图/视频作品后自动聚合</span></div>
+  <div class="empty" id="viewEmpty" style="display:none"><div class="icon">🎞️</div>暂无聚合作品<br><span style="font-size:12px;color:#9aa0b5">同名不同图序的文件（如 xx_1、xx_2）会自动聚成一件作品</span></div>
 </div>
 
 <!-- 设置页 -->
@@ -530,7 +530,9 @@ body.browse .browse-ctrl{display:flex}
     </div>
   </div>
   <div class="setcard">
-    <h3>⚙️ 下载设置（风控参数，默认为推荐值）</h3>
+    <h3>⚙️ 高级下载参数（风控，默认推荐值，一般不用改）</h3>
+    <details>
+      <summary style="padding:6px 0;color:var(--primary);font-size:13px;cursor:pointer">展开/收起 风控参数</summary>
     <div class="setitem"><label>批量下载间隔（秒）</label><div style="display:flex;gap:4px;align-items:center"><input type="number" id="dlSetIntervalMin" style="width:60px;padding:6px;border:1px solid var(--line);border-radius:8px">~<input type="number" id="dlSetIntervalMax" style="width:60px;padding:6px;border:1px solid var(--line);border-radius:8px"></div></div>
     <div class="setitem"><label>单次批量上限（条）</label><input type="number" id="dlSetBatchMax" style="width:80px;padding:6px;border:1px solid var(--line);border-radius:8px"></div>
     <div class="setitem"><label>每日下载上限（条）</label><input type="number" id="dlSetDailyMax" style="width:80px;padding:6px;border:1px solid var(--line);border-radius:8px"></div>
@@ -541,6 +543,7 @@ body.browse .browse-ctrl{display:flex}
     <div class="setitem"><label>保存目录（存储根相对路径）</label><input type="text" id="dlSetSaveDir" style="flex:1;padding:6px;border:1px solid var(--line);border-radius:8px;min-width:0"></div>
     <div class="setitem"><label>自定义解析接口（自部署后填，优先使用）</label><input type="text" id="dlSetCustomApi" placeholder="https://你的服务地址" style="flex:1;padding:6px;border:1px solid var(--line);border-radius:8px;min-width:0"></div>
     <button class="btn-sm" style="background:var(--primary);color:#fff;border-color:var(--primary);padding:10px" onclick="dlSaveCfgForm()">保存设置</button>
+    </details>
   </div>
   <div class="setcard">
     <h3>💾 数据与迁移</h3>
@@ -562,6 +565,7 @@ body.browse .browse-ctrl{display:flex}
       <button class="btn-ghost" onclick="runStorageDiag()" style="margin-top:8px">🔧 存储诊断</button>
       <button class="btn-ghost" onclick="runInventory()" style="margin-top:8px">🔍 文件清点（数量比对）</button>
       <button class="btn-ghost" onclick="openAboutModal()" style="margin-top:8px">📖 使用说明与风控说明</button>
+      <button class="btn-ghost" onclick="devCopy()" style="margin-top:8px">📤 导出使用日志与反馈（发助手修复问题）</button>
     </div>
   </div>
 </div>
@@ -595,27 +599,27 @@ body.browse .browse-ctrl{display:flex}
   </div>
 </div>
 
-<!-- 底部Tab -->
+<!-- 底部Tab（v1.0.13: 依次=鹇雩(作品聚合)/攵欤(媒体库)/大同(下载)/规矩(设置)） -->
 <div class="tabbar" id="tabbar">
-  <button class="tab active" id="tabLib" onclick="switchTab('lib')"><span class="ic">🗂️</span>媒体库</button>
-  <button class="tab" id="tabFav" onclick="switchTab('fav')"><span class="ic">📥</span>收藏·下载</button>
-  <button class="tab" id="tabView" onclick="switchTab('view')"><span class="ic">🎞️</span>作品</button>
-  <button class="tab" id="tabSet" onclick="switchTab('set')"><span class="ic">⚙️</span>设置</button>
+  <button class="tab" id="tabView" onclick="switchTab('view')"><span class="ic">🎞️</span>鹇雩</button>
+  <button class="tab active" id="tabLib" onclick="switchTab('lib')"><span class="ic">🗂️</span>攵欤</button>
+  <button class="tab" id="tabFav" onclick="switchTab('fav')"><span class="ic">📥</span>大同</button>
+  <button class="tab" id="tabSet" onclick="switchTab('set')"><span class="ic">⚙️</span>规矩</button>
 </div>
 
 <!-- v4.5: 侧边栏导航（抽屉） -->
 <div class="drawer-mask" id="drawerMask" onclick="toggleDrawer(false)"></div>
 <aside class="drawer" id="drawer">
   <div class="drawer-head">
-    <div class="drawer-title">📷 矣欤</div>
+    <div class="drawer-title">羽藏</div>
     <div class="drawer-sub" id="drawerVer"></div>
   </div>
   <nav>
     <div class="drawer-group">导航</div>
-    <button class="drawer-item" onclick="drawerAction('lib')">🗂️ 媒体库</button>
-    <button class="drawer-item" onclick="drawerAction('fav')">⭐ 收藏博主</button>
-    <button class="drawer-item" onclick="drawerAction('view')">🎞️ 作品聚合</button>
-    <button class="drawer-item" onclick="drawerAction('set')">⚙️ 设置</button>
+    <button class="drawer-item" onclick="drawerAction('view')">🎞️ 鹇雩（作品聚合）</button>
+    <button class="drawer-item" onclick="drawerAction('lib')">🗂️ 攵欤（媒体库）</button>
+    <button class="drawer-item" onclick="drawerAction('fav')">📥 大同（下载）</button>
+    <button class="drawer-item" onclick="drawerAction('set')">⚙️ 规矩（设置）</button>
     <div class="drawer-group">工具</div>
     <button class="drawer-item" onclick="drawerAction('face')">😊 人脸识别</button>
     <button class="drawer-item" onclick="drawerAction('dup')">🔍 查找重复</button>
@@ -737,8 +741,8 @@ body.browse .browse-ctrl{display:flex}
 
 <script>
 // ==================== 状态 ====================
-const VERSION='5.4.0';
-const DB_NAME='offline_media_lib_v34',DB_VERSION=6;
+const VERSION='1.0.13';
+const DB_NAME='offline_media_lib_v34',DB_VERSION=6; // v1.0.13: 结构未变，沿用旧库（保留标签/人名数据）
 const STORE_MEDIA='media',STORE_THUMB='thumbs',STORE_SESSION='session',STORE_FACES='faces';
 let cfg={rule:'person_seq',tags:[],dateFormat:'YYYYMMDD',compress:true,maxCount:2000,showHidden:false,recentNameLimit:5,ssGap:4}; // v5.3.0: ssGap=幻灯片间隔秒
 // v4.0 解耦：默认配置零个人数据（标签为空，无下载服务地址）；配置仅存于本机 localStorage，云端不存任何用户数据
@@ -1626,7 +1630,7 @@ function delFav(id){
 function exportFav(){ // v4.9: 收藏博主清单导出（数据仅本地，由用户主动发送给助手配置自动下载）
   const list=getFav();
   if(!list.length){showToast('暂无收藏，先添加博主');return}
-  const lines=['【矣欤·收藏博主清单】'+new Date().toLocaleDateString('zh-CN')];
+  const lines=['【羽藏·收藏博主清单】'+new Date().toLocaleDateString('zh-CN')];
   list.forEach((f,i)=>{lines.push((i+1)+'. ['+(FAV_NAMES[f.platform]||f.platform)+'] '+(f.alias||f.name||'未知')+(f.alias?'（原名：'+(f.name||'未知')+'）':'')+' '+(f.url||'')+(f.note?'（'+f.note+'）':''))}); // v5.1.9: 导出带备注名
   const txt=lines.join('\n');
   const done=()=>showToast('已复制 '+list.length+' 位博主，粘贴发给助手即可');
@@ -1983,49 +1987,55 @@ function switchTab(t){
   if(t==='set'){loadSettingsForm();renderSetStats();updateQuota();dlLoadCfgForm()} // v5.1.3: 修复直接进设置页时下载设置输入框空白（漏调 dlLoadCfgForm）
 }
 
-// ==================== v5.4.0 作品聚合浏览（抖音内容） ====================
-// 软聚合：文件名「作者_抖音_标题_YY.MM.DD[_图序].ext」去图序后同 key 归组；
-// 图序与重名兜底（_2/_3）统一聚合，无需区分（用户确认）。组内至少 2 个文件才成组。
-const DY_RE=/^(.+_抖音_.+_\d{2}\.\d{2}\.\d{2})(?:_(\d{1,4}))?\.([a-zA-Z0-9]+)$/i;
-const DY_META_RE=/^(.+)_抖音_(.+)_(\d{2}\.\d{2}\.\d{2})$/;
+// ==================== v1.0.13 作品聚合浏览（任意来源，按文件名单聚合） ====================
+// 通用软聚合：把文件名「基础名[_图序].ext」中的图序（_1/_2/_3、_01、_10 等）剥掉后，
+// 基础名相同的多个文件聚成一件作品（同一作品的不同图片/动图）。抖音/小红书/系统图库等
+// 任意来源通用，不再依赖「_抖音_」中缀。组内至少 2 个文件才成组，单件文件独立成作品。
+// v1.0.13: 聚合规则可被「手动刷新」重算（重命名 UI 改完名字后，作品页点刷新重建分组）。
+const DY_META_RE=/^(.+)_抖音_(.+)_(\d{2}\.\d{2}\.\d{2})$/; // 抖音命名仍可解析作者/标题/日期展示
 let viewWorks=[],viewIdx=-1,viewNavIdx=0,_viewTouch=null,viewObserver=null;
 
 function viewMeta(key){
-  const k=String(key||'').replace(/\.(mp4|webp|jpg|jpeg|png|gif)$/i,''); // v5.4.0: 单件 key 含扩展名，先剥掉再匹配
+  const k=String(key||'').replace(/\.(mp4|webp|jpg|jpeg|png|gif)$/i,''); // 单件 key 含扩展名，先剥掉再匹配
   const m=k.match(DY_META_RE);
   return m?{author:m[1],title:m[2],date:m[3]}:{author:'',title:k,date:''};
 }
-function buildWorks(list){ // 软聚合引擎：输入媒体库条目，输出作品列表（组+单件）
+function viewBase(name){ // v1.0.13: 去扩展名再剥图序，得基础名；无图序返回 null（不参与聚合）
+  const stem=String(name||'').replace(/\.([a-zA-Z0-9]+)$/,'');
+  const m=stem.match(/^(.+?)(_(\d{1,4}))?$/);
+  return (m&&m[2]!==undefined)?m[1]:null; // 仅「带图序后缀」返回基础名
+}
+function buildWorks(items){ // 输入文件条目，输出作品列表（组+单件）。items 为空/未扫时返回 []
+  if(!items||!items.length)return[];
   const groups=new Map(),singles=[];
-  list.forEach(function(it){
-    const m=String(it.name||'').match(DY_RE);
-    if(m&&m[2]){
-      const key=m[1];
-      if(!groups.has(key))groups.set(key,[]);
-      groups.get(key).push({it:it,seq:parseInt(m[2],10)});
-    }else singles.push(it);
+  items.forEach(function(it){
+    const key=viewBase(it.name);
+    if(key){if(!groups.has(key))groups.set(key,[]);groups.get(key).push(it)}
+    else singles.push(it);
   });
   const works=[];
   groups.forEach(function(arr,key){
-    if(arr.length<2)return;
-    arr.sort(function(a,b){return a.seq-b.seq||a.it.name.localeCompare(b.it.name)});
-    works.push({key:key,isGroup:true,items:arr,types:Array.from(new Set(arr.map(function(x){return x.it.type}))).filter(Boolean),last:Math.max.apply(null,arr.map(function(x){return x.it.lastModified||x.it.savedAt||0}))});
+    if(arr.length<2){arr.forEach(function(x){works.push({key:x.name,isGroup:false,items:[{it:x,seq:0}],types:[x.type],last:x.lastModified||x.savedAt||0})});return}
+    arr.sort(function(a,b){return viewSeqNo(a.name)-viewSeqNo(b.name)||a.name.localeCompare(b.name)});
+    works.push({key:key,isGroup:true,items:arr.map(function(x){return {it:x,seq:viewSeqNo(x.name)}}),types:Array.from(new Set(arr.map(function(x){return x.type}))).filter(Boolean),last:Math.max.apply(null,arr.map(function(x){return x.lastModified||x.savedAt||0}))});
   });
   singles.forEach(function(it){works.push({key:it.name,isGroup:false,items:[{it:it,seq:0}],types:[it.type],last:it.lastModified||it.savedAt||0})});
   works.sort(function(a,b){return (b.last||0)-(a.last||0)});
   return works;
 }
-function onViewSearch(){renderView()}
-function renderView(){
+function viewSeqNo(name){ // 提取图序数字（无则 0）
+  const m=String(name||'').replace(/\.([a-zA-Z0-9]+)$/,'').match(/_(\d{1,4})$/);
+  return m?parseInt(m[1],10):0;
+}
+function renderView(){ // v1.0.13: 直接对当前媒体库 items 全量聚合（不限定来源）；可手动刷新
   const grid=document.getElementById('viewGrid');
   const empty=document.getElementById('viewEmpty');
   const q=(document.getElementById('viewSearch').value||'').toLowerCase();
-  const dyItems=(items||[]).filter(function(it){return String(it.name||'').indexOf('_抖音_')>=0});
-  const list=buildWorks(dyItems);
+  const list=buildWorks(items);
   const flt=q?list.filter(function(w){return String(w.key||'').toLowerCase().indexOf(q)>=0}):list;
   viewWorks=flt;
   const nGroup=flt.filter(function(w){return w.isGroup}).length;
-  document.getElementById('viewStats').innerHTML='<div class="stat"><div class="num">'+flt.length+'</div><div class="lbl">作品</div></div><div class="stat"><div class="num">'+nGroup+'</div><div class="lbl">图集</div></div><div class="stat"><div class="num">'+dyItems.length+'</div><div class="lbl">文件</div></div>';
+  document.getElementById('viewStats').innerHTML='<div class="stat"><div class="num">'+flt.length+'</div><div class="lbl">作品</div></div><div class="stat"><div class="num">'+nGroup+'</div><div class="lbl">图集</div></div><div class="stat"><div class="num">'+((items||[]).length)+'</div><div class="lbl">文件</div></div>';
   document.getElementById('viewCount').textContent='共 '+flt.length+' 件';
   empty.style.display=flt.length?'none':'block';
   grid.innerHTML=flt.map(function(w,i){
@@ -2118,10 +2128,10 @@ function closeViewer(){document.getElementById('viewOverlay').classList.remove('
 (async function init(){
   loadSettings();
   // v4.0：首次运行提示（空白配置，零个人数据）
-  if(_firstRun)showToast('欢迎使用矣欤！先选文件夹，再到设置页加标签');
+  if(_firstRun)showToast('欢迎使用羽藏！先选文件夹，再到设置页加标签');
   // v4.0：关于信息（版本+运行模式）
   const aboutEl=document.getElementById('aboutMode');
-  if(aboutEl)aboutEl.textContent='矣欤 v'+VERSION+'（'+(RUNTIME_MODE==='app'?'App 模式':'网页版')+'）';
+  if(aboutEl)aboutEl.textContent='羽藏 v'+VERSION+'（'+(RUNTIME_MODE==='app'?'App 模式':'网页版')+'）';
   bindDevEntry(); // v4.2: 版本文字连点7次进入测试反馈面板
   favPickInit(); // v5.1.1: 平台图标选择器
   // v5.1.4: 自动更新——打开App稍后查一次 + 前台每30分钟增量检查（真后台定时受手机省电策略限制，打开App即查最可靠）
@@ -3176,7 +3186,7 @@ async function clearFaceData(){
 // 说明：解析服务未开放 CORS，浏览器无法直接调用 → 解析/下载全部走 CapacitorHttp 原生请求（App 专属）。
 const DL_UA='Mozilla/5.0 (Linux; Android 14) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Mobile Safari/537.36';
 const DL_CFG_KEY='yiyu_dl_cfg_v50';
-const DL_CFG_DEFAULT={intervalMin:5,intervalMax:15,batchMax:20,dailyMax:50,dailyParseMax:100,retryMax:1,followupGap:30,saveDir:'/.1/矣欤下载',customApi:'',coolMin:30}; // v5.1.8改: 点开头隐藏目录——不进系统相册（用户定稿）
+const DL_CFG_DEFAULT={intervalMin:5,intervalMax:15,batchMax:20,dailyMax:50,dailyParseMax:100,retryMax:1,followupGap:30,saveDir:'/.1/矣欤下载',customApi:'',coolMin:30}; // v5.1.8改: 点开头隐藏目录——不进系统相册（用户定稿）；v1.0.13: 目录不变
 function dlCfg(){try{const c=JSON.parse(storeGet(DL_CFG_KEY));const m=Object.assign({},DL_CFG_DEFAULT,c||{});if(m.saveDir==='/DCIM/矣欤下载')m.saveDir=DL_CFG_DEFAULT.saveDir;return m}catch(e){return Object.assign({},DL_CFG_DEFAULT)}} // v5.1.8改: 旧默认目录一次性迁移到隐藏目录
 function dlSaveCfg(c){storeSet(DL_CFG_KEY,c)}
 function dlUsage(){ // 防线①：每日计数（按日期自动重置）
@@ -3405,16 +3415,19 @@ async function xhsImport(){ // v5.3.3改: 跳转网页解析下载→回App导�
 }
 async function dlParse(){ // 入口：解析按钮（v5.1 修复取不到按钮导致卡"解析中"的 bug；进度分阶段提示）
   const rawTxt=document.getElementById('dlUrl').value.trim();
-  if(!rawTxt){showToast('请粘贴抖音链接');return}
-  if(!IS_NATIVE_APP){dlResultMsg('在线下载需在手机「矣欤」App 中使用');return}
+  if(!rawTxt){showToast('请粘贴 抖音/小红书/TikTok/X/微博 链接');return}
+  if(!IS_NATIVE_APP){dlResultMsg('在线下载需在手机「羽藏」App 中使用');return}
   // v5.1: 兼容完整分享口令——先取全部 http(s) 链接，取不到再原文当作链接
   const m=rawTxt.match(/https?:\/\/[^\s，。"''\uFF08\uFF09]+/);
   const link=m?m[0]:rawTxt;
-  // v5.1.2: 未开放平台提前明确提示（避免拿去解析报莫名错误）
-  if(/tiktok\.com/i.test(link)){dlResultMsg('🚧 TikTok 暂未开放');return}
-  if(/xiaohongshu\.com|xhslink\.com/i.test(link)){dlXhsGuide(link);return} // v5.1.11改: 小红书=网页解析+导入
-  if(/weibo\.(cn|com)/i.test(link)){dlResultMsg('🚧 微博暂未开放');return}
-  if(!/douyin\.com|iesdouyin\.com|iegtd|douyin/i.test(link)){dlResultMsg('🚧 看不僮这个链接——请粘贴抖音作品分享链接（支持整段口令）');return}
+  // v1.0.13: 自动识别渠道——抖音走解析下载、小红书跳转网页导入、TikTok/X/微博提示当前状态
+  const CH=/tiktok\.com/i.test(link)?'tiktok':(/x\.com|twitter\.com/i.test(link)?'x':/weibo\.(cn|com)/i.test(link)?'weibo':/xiaohongshu\.com|xhslink\.com/i.test(link)?'xhs':/douyin\.com|iesdouyin\.com|iegtd|douyin/i.test(link)?'dy':'');
+  if(CH==='tiktok'){dlResultMsg('🚧 TikTok 暂未开放，请等待后续版本');return}
+  if(CH==='x'){dlResultMsg('🚧 X（推特）暂未开放，请等待后续版本');return}
+  if(CH==='weibo'){dlResultMsg('🚧 微博暂未开放，请等待后续版本');return}
+  if(CH==='xhs'){dlXhsGuide(link);return} // v5.1.11改: 小红书=网页解析+导入
+  if(CH==='dy'){/* 抖音走下方解析流程 */}
+  else{dlResultMsg('🚧 认不出这个链接的渠道——请粘贴 抖音/小红书/TikTok/X/微博 的分享链接（支持整段口令）');return}
   const btn=document.getElementById('dlParseBtn');
   const steps=['解析中…登录解析服务','解析中…提交解析任务（约2秒）','解析中…等待结果（最长30秒）'];
   dlResultMsg(steps[0]);let si=1;
@@ -3828,7 +3841,7 @@ async function runInventory(){ // 扫描数量与文件管理器对不上时，�
   h+='<div style="margin-top:10px;font-size:12px;color:#888">💡 常见差额：.heif(小米实况/RAW) .dng .avif .bmp .svg .wma 不在支持列表；上限 2000 达到后停止扫描。需要支持更多类型发给助手加白名单。</div>';
   h+='</div>';
   body.innerHTML=h;
-  INV_TEXT='【矣欤文件清点】目录：'+curDir.name+'\r\n全部文件 '+stats.total+' = 入库 '+stats.imported+' + 不支持扩展名 '+stats.badExt+'（'+badArr.map(function(x){return x[0]+'x'+x[1]}).join(' ')+') + 隐藏 '+stats.hidden+' + 跳过目录 '+stats.inSkip+'\r\n读取失败目录 '+stats.errs.length+' 个';
+  INV_TEXT='【羽藏文件清点】目录：'+curDir.name+'\r\n全部文件 '+stats.total+' = 入库 '+stats.imported+' + 不支持扩展名 '+stats.badExt+'（'+badArr.map(function(x){return x[0]+'x'+x[1]}).join(' ')+') + 隐藏 '+stats.hidden+' + 跳过目录 '+stats.inSkip+'\r\n读取失败目录 '+stats.errs.length+' 个';
 }
 function copyInvText(){
   if(!INV_TEXT){showToast('请先运行清点');return}
@@ -3858,7 +3871,7 @@ function dlSaveCfgForm(){
   c.retryMax=Math.max(0,Math.min(3,parseInt(document.getElementById('dlSetRetryMax').value)||1));
   c.coolMin=Math.max(0,Math.min(120,parseInt(document.getElementById('dlSetCoolMin').value)||30));
   c.followupGap=Math.max(10,Math.min(120,parseInt(document.getElementById('dlSetFollowupGap').value)||30));
-  c.saveDir=String(document.getElementById('dlSetSaveDir').value||'/.1/矣欤下载').trim()||'/.1/矣欤下载'; // v5.1.8改: 隐藏目录默认
+  c.saveDir=String(document.getElementById('dlSetSaveDir').value||'/.1/矣欤下载').trim()||'/.1/矣欤下载'; // v5.1.8改: 隐藏目录默认；v1.0.13: 目录不变
   if(c.saveDir.charAt(0)!=='/')c.saveDir='/'+c.saveDir;
   c.customApi=String(document.getElementById('dlSetCustomApi').value||'').trim();
   dlSaveCfg(c);
@@ -3868,8 +3881,8 @@ function dlSaveCfgForm(){
 
 // ==================== v4.2: 开发者模式（测试反馈面板，替代 Excel 回填） ====================
 const DEV_TEST_CASES=[
- {id:'A01',mod:'安装',name:'APK安装',expect:'安装成功，桌面出现「矣欤」图标，打开为全屏App（无浏览器地址栏）'},
- {id:'A02',mod:'首次使用',name:'权限引导',expect:'选文件夹时弹照片/视频权限→允许；若提示「所有文件访问」按引导到系统设置开启后重试通过'},
+{id:'A01',mod:'安装',name:'APK安装',expect:'安装成功，桌面出现「羽藏」图标，打开为全屏App（无浏览器地址栏）'},
+  {id:'A02',mod:'首次使用',name:'权限引导',expect:'选文件夹时弹照片/视频权限→允许；若提示「所有文件访问」按引导到系统设置开启后重试通过'},
  {id:'A03',mod:'目录选择',name:'App版目录选择器',expect:'出现相册/图片/视频/下载快捷入口+目录导航+面包屑，可选到子文件夹'},
  {id:'A04',mod:'扫描',name:'扫描媒体',expect:'进度条正常，扫描完成提示N个文件，图片/视频缩略图正常显示'},
  {id:'D01',mod:'图片预览',name:'详情页大图',expect:'大图秒开；选人名→标签→确认后提示「已重命名：人名-N.jpg」'},
@@ -3940,7 +3953,7 @@ function devBuildSummary(){
   let pass=0,fail=0,todo=0;
   DEV_TEST_CASES.forEach(c=>{const st=(s.cases[c.id]&&s.cases[c.id].status)||'todo';if(st==='pass')pass++;else if(st==='fail')fail++;else todo++});
   const lines=[];
-  lines.push('【矣欤 v'+VERSION+' 测试反馈】');
+  lines.push('【羽藏 v'+VERSION+' 测试反馈】');
   lines.push('时间：'+new Date().toLocaleString('zh-CN'));
   lines.push('环境：'+(RUNTIME_MODE==='app'?'App':'网页')+'｜媒体目录：'+(curDirName||'未选择'));
   lines.push('汇总：通过 '+pass+' / 不通过 '+fail+' / 未测 '+todo+'（共'+DEV_TEST_CASES.length+'项）');
