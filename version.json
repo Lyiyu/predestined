@@ -1,5 +1,5 @@
 {
-  "version": "5.3.6",
-  "apkUrl": "https://github.com/Lyiyu/predestined/releases/download/v5.3.6/yiyu-v5.3.6.apk",
-  "note": "v5.3.6 修复原生缩略图中文路径 bug：nUri 返回的路径是 URL 编码的（中文目录如「素菜」→%E7%B4%A0…），原生 new File 打不开——改用未编码原始路径。否则中文目录下 WebView 解不了的图切换原生的兑底会失败。含 v5.3.4/5.3.5 全部功能。如异常回退 v5.3.5"
+  "version": "5.3.7",
+  "apkUrl": "https://github.com/Lyiyu/predestined/releases/download/v5.3.7/yiyu-v5.3.7.apk",
+  "note": "v5.3.7 修复确认弹窗错位 bug：v5.3.3 文案清理时残留的\"置。\"+多余闭合标签让弹窗提前断开——删除收藏/整理/聚合等所有确认弹窗的按钮都跑到弹窗外。已修复，按钮回到弹窗内正常并排。如异常回退 v5.3.6"
 }
