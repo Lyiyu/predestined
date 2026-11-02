@@ -342,6 +342,7 @@ body.browse .browse-ctrl{display:flex}
 .view-top{display:flex;align-items:center;gap:10px;padding:calc(10px + var(--safe-t)) 12px 10px;background:rgba(0,0,0,.35)}
 .view-top .view-title{flex:1;color:#fff;font-size:14px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .view-top .view-close{color:#fff;font-size:24px;cursor:pointer;width:36px;height:36px;display:flex;align-items:center;justify-content:center;flex:0 0 auto;background:rgba(255,255,255,.15);border-radius:50%}
+.view-top .v-flow-btn{color:#fff;font-size:12px;background:rgba(255,255,255,.18);border-radius:14px;padding:6px 12px;cursor:pointer;white-space:nowrap} /* v1.0.14: 抖音流连播开关 */
 .view-stage{flex:1 1 0;min-height:0;display:flex;align-items:center;justify-content:center;overflow:hidden;touch-action:none;position:relative}
 .view-stage img{max-width:100%;max-height:100%;object-fit:contain;border-radius:4px}
 .view-stage video{max-width:100%;max-height:100%;object-fit:contain;border-radius:8px}
@@ -649,11 +650,14 @@ body.browse .browse-ctrl{display:flex}
   </nav>
 </aside>
 
-<!-- v5.4.0: 作品聚合沉浸浏览（左右滑组内、上下滑切作品） -->
+<!-- v5.4.0: 作品聚合沉浸浏览（左右滑组内、上下滑切作品）；v1.0.14: 抖音流连播（顺序/随机） -->
 <div class="view-overlay" id="viewOverlay">
   <div class="view-top">
     <div class="view-title" id="viewTitle">作品</div>
-    <div class="view-close" onclick="closeViewer()">×</div>
+    <div style="display:flex;gap:6px;align-items:center">
+      <div class="v-flow-btn" id="vFlowBtn" onclick="viewFlowToggle()">▶ 连播</div>
+      <div class="view-close" onclick="closeViewer()">×</div>
+    </div>
   </div>
   <div class="view-stage" id="viewStage"></div>
   <div class="view-counter" id="viewCounter"></div>
@@ -1223,6 +1227,16 @@ async function loadDetailImage(item){
   const el=document.getElementById('detailImg');
   const set=(html)=>{if(seq===_detailLoadSeq)el.innerHTML=html}; // 仅当前页生效
   if(!item.handle){
+    // v1.0.14: 有 path 时优先直链兜底（原生模式，解决下载记录/聚合来源无句柄导致详情看不到图）
+    if(IS_NATIVE_APP&&nApi&&item.path){
+      try{
+        const url=await nUri(item.path);
+        if(url){
+          if(item.type==='video'){set('<video src="'+url+'" controls style="max-width:100%;max-height:100%"></video>');return}
+          set('<img src="'+url+'" style="max-width:100%;max-height:100%">');return;
+        }
+      }catch(e){}
+    }
     const libRec=libItems.find(i=>(item.path&&i.origPath===item.path)||i.name===item.name); // v4.8: path 优先
     if(libRec&&(libRec.img||libRec.thumb)){set('<img src="'+(libRec.img||libRec.thumb)+'" style="max-width:100%;max-height:100%">');return}
     set('<div style="color:#666">🔒 需重新选择文件夹才能加载原图</div>');
@@ -1274,7 +1288,7 @@ async function loadDetailImage(item){
         :'';
       if(item.type==='video'){set('<div style="width:100%;height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center"><video src="'+url+'" controls style="max-width:100%;max-height:calc(100% - 40px);border-radius:8px"></video>'+extBtn+'</div>')}
       else{set('<img src="'+url+'">')}
-    }catch(e){set('<div style="color:#666">无法加载</div>')}
+    }catch(e){set('<div style="color:#666;text-align:center;padding:16px">无法加载<br><span style="font-size:11px;color:#999">'+escapeHtml(String((e&&e.message)||e).substring(0,120))+'</span></div>')}
     return;
   }
   try{
@@ -2087,6 +2101,7 @@ function viewFrame(){
   const w=viewWorks[viewIdx];if(!w)return;
   if(viewNavIdx<0)viewNavIdx=0;
   if(viewNavIdx>=w.items.length)viewNavIdx=w.items.length-1;
+  viewFlowArm(0); // v1.0.14: 清旧计时（连播状态下 viewFrame 尾部重新挂）
   const it=w.items[viewNavIdx].it;
   const meta=viewMeta(w.key);
   document.getElementById('viewTitle').textContent=meta.title||w.key;
@@ -2099,8 +2114,18 @@ function viewFrame(){
   const set=function(html){stage.innerHTML=html};
   if(it.type==='audio'){set('<div style="color:#888;font-size:14px;padding:20px;text-align:center">🎵 '+escapeHtml(it.name)+'</div>');return}
   const load=function(src,isV){
-    if(isV)set('<video src="'+src+'" autoplay muted loop playsinline preload="auto"></video><div class="v-hint">▶ 动图自动循环 · 点击视频切换播放</div>');
-    else set('<img src="'+src+'" alt="">');
+    if(isV){
+      if(viewFlowMode>0){ // v1.0.14: 抖音流连播——播完自动下一作（不循环）
+        set('<video src="'+src+'" autoplay playsinline preload="auto" id="viewFlowVid"></video><div class="v-hint">▶ '+(viewFlowMode===1?'顺序':'随机')+'连播中 · 播完自动下一个</div>');
+        const vid=document.getElementById('viewFlowVid');
+        if(vid)vid.addEventListener('ended',function(){viewFlowNext()},{once:true});
+      }else{
+        set('<video src="'+src+'" autoplay muted loop playsinline preload="auto"></video><div class="v-hint">▶ 动图自动循环 · 点击视频切换播放</div>');
+      }
+    }else{
+      set('<img src="'+src+'" alt="">');
+      if(viewFlowMode>0)viewFlowArm(4000); // v1.0.14: 连播模式图片停留 4 秒
+    }
   };
   // 原生模式：本地文件直链
   if(IS_NATIVE_APP&&nApi&&it.handle&&it.handle._rel!==undefined){
@@ -2119,12 +2144,41 @@ function viewStep(d){ // 组内前后
   if(ni<0||ni>=w.items.length){showToast(w.isGroup?'已是'+(d<0?'第一':'最后')+'张':'单文件作品');return}
   viewNavIdx=ni;viewFrame();
 }
+// ==================== v1.0.14: 抖音流连播（顺序/随机，图片4秒、视频播完自动下一作） ====================
+let viewFlowMode=0,viewFlowTimer=null;
+function viewFlowArm(ms){
+  if(viewFlowTimer){clearTimeout(viewFlowTimer);viewFlowTimer=null}
+  if(ms>0)viewFlowTimer=setTimeout(viewFlowNext,ms);
+}
+function viewFlowToggle(){
+  viewFlowMode=(viewFlowMode+1)%3;
+  const b=document.getElementById('vFlowBtn');
+  if(b)b.textContent=viewFlowMode===0?'▶ 连播':(viewFlowMode===1?'⏩ 顺序':'🔀 随机');
+  showToast(viewFlowMode===0?'连播已关':(viewFlowMode===1?'顺序连播：播完自动下一个作品':'随机连播：自动随机跳转作品'));
+  if(viewFlowMode===0)viewFlowArm(0);
+  else{viewNavIdx=0;viewFrame()}
+}
+function viewFlowNext(){
+  if(!viewFlowMode||viewIdx<0)return;
+  viewFlowArm(0);
+  if(viewFlowMode===1){ // 顺序
+    const ni=viewIdx+1;
+    if(ni>=viewWorks.length){showToast('已播完全部作品，连播已停');viewFlowMode=0;const b=document.getElementById('vFlowBtn');if(b)b.textContent='▶ 连播';return}
+    viewIdx=ni;
+  }else{ // 随机
+    if(viewWorks.length<2){showToast('作品不足，连播已停');viewFlowMode=0;return}
+    let ri=viewIdx,guard=0;
+    while(ri===viewIdx&&guard++<20)ri=Math.floor(Math.random()*viewWorks.length);
+    viewIdx=ri;
+  }
+  viewNavIdx=0;viewFrame();
+}
 function viewNextWork(dir){ // 上滑/下滑 切换作品
   const ni=viewIdx+dir;
   if(ni<0||ni>=viewWorks.length){showToast('已是'+(dir<0?'第一个':'最后一个')+'作品');return}
   viewIdx=ni;viewNavIdx=0;viewFrame();
 }
-function closeViewer(){document.getElementById('viewOverlay').classList.remove('show');viewIdx=-1}
+function closeViewer(){document.getElementById('viewOverlay').classList.remove('show');viewIdx=-1;viewFlowArm(0)} // v1.0.14: 关闭时清连播计时
 (function(){ // 作品浏览手势：左右滑组内换图，上下滑切换作品
   const st=document.getElementById('viewStage');
   if(!st)return;
