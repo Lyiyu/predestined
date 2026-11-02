@@ -3614,15 +3614,13 @@ async function qkUploadRel(relPath,parentFid,onProgress){
   // 1) pre
   const d=await qkCall('POST','/open/v1/file/upload_pre',{file_name:name,size:size,sha1:sha1Hex,md5:md5All,pdir_fid:parentFid||'0',format_type:ext,same_path_file_reuse:true,parallel_upload:true,hash_update:false,part_info_list:ctxList});
   if(d.finish&&d.fid)return d.fid;
-  // 2) 地址
-  let urls={};((d.upload_urls)||[]).forEach(function(u){urls[u.part_number]=u});
-  if(Object.keys(urls).length<nparts){
-    const d2=await qkCall('POST','/open/v1/file/get_upload_urls',{task_id:d.task_id,part_info_list:ctxList});
-    ((d2.upload_urls)||[]).forEach(function(u){urls[u.part_number]=u});
-  }
+  // 2) 地址：统一从 get_upload_urls 取（其 common_headers 与签名时间一致，避免跨秒不匹配）
+  let urls={},common=d.common_headers||{};
+  const d2=await qkCall('POST','/open/v1/file/get_upload_urls',{task_id:d.task_id,part_info_list:ctxList});
+  ((d2.upload_urls)||[]).forEach(function(u){urls[u.part_number]=u});
+  if(d2.common_headers)common=d2.common_headers;
   // 3) 逐片上传（原生 PUT）
   const D=window.Capacitor.Plugins.DownloadFile;
-  const common=d.common_headers||{};
   for(let i=0;i<nparts;i++){
     const u=urls[i+1];if(!u)throw new Error('缺少分片 '+(i+1)+' 地址');
     const hdrs={'Authorization':u.signature_info.signature};
