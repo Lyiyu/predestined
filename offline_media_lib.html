@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
-<title>羽藏 v1.0.13</title>
+<title>羽藏 v1.0.14</title>
 <style>
 *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 :root{
@@ -360,7 +360,7 @@ body.browse .browse-ctrl{display:flex}
   <button class="topbar-btn" onclick="toggleDrawer()" title="菜单" style="font-size:18px;padding:2px 10px">☰</button>
   <h1>羽藏</h1>
   <button class="topbar-btn" onclick="location.reload()" title="刷新页面（用于重新授权文件夹）">🔄</button>
-  <span class="tag" id="topVerTag">v5.4.0</span>
+  <span class="tag" id="topVerTag">v1.0.14</span>
 </div>
 
 <div class="progress-bar" id="progressBar"><i id="progressFill"></i></div>
@@ -558,6 +558,22 @@ body.browse .browse-ctrl{display:flex}
     <div class="sub" style="margin-top:6px">清空缩略图缓存，下次打开会重新生成。</div>
   </div>
   <div class="setcard">
+    <h3>☁️ 夸克网盘备份</h3>
+    <div class="setitem">
+      <label>授权 access_token</label>
+      <input type="text" id="qkToken" placeholder="夸克 OAuth 授权后获取的 access_token" style="width:100%;padding:8px;border:1px solid var(--line);border-radius:8px;font-size:12px">
+      <div class="sub">夸克授权后获得，长期有效；过期重新授权即可</div>
+    </div>
+    <div class="setitem">
+      <label>设备ID</label>
+      <input type="text" id="qkDeviceId" placeholder="dev_xxx" style="width:100%;padding:8px;border:1px solid var(--line);border-radius:8px;font-size:12px">
+    </div>
+    <button class="btn-sm" style="background:var(--primary);color:#fff;border-color:var(--primary);padding:10px;width:100%" onclick="qkSaveCfgForm()">保存夸克配置</button>
+    <button class="btn-ghost" onclick="qkTest()" style="margin-top:8px">🔗 测试连接</button>
+    <button class="btn-ghost" onclick="qkBackupAll()" style="margin-top:8px">☁️ 备份当前媒体库文件到夸克</button>
+    <div class="sub" style="margin-top:6px" id="qkStatus">未配置</div>
+  </div>
+  <div class="setcard">
     <h3>ℹ️ 关于</h3>
     <div class="setitem">
       <div class="sub" id="aboutMode" style="margin:0;font-size:13px;color:#333">检测中…</div>
@@ -741,7 +757,7 @@ body.browse .browse-ctrl{display:flex}
 
 <script>
 // ==================== 状态 ====================
-const VERSION='1.0.13';
+const VERSION='1.0.14';
 const DB_NAME='offline_media_lib_v34',DB_VERSION=6; // v1.0.13: 结构未变，沿用旧库（保留标签/人名数据）
 const STORE_MEDIA='media',STORE_THUMB='thumbs',STORE_SESSION='session',STORE_FACES='faces';
 let cfg={rule:'person_seq',tags:[],dateFormat:'YYYYMMDD',compress:true,maxCount:2000,showHidden:false,recentNameLimit:5,ssGap:4}; // v5.3.0: ssGap=幻灯片间隔秒
@@ -1984,7 +2000,7 @@ function switchTab(t){
   if(t==='lib')renderLib();
   if(t==='fav'){renderFav();renderDlPage()}
   if(t==='view')renderView(); // v5.4.0: 作品聚合页
-  if(t==='set'){loadSettingsForm();renderSetStats();updateQuota();dlLoadCfgForm()} // v5.1.3: 修复直接进设置页时下载设置输入框空白（漏调 dlLoadCfgForm）
+  if(t==='set'){loadSettingsForm();renderSetStats();updateQuota();dlLoadCfgForm();qkLoadCfgForm()} // v5.1.3: 修复直接进设置页时下载设置输入框空白（漏调 dlLoadCfgForm）；v1.0.14: 夸克配置回填
 }
 
 // ==================== v1.0.13 作品聚合浏览（任意来源，按文件名单聚合） ====================
@@ -3350,7 +3366,7 @@ async function dlUniquePath(relPath){ // v5.1.8改: 去序号后的重名兜底�
   }catch(e){}
   return relPath;
 }
-async function dlSaveFile(url,relPath){ // v5.1.6: 改用原生 DownloadFile 插件流式下载（CapacitorHttp.downloadFile 在 Android 从未实现，真机报 not a function——图13）
+async function dlSaveFile(url,relPath,extraHeaders){ // v5.1.6: 改用原生 DownloadFile 插件流式下载；v1.0.14: 支持自定义 headers（B站需 Referer）
   const cfg=dlCfg();
   relPath=await dlUniquePath(relPath); // v5.1.8改: 重名自动 _2 兜底
   // v5.1.6: 修复主页批量下载报错——fname 含博主子文件夹（sub/001_xxx.mp4），旧代码只 mkdir 保存根目录，
@@ -3359,7 +3375,8 @@ async function dlSaveFile(url,relPath){ // v5.1.6: 改用原生 DownloadFile 插
   try{await window.Capacitor.Plugins.Filesystem.mkdir({path:parent,directory:'EXTERNAL_STORAGE',recursive:true})}catch(e){}
   const D=window.Capacitor&&window.Capacitor.Plugins&&window.Capacitor.Plugins.DownloadFile;
   if(!D||!D.download)throw new Error('下载组件未就绪，请覆盖安装最新版 APK');
-  const r=await D.download({url:url,path:relPath,headers:{'Referer':'https://www.douyin.com/','User-Agent':DL_UA}});
+  const hdrs=Object.assign({'Referer':'https://www.douyin.com/','User-Agent':DL_UA},extraHeaders||{});
+  const r=await D.download({url:url,path:relPath,headers:hdrs});
   return r;
 }
 function dlResultMsg(msg){document.getElementById('dlResult').innerHTML='<div style="padding:12px;font-size:13px;color:#666">'+escapeHtml(msg)+'</div>'}
@@ -3413,6 +3430,270 @@ async function xhsImport(){ // v5.3.3改: 跳转网页解析下载→回App导�
   };
   document.getElementById('modalOverlay').classList.add('show');
 }
+// ==================== v1.0.14: B站下载（单文件 360/720p，无需 ffmpeg） ====================
+let DL_BILI=null;
+async function dlHttpGetJson(url, referer){ // App 内用 CapacitorHttp 绕 CORS；网页用 fetch
+  const C=window.Capacitor&&window.Capacitor.Plugins;
+  if(C&&C.CapacitorHttp&&C.CapacitorHttp.get){
+    const r=await C.CapacitorHttp.get({url:url,headers:{'User-Agent':DL_UA,'Referer':referer||'https://www.bilibili.com/'}});
+    const d=(typeof r.data==='string')?JSON.parse(r.data):r.data;
+    return d;
+  }
+  const resp=await fetch(url,{headers:{'Referer':referer||'https://www.bilibili.com/'}});
+  return await resp.json();
+}
+async function dlBiliParse(link){
+  dlResultMsg('解析中…获取B站视频信息');
+  // 1) 提取 BV 号
+  let bvid='';
+  const mb=link.match(/BV[0-9A-Za-z]{10}/);
+  if(mb)bvid=mb[0];
+  if(!bvid&&/b23\.tv/i.test(link)){ // 短链：用 CapacitorHttp 跟随重定向取最终地址
+    try{
+      const C=window.Capacitor.Plugins;
+      const r=await C.CapacitorHttp.get({url:link,headers:{'User-Agent':DL_UA}});
+      const finalUrl=(r&&(r.url||(r.headers&&r.headers.location)))||'';
+      const m2=String(finalUrl).match(/BV[0-9A-Za-z]{10}/);
+      if(m2)bvid=m2[0];
+    }catch(e){}
+  }
+  if(!bvid){dlResultMsg('❌ 未识别到 BV 号——请粘贴 B站视频页链接（含 BV 号）');return}
+  // 2) view 接口：标题/cid/封面
+  const v=await dlHttpGetJson('https://api.bilibili.com/x/web-interface/view?bvid='+bvid);
+  if(!v||v.code!==0||!v.data){dlResultMsg('❌ B站信息获取失败：'+((v&&v.message)||'未知错误'));return}
+  const cid=v.data.cid, title=v.data.title||bvid, pic=v.data.pic||'', dur=v.data.duration||0;
+  // 3) playurl：platform=html5 返回单文件 durl（含音视频，免 ffmpeg）
+  let qn=64, purl='', qnGot=0;
+  for(const q of [64,32,16]){ // 720p → 480p → 360p 依次尝试
+    const p=await dlHttpGetJson('https://api.bilibili.com/x/player/playurl?bvid='+bvid+'&cid='+cid+'&fnval=0&qn='+q+'&platform=html5&high_quality=1');
+    const urls=((p&&p.data&&p.data.durl)||[]);
+    if(urls.length&&urls[0].url){purl=urls[0].url;qnGot=(p.data.quality||q);qn=q;break}
+  }
+  if(!purl){dlResultMsg('❌ 取不到播放地址（可能需要大会员/该视频受限）');return}
+  DL_BILI={bvid:bvid,cid:cid,title:title,pic:pic,url:purl,qn:qnGot,duration:dur};
+  const qname=qnGot>=64?'720p':(qnGot>=32?'480p':'360p');
+  document.getElementById('dlResult').innerHTML='<div style="margin-top:12px;padding:12px;border:1px solid var(--line);border-radius:12px">'+
+    '<div style="font-size:12px;color:#888">🎬 B站视频 · '+qname+' · '+dur+'秒</div>'+
+    (pic?'<img src="'+pic+'" style="width:100%;max-height:180px;object-fit:cover;border-radius:10px;margin:8px 0">':'')+
+    '<div style="font-size:14px;margin:6px 0;word-break:break-all">'+escapeHtml(title)+'</div>'+
+    '<button class="btn-sm" style="background:var(--primary);color:#fff;border-color:var(--primary);padding:10px 16px" onclick="dlBiliDownload()">⬇️ 下载视频（'+qname+'）</button>'+
+    '<div style="font-size:11px;color:#999;margin-top:8px">直链约 2 小时有效；高清 DASH 需服务端转码，暂支持单文件清晰度</div>'+
+    '</div>';
+}
+async function dlBiliDownload(){
+  if(!DL_BILI){showToast('请先解析');return}
+  const cfg=dlCfg();
+  const base=dlSafeName(DL_BILI.title)+'_B站_'+dlShortDate(new Date());
+  const rel=cfg.saveDir+'/'+base+'.mp4';
+  showToast('开始下载…');
+  try{
+    await dlSaveFile(DL_BILI.url,rel,{'Referer':'https://www.bilibili.com/','User-Agent':DL_UA});
+    showToast('✅ B站视频已保存：'+base+'.mp4');
+    dlResultMsg('✅ 已保存到 '+cfg.saveDir+'/'+base+'.mp4');
+  }catch(e){
+    dlResultMsg('❌ 下载失败：'+String((e&&e.message)||e));
+  }
+}
+// ==================== v1.0.14: 夸克网盘（App 内上传备份） ====================
+const QK_KEY='yuzang_quark_cfg';
+function qkCfg(){try{return JSON.parse(storeGet(QK_KEY))||{}}catch(e){return{}}}
+function qkSave(c){storeSet(QK_KEY,JSON.stringify(c||{}))}
+function qkB64Bytes(b64){const bin=atob(b64);const u=new Uint8Array(bin.length);for(let i=0;i<bin.length;i++)u[i]=bin.charCodeAt(i);return u}
+function qkHex(u8){let s='';for(let i=0;i<u8.length;i++)s+=('0'+u8[i].toString(16)).slice(-2);return s}
+// --- 纯 JS MD5（夸克 upload_pre 需要）---
+function qkMd5(bytes){
+  const rl=[7,12,17,22,7,12,17,22,7,12,17,22,7,12,17,22,5,9,14,20,5,9,14,20,5,9,14,20,5,9,14,20,4,11,16,23,4,11,16,23,4,11,16,23,4,11,16,23,6,10,15,21,6,10,15,21,6,10,15,21,6,10,15,21];
+  const k=[];for(let i=0;i<64;i++)k[i]=Math.floor(Math.abs(Math.sin(i+1))*4294967296);
+  let h0=1732584193,h1=-271733879,h2=-1732584194,h3=271733878;
+  const len=bytes.length, bl=(((len+8)>>6)+1)*64, buf=new Uint8Array(bl);
+  buf.set(bytes);buf[len]=0x80;
+  const dv=new DataView(buf.buffer);
+  dv.setUint32(bl-8,len*8,true);
+  const rol=(x,c)=>((x<<c)|(x>>>(32-c)));
+  for(let off=0;off<bl;off+=64){
+    const m=[];for(let i=0;i<16;i++)m[i]=dv.getUint32(off+i*4,true);
+    let a=h0,b=h1,c=h2,d=h3;
+    for(let i=0;i<64;i++){
+      let f,g;
+      if(i<16){f=(b&c)|(~b&d);g=i}
+      else if(i<32){f=(d&b)|(~d&c);g=(5*i+1)%16}
+      else if(i<48){f=b^c^d;g=(3*i+5)%16}
+      else{f=c^(b|~d);g=(7*i)%16}
+      const tmp=d;d=c;c=b;
+      b=(b+rol((a+f+k[i]+m[g])|0,rl[i]))|0;
+      a=tmp;
+    }
+    h0=(h0+a)|0;h1=(h1+b)|0;h2=(h2+c)|0;h3=(h3+d)|0;
+  }
+  const out=new DataView(new ArrayBuffer(16));
+  out.setInt32(0,h0,true);out.setInt32(4,h1,true);out.setInt32(8,h2,true);out.setInt32(12,h3,true);
+  return qkHex(new Uint8Array(out.buffer));
+}
+// --- SHA1 压缩（分片 parallel_sha1_ctx 需要中间状态）---
+const QK_SHA1_INIT=[0x67452301,0xEFCDAB89,0x98BADCFE,0x10325476,0xC3D2E1F0];
+function qkRol(x,n){return ((x<<n)|(x>>>(32-n)))>>>0}
+function qkSha1Block(h,blk){
+  const w=[];for(let i=0;i<16;i++)w[i]=((blk[i*4]<<24)|(blk[i*4+1]<<16)|(blk[i*4+2]<<8)|blk[i*4+3])>>>0;
+  for(let i=16;i<80;i++)w[i]=qkRol(w[i-3]^w[i-8]^w[i-14]^w[i-16],1);
+  let a=h[0],b=h[1],c=h[2],d=h[3],e=h[4];
+  for(let i=0;i<80;i++){
+    let f,k;
+    if(i<20){f=(b&c)|((~b)&d);k=0x5A827999}
+    else if(i<40){f=b^c^d;k=0x6ED9EBA1}
+    else if(i<60){f=(b&c)|(b&d)|(c&d);k=0x8F1BBCDC}
+    else{f=b^c^d;k=0xCA62C1D6}
+    const t=(qkRol(a,5)+f+e+k+w[i])>>>0;
+    e=d;d=c;c=qkRol(b,30);b=a;a=t;
+  }
+  return [(h[0]+a)>>>0,(h[1]+b)>>>0,(h[2]+c)>>>0,(h[3]+d)>>>0,(h[4]+e)>>>0];
+}
+function qkSha1Ctx(bytes){ // 处理完整 64B 块后的中间状态
+  let h=QK_SHA1_INIT.slice();
+  const n=Math.floor(bytes.length/64);
+  for(let i=0;i<n;i++)h=qkSha1Block(h,bytes.subarray(i*64,(i+1)*64));
+  return h;
+}
+async function qkSign(method,path,tm,key){
+  const enc=new TextEncoder().encode(method+'&'+path+'&'+tm+'&'+key);
+  const dig=await crypto.subtle.digest('SHA-256',enc);
+  return qkHex(new Uint8Array(dig));
+}
+async function qkCall(method,path,body,extraParams){
+  const c=qkCfg();
+  if(!c.token)throw new Error('未配置夸克授权');
+  const tm=String(Date.now());
+  const tk=await qkSign(method,path,tm,c.signKey||'cf134812e2de4032bd1cb7c3727e84b3');
+  const params=Object.assign({req_id:(crypto.randomUUID?crypto.randomUUID():String(Date.now())+Math.random().toString(16).slice(2)),access_token:c.token,device_id:c.deviceId||'wild_claw'},extraParams||{});
+  const qs=Object.keys(params).map(function(k){return k+'='+encodeURIComponent(params[k])}).join('&');
+  const url='https://open-api-drive.quark.cn'+path+'?'+qs;
+  const H={'x-pan-client-id':c.clientId||'third_party_agent','x-pan-tm':tm,'x-pan-token':tk,'Content-Type':'application/json','Accept':'application/json'};
+  const C=window.Capacitor&&window.Capacitor.Plugins;
+  let resp;
+  if(C&&C.CapacitorHttp&&C.CapacitorHttp.request){
+    const r=await C.CapacitorHttp.request({url:url,method:method,headers:H,data:body||undefined,connectTimeout:30000,readTimeout:60000});
+    resp=(typeof r.data==='string')?JSON.parse(r.data):r.data;
+  }else{
+    const r=await fetch(url,{method:method,headers:H,body:body?JSON.stringify(body):undefined});
+    resp=await r.json();
+  }
+  if(!resp||resp.status!==0)throw new Error('['+(resp&&resp.errno)+'] '+((resp&&resp.error_info)||'未知错误'));
+  return resp.data||{};
+}
+async function qkMkdir(name,parentFid){
+  return await qkCall('POST','/open/v1/dir',{dir_path:name,pdir_fid:parentFid||'0'});
+}
+async function qkUploadRel(relPath,parentFid,onProgress){
+  const F=window.Capacitor.Plugins.Filesystem;
+  const st=await F.stat({path:relPath,directory:'EXTERNAL_STORAGE'});
+  const size=st.size||0;
+  const PART=4*1024*1024;
+  const nparts=Math.max(1,Math.ceil(size/PART));
+  // 逐片读取 + 计算整体哈希与起始 ctx
+  let ctxList=[],md5='',sha1Hex=''; // 整体哈希用 WebCrypto 计算 SHA-1，MD5 用分片累积
+  const allParts=[];
+  const md5buf=[];
+  let hCur=QK_SHA1_INIT.slice();
+  for(let i=0;i<nparts;i++){
+    const off=i*PART, len=Math.min(PART,size-off);
+    const r=await F.readFile({path:relPath,directory:'EXTERNAL_STORAGE',offset:off,length:len});
+    const bytes=qkB64Bytes(r.data);
+    ctxList.push({part_number:i+1,part_size:len,parallel_sha1_ctx:{part_offset:off,h:hCur.slice()}});
+    hCur=qkSha1CtxAccum(hCur,bytes);
+    allParts.push(bytes);
+    md5buf.push(bytes);
+  }
+  // 整体 SHA1（WebCrypto）
+  const whole=new Uint8Array(size);let p=0;allParts.forEach(function(b){whole.set(b,p);p+=b.length});
+  const dig=await crypto.subtle.digest('SHA-1',whole);
+  sha1Hex=qkHex(new Uint8Array(dig));
+  // 整体 MD5（分片便于内存）
+  let md5h=[1732584193,-271733879,-1732584187,271733878];
+  const md5All=qkMd5Concat(allParts);
+  const name=relPath.substring(relPath.lastIndexOf('/')+1);
+  const ext=(name.match(/\.([^.]+)$/)||['','bin'])[1].toLowerCase();
+  // 1) pre
+  const d=await qkCall('POST','/open/v1/file/upload_pre',{file_name:name,size:size,sha1:sha1Hex,md5:md5All,pdir_fid:parentFid||'0',format_type:ext,same_path_file_reuse:true,parallel_upload:true,hash_update:false,part_info_list:ctxList});
+  if(d.finish&&d.fid)return d.fid;
+  // 2) 地址
+  let urls={};((d.upload_urls)||[]).forEach(function(u){urls[u.part_number]=u});
+  if(Object.keys(urls).length<nparts){
+    const d2=await qkCall('POST','/open/v1/file/get_upload_urls',{task_id:d.task_id,part_info_list:ctxList});
+    ((d2.upload_urls)||[]).forEach(function(u){urls[u.part_number]=u});
+  }
+  // 3) 逐片上传（原生 PUT）
+  const D=window.Capacitor.Plugins.DownloadFile;
+  const common=d.common_headers||{};
+  for(let i=0;i<nparts;i++){
+    const u=urls[i+1];if(!u)throw new Error('缺少分片 '+(i+1)+' 地址');
+    const hdrs={'Authorization':u.signature_info.signature};
+    if(common['X-Oss-Content-Sha256'])hdrs['X-Oss-Content-Sha256']=common['X-Oss-Content-Sha256'];
+    if(common['X-Oss-Date'])hdrs['X-Oss-Date']=common['X-Oss-Date'];
+    const r=await D.uploadPart({url:u.upload_url,path:relPath,offset:(i*PART),length:Math.min(PART,size-i*PART),headers:hdrs});
+    ctxList[i].etag=r.etag;
+    if(onProgress)onProgress((i+1)/nparts);
+  }
+  // 4) finish（etag 原样带引号）
+  const fin=await qkCall('POST','/open/v1/file/upload_finish',{task_id:d.task_id,part_info_list:ctxList.map(function(x){return{part_number:x.part_number,etag:x.etag}})});
+  if(fin.finish)return fin.fid;
+  throw new Error('上传未完成');
+}
+function qkSha1CtxAccum(h,bytes){ // 在已有状态上继续处理整块
+  let cur=h.slice();const n=Math.floor(bytes.length/64);
+  for(let i=0;i<n;i++)cur=qkSha1Block(cur,bytes.subarray(i*64,(i+1)*64));
+  return cur;
+}
+function qkMd5Concat(parts){ // 拼接后整体 MD5（内存足够时分片场景也适用）
+  let total=0;parts.forEach(function(b){total+=b.length});
+  const all=new Uint8Array(total);let p=0;parts.forEach(function(b){all.set(b,p);p+=b.length});
+  return qkMd5(all);
+}
+async function qkBackupFile(relPath,onProgress){
+  const c=qkCfg();
+  if(!c.token)throw new Error('请先在规矩页配置夸克授权');
+  let fid=c.backupFid;
+  if(!fid){const d=await qkMkdir('羽藏备份','0');fid=d.fid;c.backupFid=fid;qkSave(c)}
+  const id=await qkUploadRel(relPath,fid,onProgress);
+  return id;
+}
+function qkLoadCfgForm(){
+  const c=qkCfg();
+  const t=document.getElementById('qkToken');if(t)t.value=c.token||'';
+  const d=document.getElementById('qkDeviceId');if(d)d.value=c.deviceId||'';
+  const s=document.getElementById('qkStatus');if(s)s.textContent=c.token?('已配置'+(c.backupFid?'（备份夹已建）':'')):'未配置';
+}
+function qkSaveCfgForm(){
+  const c=qkCfg();
+  c.token=(document.getElementById('qkToken').value||'').trim();
+  c.deviceId=(document.getElementById('qkDeviceId').value||'').trim()||'wild_claw';
+  c.clientId='third_party_agent';
+  c.signKey='cf134812e2de4032bd1cb7c3727e84b3';
+  qkSave(c);
+  const s=document.getElementById('qkStatus');if(s)s.textContent=c.token?'已保存':'未配置';
+  showToast('夸克配置已保存');
+}
+async function qkTest(){
+  try{
+    const d=await qkCall('GET','/open/v1/user/info');
+    showToast('✅ 已连接：'+(d.nickname||'未知'));
+    const s=document.getElementById('qkStatus');if(s)s.textContent='已连接：'+(d.nickname||'');
+  }catch(e){
+    showToast('❌ '+String((e&&e.message)||e));
+    const s=document.getElementById('qkStatus');if(s)s.textContent='连接失败：'+String((e&&e.message)||e);
+  }
+}
+async function qkBackupAll(){
+  if(!items||!items.length){showToast('媒体库为空');return}
+  showToast('开始备份 '+items.length+' 个文件…');
+  let ok=0,fail=0;
+  for(const it of items){
+    if(!it.path)continue;
+    try{await qkBackupFile(it.path);ok++}catch(e){fail++}
+    const s=document.getElementById('qkStatus');
+    if(s)s.textContent='备份中 '+(ok+fail)+'/'+items.length+(fail?'，失败 '+fail:'');
+  }
+  showToast('备份完成：成功 '+ok+'，失败 '+fail);
+  const s=document.getElementById('qkStatus');if(s)s.textContent='备份完成：成功 '+ok+'，失败 '+fail;
+}
 async function dlParse(){ // 入口：解析按钮（v5.1 修复取不到按钮导致卡"解析中"的 bug；进度分阶段提示）
   const rawTxt=document.getElementById('dlUrl').value.trim();
   if(!rawTxt){showToast('请粘贴 抖音/小红书/TikTok/X/微博 链接');return}
@@ -3420,8 +3701,9 @@ async function dlParse(){ // 入口：解析按钮（v5.1 修复取不到按钮�
   // v5.1: 兼容完整分享口令——先取全部 http(s) 链接，取不到再原文当作链接
   const m=rawTxt.match(/https?:\/\/[^\s，。"''\uFF08\uFF09]+/);
   const link=m?m[0]:rawTxt;
-  // v1.0.13: 自动识别渠道——抖音走解析下载、小红书跳转网页导入、TikTok/X/微博提示当前状态
-  const CH=/tiktok\.com/i.test(link)?'tiktok':(/x\.com|twitter\.com/i.test(link)?'x':/weibo\.(cn|com)/i.test(link)?'weibo':/xiaohongshu\.com|xhslink\.com/i.test(link)?'xhs':/douyin\.com|iesdouyin\.com|iegtd|douyin/i.test(link)?'dy':'');
+  // v1.0.13: 自动识别渠道——抖音走解析下载、小红书跳转网页导入、B站单文件下载、TikTok/X/微博提示当前状态
+  const CH=/bilibili\.com|b23\.tv/i.test(link)?'bili':(/tiktok\.com/i.test(link)?'tiktok':(/x\.com|twitter\.com/i.test(link)?'x':/weibo\.(cn|com)/i.test(link)?'weibo':/xiaohongshu\.com|xhslink\.com/i.test(link)?'xhs':/douyin\.com|iesdouyin\.com|iegtd|douyin/i.test(link)?'dy':''));
+  if(CH==='bili'){try{await dlBiliParse(link)}catch(e){dlResultMsg('❌ B站解析失败：'+String((e&&e.message)||e))}return}
   if(CH==='tiktok'){dlResultMsg('🚧 TikTok 暂未开放，请等待后续版本');return}
   if(CH==='x'){dlResultMsg('🚧 X（推特）暂未开放，请等待后续版本');return}
   if(CH==='weibo'){dlResultMsg('🚧 微博暂未开放，请等待后续版本');return}
