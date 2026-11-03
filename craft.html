@@ -623,7 +623,7 @@ body{font-family:var(--sans);background:var(--bg);color:var(--text)}
       <button class="btn-sm" style="background:var(--primary);color:#fff;border-color:var(--primary);padding:10px 14px;white-space:nowrap" id="dlParseBtn" onclick="dlParse()">解析</button>
       <button class="btn-sm" style="padding:10px 12px;white-space:nowrap" onclick="confirmAsk('清空链接输入框？',function(){document.getElementById('dlUrl').value='';document.getElementById('dlResult').innerHTML='';document.getElementById('dlProgress').innerHTML=''},'✅ 清空')">✕</button>
     </div>
-    <div class="sub" style="margin-top:6px">粘贴链接或完整分享口令（自动提取并识别渠道）：抖音/小红书/TikTok/X/微博；小红书跳转网页下载后回本页导入，命名路径与抖音一致</div>
+    <div class="sub" style="margin-top:6px">粘贴链接或完整分享口令（自动提取并识别渠道）：抖音/小红书/B站/TikTok/X/微博；小红书可直接「☁️ 云下载」或回本页导入，命名路径与抖音一致</div>
     <div id="dlResult"></div>
     <div id="dlProgress"></div>
     <div id="dlUsage" style="margin-top:8px;font-size:12px;color:#888"></div>
@@ -3655,7 +3655,17 @@ async function dlSaveFile(url,relPath,extraHeaders){ // v5.1.6: 改用原生 Dow
   return r;
 }
 function dlResultMsg(msg){document.getElementById('dlResult').innerHTML='<div style="padding:12px;font-size:13px;color:#666">'+escapeHtml(msg)+'</div>'}
-function dlXhsGuide(link){ // v5.1.11改: 小红书——复制链接→网页解析（浏览器）→回 App 导入
+function dlXhsGuide(link){ // v5.1.11改: 小红书——本地网页解析或云下载二选一；v1.0.17: 加「☁️ 云下载」
+  document.getElementById('dlResult').innerHTML='<div style="padding:12px">'+
+    '<div style="font-size:12px;color:#888;margin-bottom:8px">📖 小红书笔记——两种方式：</div>'+
+    '<div style="display:grid;grid-template-columns:repeat(2,1fr);gap:8px">'+
+    '<button class="btn-sm" id="xhsCloud" style="background:var(--primary);color:#fff;border-color:var(--primary);padding:10px 6px">☁️ 云下载（推荐）</button>'+
+    '<button class="btn-sm" id="xhsGuide" style="background:#fff;color:var(--primary);border-color:var(--primary);padding:10px 6px">🌐 本地解析</button>'+
+    '</div></div>';
+  document.getElementById('xhsCloud').onclick=function(){cloudSubmit('xhs',link,'')};
+  document.getElementById('xhsGuide').onclick=function(){xhsLocalGuide(link)};
+}
+function xhsLocalGuide(link){ // 旧本地流程：复制链接→网页解析→导入
   document.getElementById('dlResult').innerHTML='<div style="padding:12px">'+
     '<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px">'+
     '<button class="btn-sm" id="xhsCopy" style="background:#fff;color:var(--primary);border-color:var(--primary)">📋 复制链接</button>'+
@@ -3788,14 +3798,15 @@ async function qkWriteTask(name,content){ // 写缓存→上传「羽藏任务�
   if(!fid){const d=await qkMkdir('羽藏任务','0');fid=d.fid;c.taskFid=fid;qkSave(c)}
   return await qkUploadRel(rel,fid);
 }
-async function cloudSubmit(ch,link,title){ // B站/抖音解析卡「☁️ 云下载」入口
+async function cloudSubmit(ch,link,title){ // B站/抖音/小红书解析卡「☁️ 云下载」入口；tid=任务文件名毫秒，回执检索用
   if(!IS_NATIVE_APP){showToast('云下载需在手机「羽藏」App 内使用');return}
   const c=qkCfg();
   if(!c.token){showToast('请先在「规矩」页配置夸克授权');switchTab('set');return}
   try{
-    await qkWriteTask('task_'+Date.now()+'.txt',(ch||'auto')+'|'+(link||''));
+    const tid=Date.now();
+    await qkWriteTask('task_'+tid+'.txt',(ch||'auto')+'|'+(link||''));
     const list=cloudTasks();
-    list.unshift({id:'ct'+Date.now(),ch:ch||'auto',link:link||'',title:title||'',time:Date.now(),status:'pending',fids:[],files:[]});
+    list.unshift({id:'ct'+tid,tid:tid,ch:ch||'auto',link:link||'',title:title||'',time:tid,status:'pending',fids:[],files:[]});
     cloudTasksSave(list);renderCloudTasks();
     dlResultMsg('☁️ 已提交，PC 节点 30~60 秒拾取；完成后在本页云任务卡「🔄 检测完成」→「📥 取回」');
     showToast('☁️ 云任务已提交');
@@ -3815,20 +3826,40 @@ function renderCloudTasks(){
   }).join('');
 }
 function cloudDel(i){const list=cloudTasks();if(i>=0&&i<list.length){list.splice(i,1);cloudTasksSave(list);renderCloudTasks()}}
-async function cloudCheck(){ // 标题搜索成品（语义搜索不索引文本文件，标题搜索实测100%命中）
+async function cloudCheck(){ // 标题搜索成品；无标题任务（xhs等）搜回执 done_<tid>（语义搜索不索引文本内容，但文件名可搜）
   const c=qkCfg();
   if(!c.token){showToast('请先在「规矩」页配置夸克授权');return}
-  const list=cloudTasks();const pend=list.filter(function(t){return t.status==='pending'&&t.title});
+  const list=cloudTasks();const pend=list.filter(function(t){return t.status==='pending'});
   if(!pend.length){showToast('没有待检测的任务');return}
   showToast('检测 '+pend.length+' 个任务…');
   let found=0;
   for(const t of pend){
     try{
-      const safeT=dlSafeName(t.title);const frag=safeT.substring(0,16);
-      if(frag.length<2)continue;
-      const r=await qkCall('POST','/agent/v1/file/search',{search_type:'mix',keyword:safeT.substring(0,24),size:10});
-      const hits=((r&&r.file_list)||[]).filter(function(f){return (f.filename||'').indexOf(frag)>=0});
-      if(hits.length){t.fids=hits.map(function(f){return f.fid});t.files=hits.map(function(f){return f.filename});t.status='done';found++}
+      if(t.title){ // 有标题：标题搜索成品
+        const safeT=dlSafeName(t.title);const frag=safeT.substring(0,16);
+        if(frag.length<2)continue;
+        const r=await qkCall('POST','/agent/v1/file/search',{search_type:'mix',keyword:safeT.substring(0,24),size:10});
+        const hits=((r&&r.file_list)||[]).filter(function(f){return (f.filename||'').indexOf(frag)>=0});
+        if(hits.length){t.fids=hits.map(function(f){return f.fid});t.files=hits.map(function(f){return f.filename});t.status='done';found++}
+      }else if(t.tid){ // 无标题：回执检索（worker 写 done_<tid>.txt，内容含 fids/files/title）
+        const r=await qkCall('POST','/agent/v1/file/search',{search_type:'mix',keyword:'done_'+t.tid,size:10});
+        const hit=((r&&r.file_list)||[]).find(function(f){return (f.filename||'')==='done_'+t.tid+'.txt'});
+        if(hit){
+          const d=await qkCall('POST','/open/v1/file/get_download_url',{fid:hit.fid});
+          let txt='';
+          const C=window.Capacitor&&window.Capacitor.Plugins;
+          const ck='x_pan_client_id='+(c.clientId||'third_party_agent')+'; x_pan_access_token='+c.token;
+          if(C&&C.CapacitorHttp&&C.CapacitorHttp.request){
+            const rr=await C.CapacitorHttp.request({url:d.download_url,method:'GET',headers:{'Cookie':ck,'User-Agent':'Mozilla/5.0'},connectTimeout:30000,readTimeout:60000});
+            txt=String(rr.data||'');
+          }else{
+            const rr=await fetch(d.download_url,{headers:{'Cookie':ck}});
+            txt=await rr.text();
+          }
+          const doc=JSON.parse(txt);
+          t.fids=doc.fids||[];t.files=doc.files||[];t.title=doc.title||('云成品'+(t.tid||''));t.status='done';found++;
+        }
+      }
     }catch(e){}
   }
   cloudTasksSave(list);renderCloudTasks();
