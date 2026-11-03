@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
-<title>羽藏 v1.0.15</title>
+<title>羽藏 v1.0.16</title>
 <style>
 *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 :root{
@@ -361,7 +361,7 @@ body.browse .browse-ctrl{display:flex}
   <button class="topbar-btn" onclick="toggleDrawer()" title="菜单" style="font-size:18px;padding:2px 10px">☰</button>
   <h1>羽藏</h1>
   <button class="topbar-btn" onclick="location.reload()" title="刷新页面（用于重新授权文件夹）">🔄</button>
-  <span class="tag" id="topVerTag">v1.0.15</span>
+  <span class="tag" id="topVerTag">v1.0.16</span>
 </div>
 
 <div class="progress-bar" id="progressBar"><i id="progressFill"></i></div>
@@ -774,7 +774,7 @@ body.browse .browse-ctrl{display:flex}
 
 <script>
 // ==================== 状态 ====================
-const VERSION='1.0.15';
+const VERSION='1.0.16';
 const DB_NAME='offline_media_lib_v34',DB_VERSION=6; // v1.0.13: 结构未变，沿用旧库（保留标签/人名数据）
 const STORE_MEDIA='media',STORE_THUMB='thumbs',STORE_SESSION='session',STORE_FACES='faces';
 let cfg={rule:'person_seq',tags:[],dateFormat:'YYYYMMDD',compress:true,maxCount:2000,showHidden:false,recentNameLimit:5,ssGap:4}; // v5.3.0: ssGap=幻灯片间隔秒
@@ -3601,7 +3601,7 @@ async function cloudSubmit(ch,link,title){ // B站/抖音解析卡「☁️ 云�
     cloudTasksSave(list);renderCloudTasks();
     dlResultMsg('☁️ 已提交，PC 节点 30~60 秒拾取；完成后在本页云任务卡「🔄 检测完成」→「📥 取回」');
     showToast('☁️ 云任务已提交');
-  }catch(e){showToast('提交失败：'+String((e&&e.message)||e))}
+  }catch(e){const em='❌ 提交失败：'+String((e&&e.message)||e);dlResultMsg(em);showToast('提交失败（详情已显示在上方）')} // v1.0.16: 错误显示在页面（toast 一闪而过难截图）
 }
 function renderCloudTasks(){
   const el=document.getElementById('cloudTaskList');if(!el)return;
@@ -3770,57 +3770,74 @@ async function qkCall(method,path,body,extraParams){
 async function qkMkdir(name,parentFid){
   return await qkCall('POST','/open/v1/dir',{dir_path:name,pdir_fid:parentFid||'0'});
 }
-async function qkUploadRel(relPath,parentFid,onProgress){
+async function qkUploadRel(relPath,parentFid,onProgress){ // v1.0.16 重写：全量读取（Capacitor readFile 不支持分片参数）+ 阶段化诊断
   const F=window.Capacitor.Plugins.Filesystem;
-  const st=await F.stat({path:relPath,directory:'EXTERNAL_STORAGE'});
-  const size=st.size||0;
+  const D=window.Capacitor.Plugins.DownloadFile;
+  if(!D||!D.uploadPart)throw new Error('上传组件未就绪，请覆盖安装最新版 APK');
+  // [1] 文件信息
+  let size=0;
+  try{
+    const st=await F.stat({path:relPath,directory:'EXTERNAL_STORAGE'});
+    size=Number((st&&st.size)||0);
+  }catch(e){throw new Error('[1]读取文件信息失败：'+String((e&&e.message)||e))}
+  if(!isFinite(size)||size<=0)throw new Error('[1]文件大小异常('+size+')：'+relPath);
+  if(size>16*1024*1024)throw new Error('大于16MB的文件暂不支持App直传（下版支持），请先用PC备份');
+  // [2] 全量读取一次（16MB内内存安全；以实际字节数为准）
+  let bytes;
+  try{
+    const r=await F.readFile({path:relPath,directory:'EXTERNAL_STORAGE'});
+    bytes=qkB64Bytes(r.data);
+  }catch(e){throw new Error('[2]读取文件失败：'+String((e&&e.message)||e))}
+  if(!bytes||!bytes.length)throw new Error('[2]文件内容为空：'+relPath);
+  if(bytes.length!==size)size=bytes.length;
   const PART=4*1024*1024;
   const nparts=Math.max(1,Math.ceil(size/PART));
-  // 逐片读取 + 计算整体哈希与起始 ctx
-  let ctxList=[],md5='',sha1Hex=''; // 整体哈希用 WebCrypto 计算 SHA-1，MD5 用分片累积
-  const allParts=[];
-  const md5buf=[];
+  // [3] 各片 SHA1 中间状态（内存切片）+ 整体哈希
+  const ctxList=[];
   let hCur=QK_SHA1_INIT.slice();
   for(let i=0;i<nparts;i++){
-    const off=i*PART, len=Math.min(PART,size-off);
-    const r=await F.readFile({path:relPath,directory:'EXTERNAL_STORAGE',offset:off,length:len});
-    const bytes=qkB64Bytes(r.data);
+    const off=i*PART,len=Math.min(PART,size-off);
     ctxList.push({part_number:i+1,part_size:len,parallel_sha1_ctx:{part_offset:off,h:hCur.slice()}});
-    hCur=qkSha1CtxAccum(hCur,bytes);
-    allParts.push(bytes);
-    md5buf.push(bytes);
+    hCur=qkSha1CtxAccum(hCur,bytes.subarray(off,off+len));
   }
-  // 整体 SHA1（WebCrypto）
-  const whole=new Uint8Array(size);let p=0;allParts.forEach(function(b){whole.set(b,p);p+=b.length});
-  const dig=await crypto.subtle.digest('SHA-1',whole);
-  sha1Hex=qkHex(new Uint8Array(dig));
-  // 整体 MD5（分片便于内存）
-  let md5h=[1732584193,-271733879,-1732584187,271733878];
-  const md5All=qkMd5Concat(allParts);
+  const dig=await crypto.subtle.digest('SHA-1',bytes);
+  const sha1Hex=qkHex(new Uint8Array(dig));
+  const md5All=qkMd5(bytes);
   const name=relPath.substring(relPath.lastIndexOf('/')+1);
   const ext=(name.match(/\.([^.]+)$/)||['','bin'])[1].toLowerCase();
-  // 1) pre
-  const d=await qkCall('POST','/open/v1/file/upload_pre',{file_name:name,size:size,sha1:sha1Hex,md5:md5All,pdir_fid:parentFid||'0',format_type:ext,same_path_file_reuse:true,parallel_upload:true,hash_update:false,part_info_list:ctxList});
+  // [4] 预上传
+  let d;
+  try{
+    d=await qkCall('POST','/open/v1/file/upload_pre',{file_name:name,size:size,sha1:sha1Hex,md5:md5All,pdir_fid:parentFid||'0',format_type:ext,same_path_file_reuse:true,parallel_upload:true,hash_update:false,part_info_list:ctxList});
+  }catch(e){throw new Error('[4]upload_pre失败：'+String((e&&e.message)||e))}
   if(d.finish&&d.fid)return d.fid;
-  // 2) 地址：统一从 get_upload_urls 取（其 common_headers 与签名时间一致，避免跨秒不匹配）
-  let urls={},common=d.common_headers||{};
-  const d2=await qkCall('POST','/open/v1/file/get_upload_urls',{task_id:d.task_id,part_info_list:ctxList});
-  ((d2.upload_urls)||[]).forEach(function(u){urls[u.part_number]=u});
-  if(d2.common_headers)common=d2.common_headers;
-  // 3) 逐片上传（原生 PUT）
-  const D=window.Capacitor.Plugins.DownloadFile;
+  // [5] 分片地址（统一从 get_upload_urls 取，其 common_headers 与签名时间一致）
+  let urls={},common=d.common_headers||{},d2;
+  try{
+    d2=await qkCall('POST','/open/v1/file/get_upload_urls',{task_id:d.task_id,part_info_list:ctxList});
+  }catch(e){throw new Error('[5]get_upload_urls失败：'+String((e&&e.message)||e))}
+  (((d2&&d2.upload_urls)||[])).forEach(function(u){if(u&&u.part_number)urls[u.part_number]=u});
+  if(d2&&d2.common_headers)common=d2.common_headers;
+  // [6] 逐片原生 PUT（参数强类型+预检；失败时错误带上下文快照）
   for(let i=0;i<nparts;i++){
-    const u=urls[i+1];if(!u)throw new Error('缺少分片 '+(i+1)+' 地址');
-    const hdrs={'Authorization':u.signature_info.signature};
+    const u=urls[i+1];
+    const off=i*PART,len=Math.min(PART,size-off);
+    if(!u||!u.upload_url)throw new Error('[6]分片'+(i+1)+'地址无效：'+JSON.stringify(u||{无:'该分片'}).substring(0,160));
+    const hdrs={'Authorization':((u.signature_info&&u.signature_info.signature)||'')};
     if(common['X-Oss-Content-Sha256'])hdrs['X-Oss-Content-Sha256']=common['X-Oss-Content-Sha256'];
     if(common['X-Oss-Date'])hdrs['X-Oss-Date']=common['X-Oss-Date'];
-    const r=await D.uploadPart({url:u.upload_url,path:relPath,offset:(i*PART),length:Math.min(PART,size-i*PART),headers:hdrs});
+    if(!(len>0))throw new Error('[6]分片'+(i+1)+'长度异常 len='+len+' size='+size+' nparts='+nparts);
+    const r=await D.uploadPart({url:String(u.upload_url),path:String(relPath),offset:Number(off),length:Number(len),headers:hdrs});
+    if(!r||!(r.status>=200&&r.status<300))throw new Error('[6]分片'+(i+1)+'上传失败：'+JSON.stringify(r||{}).substring(0,120));
+    if(r.etag===undefined)throw new Error('[6]分片'+(i+1)+'未返回etag：'+JSON.stringify(r).substring(0,120));
     ctxList[i].etag=r.etag;
     if(onProgress)onProgress((i+1)/nparts);
   }
-  // 4) finish（etag 原样带引号）
-  const fin=await qkCall('POST','/open/v1/file/upload_finish',{task_id:d.task_id,part_info_list:ctxList.map(function(x){return{part_number:x.part_number,etag:x.etag}})});
-  if(fin.finish)return fin.fid;
+  // [7] 完成（etag 原样带引号）
+  try{
+    const fin=await qkCall('POST','/open/v1/file/upload_finish',{task_id:d.task_id,part_info_list:ctxList.map(function(x){return{part_number:x.part_number,etag:x.etag}})});
+    if(fin.finish)return fin.fid;
+  }catch(e){throw new Error('[7]upload_finish失败：'+String((e&&e.message)||e))}
   throw new Error('上传未完成');
 }
 function qkSha1CtxAccum(h,bytes){ // 在已有状态上继续处理整块
