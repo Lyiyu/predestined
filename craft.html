@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
-<title>羽藏 v1.0.16 · 工坊版</title>
+<title>羽藏 v1.0.17 · 工坊版</title>
 <style>
 *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 :root{
@@ -559,7 +559,7 @@ body{font-family:var(--sans);background:var(--bg);color:var(--text)}
   <button class="topbar-btn" onclick="toggleDrawer()" title="菜单" style="font-size:18px;padding:2px 10px">☰</button>
   <h1>羽藏</h1>
   <button class="topbar-btn" onclick="location.reload()" title="刷新页面（用于重新授权文件夹）">🔄</button>
-  <span class="tag" id="topVerTag">v1.0.16</span>
+  <span class="tag" id="topVerTag">v1.0.17</span>
 </div>
 
 <div class="progress-bar" id="progressBar"><i id="progressFill"></i></div>
@@ -972,7 +972,7 @@ body{font-family:var(--sans);background:var(--bg);color:var(--text)}
 
 <script>
 // ==================== 状态 ====================
-const VERSION='1.0.16';
+const VERSION='1.0.17';
 const DB_NAME='offline_media_lib_v34',DB_VERSION=6; // v1.0.13: 结构未变，沿用旧库（保留标签/人名数据）
 const STORE_MEDIA='media',STORE_THUMB='thumbs',STORE_SESSION='session',STORE_FACES='faces';
 let cfg={rule:'person_seq',tags:[],dateFormat:'YYYYMMDD',compress:true,maxCount:2000,showHidden:false,recentNameLimit:5,ssGap:4}; // v5.3.0: ssGap=幻灯片间隔秒
@@ -2001,7 +2001,7 @@ if(IS_NATIVE_APP){
         }
       }).catch(function(){});
       // 状态栏背景色与顶栏渐变起始色一致，避免色差割裂
-      try{SB.setBackgroundColor({color:'#f5efe3'}).catch(function(){})}catch(e){} // 工坊版：状态栏与纸感顶栏同色
+      try{SB.setBackgroundColor({color:'#f5efe3'}).catch(function(){})}catch(e){}
     }
   }catch(e){}
   // 第2层：env() 探针——仅当返回值 > 28（深刘海/挖孔屏）时覆盖
@@ -3901,34 +3901,74 @@ function qkCfg(){try{return JSON.parse(storeGet(QK_KEY))||{}}catch(e){return{}}}
 function qkSave(c){storeSet(QK_KEY,JSON.stringify(c||{}))}
 function qkB64Bytes(b64){const bin=atob(b64);const u=new Uint8Array(bin.length);for(let i=0;i<bin.length;i++)u[i]=bin.charCodeAt(i);return u}
 function qkHex(u8){let s='';for(let i=0;i<u8.length;i++)s+=('0'+u8[i].toString(16)).slice(-2);return s}
-// --- 纯 JS MD5（夸克 upload_pre 需要）---
-function qkMd5(bytes){
-  const rl=[7,12,17,22,7,12,17,22,7,12,17,22,7,12,17,22,5,9,14,20,5,9,14,20,5,9,14,20,5,9,14,20,4,11,16,23,4,11,16,23,4,11,16,23,4,11,16,23,6,10,15,21,6,10,15,21,6,10,15,21,6,10,15,21];
-  const k=[];for(let i=0;i<64;i++)k[i]=Math.floor(Math.abs(Math.sin(i+1))*4294967296);
-  let h0=1732584193,h1=-271733879,h2=-1732584194,h3=271733878;
+// --- 纯 JS MD5（夸克 upload_pre 需要）；v1.0.17: 核心抽块 + 增量版（大文件流式）---
+const QK_MD5_RL=[7,12,17,22,7,12,17,22,7,12,17,22,7,12,17,22,5,9,14,20,5,9,14,20,5,9,14,20,5,9,14,20,4,11,16,23,4,11,16,23,4,11,16,23,4,11,16,23,6,10,15,21,6,10,15,21,6,10,15,21,6,10,15,21];
+const QK_MD5_K=(function(){const k=[];for(let i=0;i<64;i++)k[i]=Math.floor(Math.abs(Math.sin(i+1))*4294967296);return k})();
+function qkMd5Core(h,blk){ // h:[4] 就地更新；blk:64B（可为 subarray）
+  const dv=new DataView(blk.buffer,blk.byteOffset,64);
+  const m=[];for(let i=0;i<16;i++)m[i]=dv.getUint32(i*4,true);
+  const rol=(x,c)=>((x<<c)|(x>>>(32-c)));
+  let a=h[0],b=h[1],c=h[2],d=h[3];
+  for(let i=0;i<64;i++){
+    let f,g;
+    if(i<16){f=(b&c)|(~b&d);g=i}
+    else if(i<32){f=(d&b)|(~d&c);g=(5*i+1)%16}
+    else if(i<48){f=b^c^d;g=(3*i+5)%16}
+    else{f=c^(b|~d);g=(7*i)%16}
+    const tmp=d;d=c;c=b;
+    b=(b+rol((a+f+QK_MD5_K[i]+m[g])|0,QK_MD5_RL[i]))|0;
+    a=tmp;
+  }
+  h[0]=(h[0]+a)|0;h[1]=(h[1]+b)|0;h[2]=(h[2]+c)|0;h[3]=(h[3]+d)|0;
+}
+function qkMd5(bytes){ // 一次性（小文件用）
+  const h=[1732584193,-271733879,-1732584194,271733878];
   const len=bytes.length, bl=(((len+8)>>6)+1)*64, buf=new Uint8Array(bl);
   buf.set(bytes);buf[len]=0x80;
   const dv=new DataView(buf.buffer);
   dv.setUint32(bl-8,len*8,true);
-  const rol=(x,c)=>((x<<c)|(x>>>(32-c)));
-  for(let off=0;off<bl;off+=64){
-    const m=[];for(let i=0;i<16;i++)m[i]=dv.getUint32(off+i*4,true);
-    let a=h0,b=h1,c=h2,d=h3;
-    for(let i=0;i<64;i++){
-      let f,g;
-      if(i<16){f=(b&c)|(~b&d);g=i}
-      else if(i<32){f=(d&b)|(~d&c);g=(5*i+1)%16}
-      else if(i<48){f=b^c^d;g=(3*i+5)%16}
-      else{f=c^(b|~d);g=(7*i)%16}
-      const tmp=d;d=c;c=b;
-      b=(b+rol((a+f+k[i]+m[g])|0,rl[i]))|0;
-      a=tmp;
-    }
-    h0=(h0+a)|0;h1=(h1+b)|0;h2=(h2+c)|0;h3=(h3+d)|0;
-  }
+  for(let off=0;off<bl;off+=64)qkMd5Core(h,buf.subarray(off,off+64));
   const out=new DataView(new ArrayBuffer(16));
-  out.setInt32(0,h0,true);out.setInt32(4,h1,true);out.setInt32(8,h2,true);out.setInt32(12,h3,true);
+  out.setInt32(0,h[0],true);out.setInt32(4,h[1],true);out.setInt32(8,h[2],true);out.setInt32(12,h[3],true);
   return qkHex(new Uint8Array(out.buffer));
+}
+function qkMd5Init(){return {h:[1732584193,-271733879,-1732584194,271733878],buf:new Uint8Array(64),buflen:0,total:0}}
+function qkMd5Update(st,bytes){ // v1.0.17: 增量喂入（跨片保持 <64B 尾部）
+  st.total+=bytes.length;let i=0;
+  if(st.buflen>0){
+    const need=64-st.buflen,take=Math.min(need,bytes.length);
+    st.buf.set(bytes.subarray(0,take),st.buflen);st.buflen+=take;i=take;
+    if(st.buflen===64){qkMd5Core(st.h,st.buf);st.buflen=0}
+  }
+  const n=Math.floor((bytes.length-i)/64);
+  for(let j=0;j<n;j++)qkMd5Core(st.h,bytes.subarray(i+j*64,i+j*64+64));
+  i+=n*64;
+  if(i<bytes.length){st.buf.set(bytes.subarray(i),st.buflen);st.buflen+=bytes.length-i}
+}
+function qkMd5FinalHex(st){ // padding + 小端长度 → hex
+  const bit=st.total*8;
+  const pad=new Uint8Array((((st.buflen+9)>>6)+1)*64);
+  pad.set(st.buf.subarray(0,st.buflen));
+  pad[st.buflen]=0x80;
+  const dv=new DataView(pad.buffer);
+  dv.setUint32(pad.length-8,bit%4294967296,true);
+  dv.setUint32(pad.length-4,Math.floor(bit/4294967296),true);
+  for(let off=0;off<pad.length;off+=64)qkMd5Core(st.h,pad.subarray(off,off+64));
+  const out=new DataView(new ArrayBuffer(16));
+  for(let j=0;j<4;j++)out.setInt32(j*4,st.h[j],true);
+  return qkHex(new Uint8Array(out.buffer));
+}
+function qkSha1FinalHex(h,tailBytes,totalBytes){ // v1.0.17: 大文件流式 SHA1 收尾；tailBytes=全局未处理的 <64B 尾部（各片 4MB 整除 64，仅末片产生）
+  const pad=new Uint8Array((((tailBytes.length+9)>>6)+1)*64);
+  pad.set(tailBytes);pad[tailBytes.length]=0x80;
+  const dv=new DataView(pad.buffer);
+  dv.setUint32(pad.length-8,Math.floor(totalBytes*8/4294967296),false); // SHA-1 长度域为大端：高32位在前
+  dv.setUint32(pad.length-4,(totalBytes*8)%4294967296,false);
+  let cur=h.slice();
+  for(let off=0;off<pad.length;off+=64)cur=qkSha1Block(cur,pad.subarray(off,off+64));
+  const u=new Uint8Array(20);
+  for(let i=0;i<5;i++){u[i*4]=(cur[i]>>>24)&255;u[i*4+1]=(cur[i]>>>16)&255;u[i*4+2]=(cur[i]>>>8)&255;u[i*4+3]=cur[i]&255}
+  return qkHex(u);
 }
 // --- SHA1 压缩（分片 parallel_sha1_ctx 需要中间状态）---
 const QK_SHA1_INIT=[0x67452301,0xEFCDAB89,0x98BADCFE,0x10325476,0xC3D2E1F0];
@@ -3999,7 +4039,7 @@ async function qkCall(method,path,body,extraParams){
 async function qkMkdir(name,parentFid){
   return await qkCall('POST','/open/v1/dir',{dir_path:name,pdir_fid:parentFid||'0'});
 }
-async function qkUploadRel(relPath,parentFid,onProgress){ // v1.0.16 重写：全量读取（Capacitor readFile 不支持分片参数）+ 阶段化诊断
+async function qkUploadRel(relPath,parentFid,onProgress){ // v1.0.17: ≤16MB 全量读；>16MB 原生 readPart 两轮流式（内存峰值≈单片4MB）
   const F=window.Capacitor.Plugins.Filesystem;
   const D=window.Capacitor.Plugins.DownloadFile;
   if(!D||!D.uploadPart)throw new Error('上传组件未就绪，请覆盖安装最新版 APK');
@@ -4010,28 +4050,53 @@ async function qkUploadRel(relPath,parentFid,onProgress){ // v1.0.16 重写：�
     size=Number((st&&st.size)||0);
   }catch(e){throw new Error('[1]读取文件信息失败：'+String((e&&e.message)||e))}
   if(!isFinite(size)||size<=0)throw new Error('[1]文件大小异常('+size+')：'+relPath);
-  if(size>16*1024*1024)throw new Error('大于16MB的文件暂不支持App直传（下版支持），请先用PC备份');
-  // [2] 全量读取一次（16MB内内存安全；以实际字节数为准）
-  let bytes;
-  try{
-    const r=await F.readFile({path:relPath,directory:'EXTERNAL_STORAGE'});
-    bytes=qkB64Bytes(r.data);
-  }catch(e){throw new Error('[2]读取文件失败：'+String((e&&e.message)||e))}
-  if(!bytes||!bytes.length)throw new Error('[2]文件内容为空：'+relPath);
-  if(bytes.length!==size)size=bytes.length;
   const PART=4*1024*1024;
   const nparts=Math.max(1,Math.ceil(size/PART));
-  // [3] 各片 SHA1 中间状态（内存切片）+ 整体哈希
   const ctxList=[];
-  let hCur=QK_SHA1_INIT.slice();
-  for(let i=0;i<nparts;i++){
-    const off=i*PART,len=Math.min(PART,size-off);
-    ctxList.push({part_number:i+1,part_size:len,parallel_sha1_ctx:{part_offset:off,h:hCur.slice()}});
-    hCur=qkSha1CtxAccum(hCur,bytes.subarray(off,off+len));
+  let sha1Hex='',md5All='';
+  if(size<=16*1024*1024){
+    // [2] 小文件：全量读取一次（16MB内内存安全；以实际字节数为准）
+    let bytes;
+    try{
+      const r=await F.readFile({path:relPath,directory:'EXTERNAL_STORAGE'});
+      bytes=qkB64Bytes(r.data);
+    }catch(e){throw new Error('[2]读取文件失败：'+String((e&&e.message)||e))}
+    if(!bytes||!bytes.length)throw new Error('[2]文件内容为空：'+relPath);
+    if(bytes.length!==size)size=bytes.length;
+    // [3] 各片 SHA1 中间状态（内存切片）+ 整体哈希
+    let hCur=QK_SHA1_INIT.slice();
+    for(let i=0;i<nparts;i++){
+      const off=i*PART,len=Math.min(PART,size-off);
+      ctxList.push({part_number:i+1,part_size:len,parallel_sha1_ctx:{part_offset:off,h:hCur.slice()}});
+      hCur=qkSha1CtxAccum(hCur,bytes.subarray(off,off+len));
+    }
+    const dig=await crypto.subtle.digest('SHA-1',bytes);
+    sha1Hex=qkHex(new Uint8Array(dig));
+    md5All=qkMd5(bytes);
+  }else{
+    // [2B] 大文件：原生 readPart 逐片（两轮：本轮算 ctx+流式哈希，[6] 轮原生直传不经 JS 内存）
+    if(!D.readPart)throw new Error('大文件上传组件未就绪，请覆盖安装最新版 APK');
+    const md5st=qkMd5Init();
+    let hCur=QK_SHA1_INIT.slice();
+    let read=0,tail=new Uint8Array(0);
+    for(let i=0;i<nparts;i++){
+      const off=i*PART,len=Math.min(PART,size-off);
+      let bytes;
+      try{
+        const r=await D.readPart({path:String(relPath),offset:Number(off),length:Number(len)});
+        bytes=qkB64Bytes(r.data);
+      }catch(e){throw new Error('[2]读取分片'+(i+1)+'失败：'+String((e&&e.message)||e))}
+      if(!bytes||bytes.length!==len)throw new Error('[2]分片'+(i+1)+'长度不符 读='+((bytes&&bytes.length)||0)+' 应='+len);
+      read+=bytes.length;
+      ctxList.push({part_number:i+1,part_size:len,parallel_sha1_ctx:{part_offset:off,h:hCur.slice()}});
+      const whole=Math.floor(bytes.length/64)*64;
+      hCur=qkSha1CtxAccum(hCur,bytes.subarray(0,whole)); // 片内整块（4MB%64==0，仅末片留尾部）
+      tail=bytes.subarray(whole); // 覆盖为末片尾部（<64B）
+      qkMd5Update(md5st,bytes);
+    }
+    sha1Hex=qkSha1FinalHex(hCur,tail,read);
+    md5All=qkMd5FinalHex(md5st);
   }
-  const dig=await crypto.subtle.digest('SHA-1',bytes);
-  const sha1Hex=qkHex(new Uint8Array(dig));
-  const md5All=qkMd5(bytes);
   const name=relPath.substring(relPath.lastIndexOf('/')+1);
   const ext=(name.match(/\.([^.]+)$/)||['','bin'])[1].toLowerCase();
   // [4] 预上传
