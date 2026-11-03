@@ -1,5 +1,5 @@
 {
-  "version": "1.0.15",
-  "apkUrl": "https://github.com/Lyiyu/predestined/releases/download/v1.0.15/yuzang-v1.0.15.apk",
-  "note": "v1.0.15 新增：①云下载闭环——B站/抖音点「☁️ 云下载」→ PC 节点自动下载存夸克（B站1080p、抖音高清+图文BGM），云任务卡检测+一键取回；②收藏博主自动同步，PC 节点自动追更（抖音/B站UP主，新增全量回填）；③刷图文自动播 BGM；④夸克 token 被互踢自动换新（规矩页新增 refresh_token）。如异常回退 v1.0.14"
+  "version": "1.0.16",
+  "apkUrl": "https://github.com/Lyiyu/predestined/releases/download/v1.0.16/yuzang-v1.0.16.apk",
+  "note": "v1.0.16 修复：云下载提交在真机报「缺少 url/path/length」的问题——上传链路改全量读取（消除 Capacitor readFile 不支持分片参数的兼容隐患），全链路阶段化诊断（出错显示[阶段号]+原因），提交失败详情显示在页面。其余同 v1.0.15"
 }
