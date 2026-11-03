@@ -1,5 +1,5 @@
 {
-  "version": "1.0.16",
-  "apkUrl": "https://github.com/Lyiyu/predestined/releases/download/v1.0.16/yuzang-v1.0.16.apk",
-  "note": "v1.0.16 修复：云下载提交在真机报「缺少 url/path/length」的问题——上传链路改全量读取（消除 Capacitor readFile 不支持分片参数的兼容隐患），全链路阶段化诊断（出错显示[阶段号]+原因），提交失败详情显示在页面。其余同 v1.0.15"
+  "version": "1.0.17",
+  "apkUrl": "https://github.com/Lyiyu/predestined/releases/download/v1.0.17/yuzang-v1.0.17.apk",
+  "note": "v1.0.17 新增：①小红书云下载——粘贴笔记链接直接「☁️ 云下载」，PC 节点解析视频/图集自动存夸克（无标题任务靠 done 回执检测取回）；②大文件流式上传——>16MB 视频可 App 直传夸克（原生分片读取+流式哈希，内存峰值≈4MB）。如异常回退 v1.0.16"
 }
