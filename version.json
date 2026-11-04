@@ -1,5 +1,5 @@
 {
-  "version": "1.0.17",
-  "apkUrl": "https://github.com/Lyiyu/predestined/releases/download/v1.0.17/yuzang-v1.0.17.apk",
-  "note": "v1.0.17 新增：①小红书云下载——粘贴笔记链接直接「☁️ 云下载」，PC 节点解析视频/图集自动存夸克（无标题任务靠 done 回执检测取回）；②大文件流式上传——>16MB 视频可 App 直传夸克（原生分片读取+流式哈希，内存峰值≈4MB）。如异常回退 v1.0.16"
+  "version": "1.0.18",
+  "apkUrl": "https://github.com/Lyiyu/predestined/releases/download/v1.0.18/yuzang-v1.0.18.apk",
+  "note": "v1.0.18 重大更新：①全新工坊手作 UI（奶白纸感+墨色+琥珀橙，印刷硬阴影）转正为默认外观；②上传 length 参数双字段保险修复真机提交失败；③大同页与收藏博主精简为 B站/抖音/小红书三渠道；④规矩页折叠分组（云盘/下载/应用/数据/关于）；⑤视频不再当动图静音循环——有声播放、开连播自动下一个。如异常回退 v1.0.17"
 }
