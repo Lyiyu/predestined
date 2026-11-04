@@ -1840,13 +1840,17 @@ async function addFav(){
     if(/^[A-Za-z0-9._-]{4,30}$/.test(url)){showToast('请粘贴博主主页链接（不支持抖音号）');return}
     showToast('请粘贴主页分享链接');return
   }
-  const entry={id:'fav'+Date.now(),platform,url,name,note,savedAt:Date.now(),auto:true};
-  // v5.1.4: 名字留空→调解析接口取真实昵称（修复收藏显示短码无名字）
+  // v1.0.18修: 平台白名单校验（防隐藏input残留旧值写入不支持平台）
+  if(platform!=='dy'&&platform!=='bili'&&platform!=='xhs'){showToast('请先选择平台');favPickInit();return}
+  const entry={id:'fav'+Date.now(),platform,url,name,savedAt:Date.now(),auto:true}; // v1.0.18修: 移除已删除的 note 字段引用（此前 ReferenceError 使收藏必崩）
+  // v5.1.4: 名字留空→按平台取昵称（v1.0.18修: 仅抖音调解析接口，B站/小红书不浪费解析额度，直接 URL 截取）
   if(!name){
-    try{
-      const ui=await dlFetchUser(url);
-      if(ui&&ui.nickname){name=ui.nickname;entry.name=name;entry.info={follower:ui.follower,aweme:ui.aweme,sec_uid:ui.sec_uid,unique_id:ui.unique_id}} // v5.1.4: entry.name 必须回写（对象先于解析创建）
-    }catch(e){}
+    if(platform==='dy'){
+      try{
+        const ui=await dlFetchUser(url);
+        if(ui&&ui.nickname){name=ui.nickname;entry.info={follower:ui.follower,aweme:ui.aweme,sec_uid:ui.sec_uid,unique_id:ui.unique_id}} // v1.0.18修: info 回写；name 统一末尾回写 entry
+      }catch(e){}
+    }
     if(!name){
       try{
         const u=new URL(url);
@@ -1854,7 +1858,9 @@ async function addFav(){
         name=parts[parts.length-1]||parts[0]||'';
         if(name.length>20)name=name.substring(0,20)+'…';
       }catch(e){name='未知'}
+      if(/^\d+$/.test(name))name='UP主'+name.substring(0,8); // v1.0.18修: B站空间链接截出纯数字 mid 不友好
     }
+    if(name)entry.name=name; // v1.0.18修: 修复 v5.1.4 起的潜伏问题——URL 截取名未回写 entry，列表显示空名
   }
   const list=getFav();list.unshift(entry);saveFav(list);
   document.getElementById('favUrl').value='';document.getElementById('favName').value='';
@@ -1946,10 +1952,12 @@ function renderFav(){
   });
 }
 function favAutoDl(id){const list=getFav();const f=list.find(x=>x.id===id);if(!f)return;f.auto=(f.auto===false)?true:false;saveFav(list);renderFav();showToast('自动更新：'+(f.auto===false?'关':'开'))}
-async function favDlNow(id){ // v5.1.4: 收藏卡「立即下载」——同主页批量下载
-  if(!IS_NATIVE_APP){showToast('App 专属功能');return}
-  const f=getFav().find(x=>x.id===id);if(!f)return;
-  if(f.platform!=='dy'){showToast('当前仅支持抖音博主下载');return}
+async function favDlNow(id){ // v5.1.4: 收藏卡「立即下载」——同主页批量下载；v1.0.18修: 平台分支引导
+if(!IS_NATIVE_APP){showToast('App 专属功能');return}
+const f=getFav().find(x=>x.id===id);if(!f)return;
+if(f.platform==='bili'){showToast('B站博主由 PC 节点追更自动下载（约 3 小时一轮），开启「🔄 追更」即可');return} // v1.0.18修: B站走节点追更（App 端无批量）
+if(f.platform==='xhs'){showToast('小红书暂不支持手动批量，新作品由 PC 节点追更同步');return}
+if(f.platform!=='dy'){showToast('该平台暂不支持');return}
   try{
     const info=await dlFetchUser(f.url);
     DL_USER_INFO={info:info,link:f.url,alias:f.alias||''}; // v5.1.9: 传入收藏备注名→确认弹窗默认模板自动用 {备注名}
