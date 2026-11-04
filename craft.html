@@ -1,11 +1,11 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="zh-CN">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
-<title>羽藏 v1.0.17 · 工坊版</title>
+<title>羽藏 v1.0.18 · 工坊版</title>
 <style>
 *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 :root{
@@ -543,6 +543,16 @@ body{font-family:var(--sans);background:var(--bg);color:var(--text)}
 .dev-case .sbtn.on.fail{background:rgba(179,55,47,.12)!important;border-color:var(--danger)!important}
 .dev-case .sbtn.on.todo{background:var(--paper)!important;border-color:var(--sub)!important}
 #dlProgress>div{border:1.5px solid var(--ink)!important;border-radius:0!important;background:var(--card)!important}
+/* ---- v1.0.18: 规矩页折叠分组卡（工坊活字封面） ---- */
+.setcard.fold{padding:0!important;overflow:hidden}
+.setcard.fold details{display:block;padding:0}
+.setcard.fold .fold-h{display:flex;align-items:center;gap:8px;padding:14px 16px;font-family:var(--serif);font-weight:900;font-size:15px;color:var(--ink);cursor:pointer;list-style:none}
+.setcard.fold .fold-h::-webkit-details-marker{display:none}
+.setcard.fold .fold-h::after{content:'▸';color:var(--amber);font-size:13px;transition:transform .18s;flex:0 0 auto}
+.setcard.fold details[open] .fold-h::after{transform:rotate(90deg)}
+.setcard.fold .fold-tip{font-family:var(--mono);font-size:10px;color:var(--sub);font-weight:400;margin-left:auto;padding-right:6px}
+.setcard.fold details>*:not(summary){margin-left:16px;margin-right:16px;width:calc(100% - 32px)}
+.setcard.fold details>div{box-sizing:border-box}
 /* 顶栏版本票据再强调（等宽） */
 #topVerTag{font-family:var(--mono)}
 /* 进度/下拉选项在墨边下的对比 */
@@ -559,7 +569,7 @@ body{font-family:var(--sans);background:var(--bg);color:var(--text)}
   <button class="topbar-btn" onclick="toggleDrawer()" title="菜单" style="font-size:18px;padding:2px 10px">☰</button>
   <h1>羽藏</h1>
   <button class="topbar-btn" onclick="location.reload()" title="刷新页面（用于重新授权文件夹）">🔄</button>
-  <span class="tag" id="topVerTag">v1.0.17</span>
+  <span class="tag" id="topVerTag">v1.0.18</span>
 </div>
 
 <div class="progress-bar" id="progressBar"><i id="progressFill"></i></div>
@@ -619,18 +629,18 @@ body{font-family:var(--sans);background:var(--bg);color:var(--text)}
   <div class="setcard">
     <h3>📥 在线下载</h3>
     <div style="display:flex;gap:6px">
-      <input id="dlUrl" placeholder="粘贴抖音/TikTok/X/微博/小红书 链接或口令" style="flex:1;padding:10px;border:1px solid var(--line);border-radius:10px;font-size:14px;min-width:0">
+      <input id="dlUrl" placeholder="粘贴 B站/抖音/小红书 链接或口令" style="flex:1;padding:10px;border:1px solid var(--line);border-radius:10px;font-size:14px;min-width:0">
       <button class="btn-sm" style="background:var(--primary);color:#fff;border-color:var(--primary);padding:10px 14px;white-space:nowrap" id="dlParseBtn" onclick="dlParse()">解析</button>
       <button class="btn-sm" style="padding:10px 12px;white-space:nowrap" onclick="confirmAsk('清空链接输入框？',function(){document.getElementById('dlUrl').value='';document.getElementById('dlResult').innerHTML='';document.getElementById('dlProgress').innerHTML=''},'✅ 清空')">✕</button>
     </div>
-    <div class="sub" style="margin-top:6px">粘贴链接或完整分享口令（自动提取并识别渠道）：抖音/小红书/B站/TikTok/X/微博；小红书可直接「☁️ 云下载」或回本页导入，命名路径与抖音一致</div>
+    <div class="sub" style="margin-top:6px">支持 B站 / 抖音 / 小红书；解析后点「☁️ 云下载」走 PC 高清，图文自动带 BGM</div>
     <div id="dlResult"></div>
     <div id="dlProgress"></div>
     <div id="dlUsage" style="margin-top:8px;font-size:12px;color:#888"></div>
   </div>
   <div class="setcard">
     <h3>☁️ 云任务（PC 节点）</h3>
-    <div class="sub" style="margin-top:6px">B站/抖音点「☁️ 云下载」→ PC 节点自动下载存夸克 →「🔄 检测完成」→「📥 取回」到 /.1/矣欤下载</div>
+    <div class="sub" style="margin-top:6px">云下载后点「🔄 检测完成」→「📥 取回」；多图作品取回后到「鹇雩」刷图，BGM 自动播</div>
     <div style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap">
       <button class="btn-sm" style="background:var(--primary);color:#fff;border-color:var(--primary);padding:8px 14px" onclick="cloudCheck()">🔄 检测完成</button>
     </div>
@@ -638,18 +648,17 @@ body{font-family:var(--sans);background:var(--bg);color:var(--text)}
   </div>
   <div class="setcard">
     <h3>⭐ 收藏博主</h3>
+    <div class="sub" style="margin-top:6px">支持的博主自动追更：每 3 小时检查新作品并下载存夸克，已下载过不重复下；关「🔄 追更」即停</div>
     <div style="margin-top:12px;display:flex;flex-direction:column;gap:8px">
       <div id="favPlatformPick" style="display:flex;gap:6px;flex-wrap:wrap"></div>
       <input type="hidden" id="favPlatform" value="dy">
       <input type="text" id="favUrl" placeholder="粘贴主页链接" style="padding:8px 10px;border:1px solid var(--line);border-radius:8px;font-size:14px">
       <input type="text" id="favName" placeholder="博主名（可留空，自动从链接提取）" style="padding:8px 10px;border:1px solid var(--line);border-radius:8px;font-size:14px">
-      <textarea id="favNote" placeholder="备注（可选）" rows="2" style="padding:8px 10px;border:1px solid var(--line);border-radius:8px;font-size:14px;font-family:inherit;resize:vertical"></textarea>
       <button class="btn-sm" style="background:var(--primary);color:#fff;border-color:var(--primary);padding:10px" onclick="addFav()">＋ 添加收藏</button>
     </div>
   </div>
   <div class="setcard">
     <h3>📋 已收藏 (<span id="favCount">0</span>)</h3>
-    <button class="btn-sm" style="margin-bottom:10px" onclick="exportFav()">📤 导出博主清单（发助手可配置自动下载）</button>
     <div id="favList"></div>
   </div>
 </div>
@@ -667,7 +676,7 @@ body{font-family:var(--sans);background:var(--bg);color:var(--text)}
   <div class="empty" id="viewEmpty" style="display:none"><div class="icon">🎞️</div>暂无聚合作品<br><span style="font-size:12px;color:#9aa0b5">同名不同图序的文件（如 xx_1、xx_2）会自动聚成一件作品</span></div>
 </div>
 
-<!-- 设置页 -->
+<!-- 设置页（v1.0.18: 折叠分组重构——云盘/下载/应用/数据/关于各一组，默认收起，保持 id 不变） -->
 <div class="page" id="pageSet">
   <div class="stats" id="setStats"></div>
   <div class="quota" id="quotaCard">
@@ -677,124 +686,116 @@ body{font-family:var(--sans);background:var(--bg);color:var(--text)}
     <button class="q-toggle" onclick="toggleQuotaDetail()">🧾 查看分项明细 ▼</button>
     <div class="q-detail" id="quotaDetail"></div>
   </div>
-  <div class="setcard">
-    <h3>⚙️ 命名规则</h3>
-    <div class="setitem">
-      <label>重命名格式</label>
-      <select id="setRule" onchange="saveSettings()">
-        <option value="person_seq">仅人名+序号</option>
-        <option value="person_tag_date">人名_标签_日期</option>
-        <option value="person_tag_seq">人名_标签_序号</option>
-        <option value="person_date">人名_日期</option>
-        <option value="person">仅人名</option>
-      </select>
-    </div>
-    <div class="setitem">
-      <label>日期格式</label>
-      <select id="setDateFormat" onchange="saveSettings()">
-        <option value="YYYYMMDD">20260917</option>
-        <option value="YYYY-MM-DD">2026-09-17</option>
-        <option value="YYYYMM">202609</option>
-      </select>
-    </div>
-  </div>
-  <div class="setcard">
-    <h3>🏷️ 标签设置</h3>
-    <div class="setitem">
-      <label>自定义标签（英文逗号分隔）</label>
-      <input type="text" id="setTags" placeholder="如：风景,夜景,人像" onchange="saveSettings()">
-      <div class="sub">详情页可选这些标签，多选</div>
-    </div>
-    <div class="setitem">
-      <label>详情页人名快捷数量</label>
-      <input type="number" id="setNameLimit" min="1" max="20" value="5" onchange="saveSettings()">
-      <div class="sub">详情页最多显示几个人名，默认 5</div>
-    </div>
-    <div class="setitem">
-      <label>幻灯片间隔（秒）</label>
-      <input type="number" id="setSsGap" min="1" max="30" value="4" onchange="saveSettings()">
-      <div class="sub">图库浏览幻灯片每张停留时长</div>
-    </div>
-  </div>
-  <div class="setcard">
-    <h3>📦 存储与导入</h3>
-    <div class="setitem">
-      <label>最大可导入数量</label>
-      <div class="row">
-        <input type="range" id="setMaxCount" min="50" max="5000" step="50" value="2000" style="flex:3" onchange="saveSettings()">
-        <span id="setMaxCountVal" style="flex:1;text-align:center;font-weight:700">2000</span>
+  <div class="setcard fold">
+    <details open>
+      <summary class="fold-h">☁️ 夸克云盘（token / 云下载取回）<span class="fold-tip" id="foldQkState"></span></summary>
+      <div class="setitem">
+        <label>授权 access_token</label>
+        <input type="text" id="qkToken" placeholder="夸克 OAuth 授权后获取" style="width:100%;padding:8px;border:1px solid var(--line);border-radius:8px;font-size:12px">
       </div>
-      <div class="sub">超过此数量无法继续入库</div>
-    </div>
-    <div class="setitem">
-      <div class="switch">
-        <div style="flex:1">
-          <label style="font-size:14px;font-weight:600">图片压缩入库</label>
-          <div class="sub" style="margin-top:2px">图片入库时压缩为 JPEG（最长边 1280px），省空间、可预览</div>
-        </div>
-        <input type="checkbox" id="setCompress" checked><span class="sl" onclick="toggleSwitch('setCompress')"></span>
+      <div class="setitem">
+        <label>refresh_token（自愈）</label>
+        <input type="text" id="qkRefresh" placeholder="被互踢失效时自动换新" style="width:100%;padding:8px;border:1px solid var(--line);border-radius:8px;font-size:12px">
       </div>
-    </div>
-  </div>
-  <div class="setcard">
-    <h3>⚙️ 高级下载参数（风控，默认推荐值，一般不用改）</h3>
-    <details>
-      <summary style="padding:6px 0;color:var(--primary);font-size:13px;cursor:pointer">展开/收起 风控参数</summary>
-    <div class="setitem"><label>批量下载间隔（秒）</label><div style="display:flex;gap:4px;align-items:center"><input type="number" id="dlSetIntervalMin" style="width:60px;padding:6px;border:1px solid var(--line);border-radius:8px">~<input type="number" id="dlSetIntervalMax" style="width:60px;padding:6px;border:1px solid var(--line);border-radius:8px"></div></div>
-    <div class="setitem"><label>单次批量上限（条）</label><input type="number" id="dlSetBatchMax" style="width:80px;padding:6px;border:1px solid var(--line);border-radius:8px"></div>
-    <div class="setitem"><label>每日下载上限（条）</label><input type="number" id="dlSetDailyMax" style="width:80px;padding:6px;border:1px solid var(--line);border-radius:8px"></div>
-    <div class="setitem"><label>每日解析上限（次）</label><input type="number" id="dlSetDailyParseMax" style="width:80px;padding:6px;border:1px solid var(--line);border-radius:8px"></div>
-    <div class="setitem"><label>失败自动重试（次）</label><input type="number" id="dlSetRetryMax" style="width:80px;padding:6px;border:1px solid var(--line);border-radius:8px"></div>
-    <div class="setitem"><label>解析源冷却时长（分钟，0=不冷却）</label><input type="number" id="dlSetCoolMin" style="width:80px;padding:6px;border:1px solid var(--line);border-radius:8px"></div>
-    <div class="setitem"><label>追更检查最小间隔（分钟）</label><input type="number" id="dlSetFollowupGap" style="width:80px;padding:6px;border:1px solid var(--line);border-radius:8px"></div>
-    <div class="setitem"><label>保存目录（存储根相对路径）</label><input type="text" id="dlSetSaveDir" style="flex:1;padding:6px;border:1px solid var(--line);border-radius:8px;min-width:0"></div>
-    <div class="setitem"><label>自定义解析接口（自部署后填，优先使用）</label><input type="text" id="dlSetCustomApi" placeholder="https://你的服务地址" style="flex:1;padding:6px;border:1px solid var(--line);border-radius:8px;min-width:0"></div>
-    <button class="btn-sm" style="background:var(--primary);color:#fff;border-color:var(--primary);padding:10px" onclick="dlSaveCfgForm()">保存设置</button>
+      <div class="setitem">
+        <label>设备ID</label>
+        <input type="text" id="qkDeviceId" placeholder="dev_xxx" style="width:100%;padding:8px;border:1px solid var(--line);border-radius:8px;font-size:12px">
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+        <button class="btn-sm" style="background:var(--primary);color:#fff;border-color:var(--primary);padding:10px" onclick="qkSaveCfgForm()">保存配置</button>
+        <button class="btn-sm" onclick="qkTest()">🔗 测试连接</button>
+      </div>
+      <button class="btn-ghost" onclick="qkBackupAll()" style="margin-top:8px">☁️ 备份媒体库到夸克</button>
+      <div class="sub" style="margin-top:6px" id="qkStatus">未配置</div>
     </details>
   </div>
-  <div class="setcard">
-    <h3>💾 数据与迁移</h3>
-    <button class="btn-ghost" onclick="exportJson()" style="margin-top:0">📄 导出媒体库 JSON</button>
-    <div class="sub" style="margin-top:6px">导出所有标签记录。换手机时：旧手机导出JSON → 传到新手机 → 选文件夹 → 导入JSON → 自动恢复所有标签和人名。</div>
-    <button class="btn-ghost" onclick="document.getElementById('importJsonFile').click()" style="margin-top:8px">📥 导入 JSON（恢复标签/人名）</button>
-    <input type="file" id="importJsonFile" accept=".json" style="display:none" onchange="importJson(event)">
-    <div class="sub" style="margin-top:6px">导入JSON后，系统会匹配当前文件夹中的文件名，自动恢复标签、人名和整理状态。</div>
-    <button class="btn-danger" onclick="clearAll()">🗑️ 清空媒体库</button>
-    <div class="sub" style="margin-top:6px">清空所有标签记录。文件本身不受影响。</div>
-    <button class="btn-danger" onclick="clearCache()" style="margin-top:8px">🧹 清空缩略图缓存</button>
-    <div class="sub" style="margin-top:6px">清空缩略图缓存，下次打开会重新生成。</div>
+  <div class="setcard fold">
+    <details>
+      <summary class="fold-h">📥 下载设置（目录 / 风控参数）<span class="fold-tip">默认值够用</span></summary>
+      <div class="setitem"><label>保存目录（存储根相对路径）</label><input type="text" id="dlSetSaveDir" style="flex:1;padding:6px;border:1px solid var(--line);border-radius:8px;min-width:0"></div>
+      <div class="setitem"><label>批量下载间隔（秒）</label><div style="display:flex;gap:4px;align-items:center"><input type="number" id="dlSetIntervalMin" style="width:60px;padding:6px;border:1px solid var(--line);border-radius:8px">~<input type="number" id="dlSetIntervalMax" style="width:60px;padding:6px;border:1px solid var(--line);border-radius:8px"></div></div>
+      <div class="setitem"><label>单次批量上限（条）</label><input type="number" id="dlSetBatchMax" style="width:80px;padding:6px;border:1px solid var(--line);border-radius:8px"></div>
+      <div class="setitem"><label>每日下载 / 解析上限</label><div style="display:flex;gap:4px;align-items:center"><input type="number" id="dlSetDailyMax" style="width:80px;padding:6px;border:1px solid var(--line);border-radius:8px"><input type="number" id="dlSetDailyParseMax" style="width:80px;padding:6px;border:1px solid var(--line);border-radius:8px"></div></div>
+      <div class="setitem"><label>失败自动重试（次）</label><input type="number" id="dlSetRetryMax" style="width:80px;padding:6px;border:1px solid var(--line);border-radius:8px"></div>
+      <div class="setitem"><label>解析源冷却时长（分钟，0=不冷却）</label><input type="number" id="dlSetCoolMin" style="width:80px;padding:6px;border:1px solid var(--line);border-radius:8px"></div>
+      <div class="setitem"><label>追更检查最小间隔（分钟）</label><input type="number" id="dlSetFollowupGap" style="width:80px;padding:6px;border:1px solid var(--line);border-radius:8px"></div>
+      <div class="setitem"><label>自定义解析接口（自部署后填）</label><input type="text" id="dlSetCustomApi" placeholder="https://你的服务地址" style="flex:1;padding:6px;border:1px solid var(--line);border-radius:8px;min-width:0"></div>
+      <button class="btn-sm" style="background:var(--primary);color:#fff;border-color:var(--primary);padding:10px" onclick="dlSaveCfgForm()">保存设置</button>
+    </details>
   </div>
-  <div class="setcard">
-    <h3>☁️ 夸克网盘备份</h3>
-    <div class="setitem">
-      <label>授权 access_token</label>
-      <input type="text" id="qkToken" placeholder="夸克 OAuth 授权后获取的 access_token" style="width:100%;padding:8px;border:1px solid var(--line);border-radius:8px;font-size:12px">
-      <div class="sub">夸克 OAuth 授权后获得，约30天有效</div>
-    </div>
-    <div class="setitem">
-      <label>refresh_token（自愈用）</label>
-      <input type="text" id="qkRefresh" placeholder="与 access_token 一起粘贴（被互踢失效时自动换新）" style="width:100%;padding:8px;border:1px solid var(--line);border-radius:8px;font-size:12px">
-      <div class="sub">手机与 PC 节点共用授权会互踢，填此项自动换新，无需手动更新</div>
-    </div>
-    <div class="setitem">
-      <label>设备ID</label>
-      <input type="text" id="qkDeviceId" placeholder="dev_xxx" style="width:100%;padding:8px;border:1px solid var(--line);border-radius:8px;font-size:12px">
-    </div>
-    <button class="btn-sm" style="background:var(--primary);color:#fff;border-color:var(--primary);padding:10px;width:100%" onclick="qkSaveCfgForm()">保存夸克配置</button>
-    <button class="btn-ghost" onclick="qkTest()" style="margin-top:8px">🔗 测试连接</button>
-    <button class="btn-ghost" onclick="qkBackupAll()" style="margin-top:8px">☁️ 备份当前媒体库文件到夸克</button>
-    <div class="sub" style="margin-top:6px" id="qkStatus">未配置</div>
+  <div class="setcard fold">
+    <details>
+      <summary class="fold-h">🎨 应用设置（命名 / 标签 / 存储）</summary>
+      <div class="setitem">
+        <label>重命名格式</label>
+        <select id="setRule" onchange="saveSettings()">
+          <option value="person_seq">仅人名+序号</option>
+          <option value="person_tag_date">人名_标签_日期</option>
+          <option value="person_tag_seq">人名_标签_序号</option>
+          <option value="person_date">人名_日期</option>
+          <option value="person">仅人名</option>
+        </select>
+      </div>
+      <div class="setitem">
+        <label>日期格式</label>
+        <select id="setDateFormat" onchange="saveSettings()">
+          <option value="YYYYMMDD">20260917</option>
+          <option value="YYYY-MM-DD">2026-09-17</option>
+          <option value="YYYYMM">202609</option>
+        </select>
+      </div>
+      <div class="setitem">
+        <label>自定义标签（英文逗号分隔）</label>
+        <input type="text" id="setTags" placeholder="如：风景,夜景,人像" onchange="saveSettings()">
+      </div>
+      <div class="setitem">
+        <label>详情页人名快捷数量</label>
+        <input type="number" id="setNameLimit" min="1" max="20" value="5" onchange="saveSettings()">
+      </div>
+      <div class="setitem">
+        <label>幻灯片间隔（秒）</label>
+        <input type="number" id="setSsGap" min="1" max="30" value="4" onchange="saveSettings()">
+      </div>
+      <div class="setitem">
+        <label>最大可导入数量</label>
+        <div class="row">
+          <input type="range" id="setMaxCount" min="50" max="5000" step="50" value="2000" style="flex:3" onchange="saveSettings()">
+          <span id="setMaxCountVal" style="flex:1;text-align:center;font-weight:700">2000</span>
+        </div>
+      </div>
+      <div class="setitem">
+        <div class="switch">
+          <div style="flex:1">
+            <label style="font-size:14px;font-weight:600">图片压缩入库</label>
+            <div class="sub" style="margin-top:2px">入库时压缩为 JPEG（最长边 1280px）</div>
+          </div>
+          <input type="checkbox" id="setCompress" checked><span class="sl" onclick="toggleSwitch('setCompress')"></span>
+        </div>
+      </div>
+    </details>
   </div>
-  <div class="setcard">
-    <h3>ℹ️ 关于</h3>
-    <div class="setitem">
+  <div class="setcard fold">
+    <details>
+      <summary class="fold-h">💾 数据与迁移</summary>
+      <button class="btn-ghost" onclick="exportJson()" style="margin-top:0">📄 导出媒体库 JSON</button>
+      <button class="btn-ghost" onclick="document.getElementById('importJsonFile').click()" style="margin-top:8px">📥 导入 JSON（恢复标签/人名）</button>
+      <input type="file" id="importJsonFile" accept=".json" style="display:none" onchange="importJson(event)">
+      <button class="btn-danger" onclick="clearAll()" style="margin-top:8px">🗑️ 清空媒体库（文件不受影响）</button>
+      <button class="btn-danger" onclick="clearCache()" style="margin-top:8px">🧹 清空缩略图缓存</button>
+    </details>
+  </div>
+  <div class="setcard fold">
+    <details>
+      <summary class="fold-h">ℹ️ 关于</summary>
       <div class="sub" id="aboutMode" style="margin:0;font-size:13px;color:#333">检测中…</div>
-      <button class="btn-ghost" onclick="checkUpdate()" style="margin-top:8px">🔔 检查更新</button>
-      <button class="btn-ghost" onclick="runStorageDiag()" style="margin-top:8px">🔧 存储诊断</button>
-      <button class="btn-ghost" onclick="runInventory()" style="margin-top:8px">🔍 文件清点（数量比对）</button>
-      <button class="btn-ghost" onclick="openAboutModal()" style="margin-top:8px">📖 使用说明与风控说明</button>
-      <button class="btn-ghost" onclick="devCopy()" style="margin-top:8px">📤 导出使用日志与反馈（发助手修复问题）</button>
-    </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px">
+        <button class="btn-sm" onclick="checkUpdate()">🔔 检查更新</button>
+        <button class="btn-sm" onclick="runStorageDiag()">🔧 存储诊断</button>
+        <button class="btn-sm" onclick="runInventory()">🔍 文件清点</button>
+        <button class="btn-sm" onclick="openAboutModal()">📖 使用说明</button>
+      </div>
+      <button class="btn-ghost" onclick="devCopy()" style="margin-top:8px">📤 导出使用日志与反馈</button>
+    </details>
   </div>
 </div>
 
@@ -972,7 +973,7 @@ body{font-family:var(--sans);background:var(--bg);color:var(--text)}
 
 <script>
 // ==================== 状态 ====================
-const VERSION='1.0.17';
+const VERSION='1.0.18';
 const DB_NAME='offline_media_lib_v34',DB_VERSION=6; // v1.0.13: 结构未变，沿用旧库（保留标签/人名数据）
 const STORE_MEDIA='media',STORE_THUMB='thumbs',STORE_SESSION='session',STORE_FACES='faces';
 let cfg={rule:'person_seq',tags:[],dateFormat:'YYYYMMDD',compress:true,maxCount:2000,showHidden:false,recentNameLimit:5,ssGap:4}; // v5.3.0: ssGap=幻灯片间隔秒
@@ -1799,15 +1800,12 @@ async function dlFetchUser(link){ // 独立取博主主页信息（收藏/解析
   }
   throw new Error('获取博主信息失败');
 }
-const FAV_SVG={
-bili:{inner:'<path d="M3.4 6.6 1.2 4.4M20.6 6.6 22.8 4.4" stroke="#FB7299" stroke-width="2.2" stroke-linecap="round" fill="none"/><path fill="#FB7299" d="M3.2 6.8h17.6c1.6 0 2.9 1.3 2.9 2.9v9.1c0 1.6-1.3 2.9-2.9 2.9H3.2c-1.6 0-2.9-1.3-2.9-2.9V9.7c0-1.6 1.3-2.9 2.9-2.9z"/><rect x="6.8" y="10.8" width="3.7" height="5" rx="1.3" fill="#fff"/><rect x="13.5" y="10.8" width="3.7" height="5" rx="1.3" fill="#fff"/>',c:'#FB7299'},
-dy:{d:"M12.525.02c1.31-.02 2.61-.01 3.91-.02.08 1.53.63 3.09 1.75 4.17 1.12 1.11 2.7 1.62 4.24 1.79v4.03c-1.44-.05-2.89-.35-4.2-.97-.57-.26-1.1-.59-1.62-.93-.01 2.92.01 5.84-.02 8.75-.08 1.4-.54 2.79-1.35 3.94-1.31 1.92-3.58 3.17-5.91 3.21-1.43.08-2.86-.31-4.08-1.03-2.02-1.19-3.44-3.37-3.65-5.71-.02-.5-.03-1-.01-1.49.18-1.9 1.12-3.72 2.58-4.96 1.66-1.44 3.98-2.13 6.15-1.72.02 1.48-.04 2.96-.04 4.44-.99-.32-2.15-.23-3.02.37-.63.41-1.11 1.04-1.36 1.75-.21.51-.15 1.07-.14 1.61.24 1.64 1.82 3.02 3.5 2.87 1.12-.01 2.19-.66 2.77-1.61.19-.33.4-.67.41-1.06.1-1.79.06-3.57.07-5.36.01-4.03-.01-8.05.02-12.07z",c:'#000000'},
-tt:{d:"M12.525.02c1.31-.02 2.61-.01 3.91-.02.08 1.53.63 3.09 1.75 4.17 1.12 1.11 2.7 1.62 4.24 1.79v4.03c-1.44-.05-2.89-.35-4.2-.97-.57-.26-1.1-.59-1.62-.93-.01 2.92.01 5.84-.02 8.75-.08 1.4-.54 2.79-1.35 3.94-1.31 1.92-3.58 3.17-5.91 3.21-1.43.08-2.86-.31-4.08-1.03-2.02-1.19-3.44-3.37-3.65-5.71-.02-.5-.03-1-.01-1.49.18-1.9 1.12-3.72 2.58-4.96 1.66-1.44 3.98-2.13 6.15-1.72.02 1.48-.04 2.96-.04 4.44-.99-.32-2.15-.23-3.02.37-.63.41-1.11 1.04-1.36 1.75-.21.51-.15 1.07-.14 1.61.24 1.64 1.82 3.02 3.5 2.87 1.12-.01 2.19-.66 2.77-1.61.19-.33.4-.67.41-1.06.1-1.79.06-3.57.07-5.36.01-4.03-.01-8.05.02-12.07z",c:'#000000'},
-wb:{d:"M10.098 20.323c-3.977.391-7.414-1.406-7.672-4.02-.259-2.609 2.759-5.047 6.74-5.441 3.979-.394 7.413 1.404 7.671 4.018.259 2.6-2.759 5.049-6.737 5.439l-.002.004zM9.05 17.219c-.384.616-1.208.884-1.829.602-.612-.279-.793-.991-.406-1.593.379-.595 1.176-.861 1.793-.601.622.263.82.972.442 1.592zm1.27-1.627c-.141.237-.449.353-.689.253-.236-.09-.313-.361-.177-.586.138-.227.436-.346.672-.24.239.09.315.36.18.601l.014-.028zm.176-2.719c-1.893-.493-4.033.45-4.857 2.118-.836 1.704-.026 3.591 1.886 4.21 1.983.64 4.318-.341 5.132-2.179.8-1.793-.201-3.642-2.161-4.149zm7.563-1.224c-.346-.105-.57-.18-.405-.615.375-.977.42-1.804 0-2.404-.781-1.112-2.915-1.053-5.364-.03 0 0-.766.331-.571-.271.376-1.217.315-2.224-.27-2.809-1.338-1.337-4.869.045-7.888 3.08C1.309 10.87 0 13.273 0 15.348c0 3.981 5.099 6.395 10.086 6.395 6.536 0 10.888-3.801 10.888-6.82 0-1.822-1.547-2.854-2.915-3.284v.01zm1.908-5.092c-.766-.856-1.908-1.187-2.96-.962-.436.09-.706.511-.616.932.09.42.511.691.932.602.511-.105 1.067.044 1.442.465.376.421.466.977.316 1.473-.136.406.089.856.51.992.405.119.857-.105.992-.512.33-1.021.12-2.178-.646-3.035l.03.045zm2.418-2.195c-1.576-1.757-3.905-2.419-6.054-1.968-.496.104-.812.587-.706 1.081.104.496.586.813 1.082.707 1.532-.331 3.185.15 4.296 1.383 1.112 1.246 1.429 2.943.947 4.416-.165.48.106 1.007.586 1.157.479.165.991-.104 1.157-.586.675-2.088.241-4.478-1.338-6.235l.03.045z",c:'#E6162D'},
-xhs:{inner:'<rect x="0" y="0" width="24" height="24" rx="5.5" fill="#FF2442"/><path fill="#fff" d="M18 2H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zM6 4h5v8l-2.5-1.5L6 12V4z"/>',c:'#FF2442'},
-x:{d:"M14.234 10.162 22.977 0h-2.072l-7.591 8.824L7.251 0H.258l9.168 13.343L.258 24H2.33l8.016-9.318L16.749 24h6.993zm-2.837 3.299-.929-1.329L3.076 1.56h3.182l5.965 8.532.929 1.329 7.754 11.09h-3.182z",c:'#000000'}
+const FAV_SVG={ // v1.0.18: 只保留已支持追更的三平台（其余移除；历史数据中的旧平台显示通用图标）
+bili:  {inner:'<path d="M3.4 6.6 1.2 4.4M20.6 6.6 22.8 4.4" stroke="#FB7299" stroke-width="2.2" stroke-linecap="round" fill="none"/><path fill="#FB7299" d="M3.2 6.8h17.6c1.6 0 2.9 1.3 2.9 2.9v9.1c0 1.6-1.3 2.9-2.9 2.9H3.2c-1.6 0-2.9-1.3-2.9-2.9V9.7c0-1.6 1.3-2.9 2.9-2.9z"/><rect x="6.8" y="10.8" width="3.7" height="5" rx="1.3" fill="#fff"/><rect x="13.5" y="10.8" width="3.7" height="5" rx="1.3" fill="#fff"/>',c:'#FB7299'},
+dy:    {d:"M12.525.02c1.31-.02 2.61-.01 3.91-.02.08 1.53.63 3.09 1.75 4.17 1.12 1.11 2.7 1.62 4.24 1.79v4.03c-1.44-.05-2.89-.35-4.2-.97-.57-.26-1.1-.59-1.62-.93-.01 2.92.01 5.84-.02 8.75-.08 1.4-.54 2.79-1.35 3.94-1.31 1.92-3.58 3.17-5.91 3.21-1.43.08-2.86-.31-4.08-1.03-2.02-1.19-3.44-3.37-3.65-5.71-.02-.5-.03-1-.01-1.49.18-1.9 1.12-3.72 2.58-4.96 1.66-1.44 3.98-2.13 6.15-1.72.02 1.48-.04 2.96-.04 4.44-.99-.32-2.15-.23-3.02.37-.63.41-1.11 1.04-1.36 1.75-.21.51-.15 1.07-.14 1.61.24 1.64 1.82 3.02 3.5 2.87 1.12-.01 2.19-.66 2.77-1.61.19-.33.4-.67.41-1.06.1-1.79.06-3.57.07-5.36.01-4.03-.01-8.05.02-12.07z",c:'#000000'},
+xhs:  {inner:'<rect x="0" y="0" width="24" height="24" rx="5.5" fill="#FF2442"/><path fill="#fff" d="M18 2H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zM6 4h5v8l-2.5-1.5L6 12V4z"/>',c:'#FF2442'}
 };
-const FAV_NAMES={xhs:'小红书',dy:'抖音',bili:'B站',wb:'微博',tt:'TikTok',x:'X'}; // v1.0.15: 加B站（UP主追更入口）
+const FAV_NAMES={xhs:'小红书',dy:'抖音',bili:'B站'}; // v1.0.18: 收藏/追更支持的三平台
 // v5.1.1: 官方SVG图标渲染 + 自定义平台选择器（替代原生下拉，避免图文选项难看）
 function favSvgIcon(p,size){
   const s=FAV_SVG[p];if(!s)return '🔗';
@@ -1817,6 +1815,7 @@ function favSvgIcon(p,size){
 function favPickInit(){ // 渲染官方图标网格，选中高亮；值写入隐藏 input#favPlatform 保持 addFav 兼容
   const wrap=document.getElementById('favPlatformPick');if(!wrap)return;
   const cur=document.getElementById('favPlatform').value||'dy';
+  if(cur!=='dy'&&cur!=='bili'&&cur!=='xhs')document.getElementById('favPlatform').value='dy'; // v1.0.18: 默认值兜底到三平台
   wrap.innerHTML=Object.keys(FAV_SVG).map(function(p){
     const s=FAV_SVG[p];const c=(s&&s.c)||'#333';const on=p===cur;
     return '<div data-p="'+p+'" style="flex:1;min-width:52px;max-width:64px;text-align:center;padding:7px 2px 5px;border:1.5px solid '+(on?c:'#e2e0ea')+';border-radius:10px;cursor:pointer;background:'+(on?'rgba(0,0,0,.05)':'#fff')+'">'+favSvgIcon(p,18)+'<div style="font-size:10px;color:'+(on?'#333':'#888')+';margin-top:3px;line-height:1">'+FAV_NAMES[p]+'</div></div>';
@@ -1835,7 +1834,6 @@ async function addFav(){
   const platform=document.getElementById('favPlatform').value;
   let url=document.getElementById('favUrl').value.trim();
   let name=document.getElementById('favName').value.trim();
-  const note=document.getElementById('favNote').value.trim();
   if(!url){showToast('请粘贴主页链接');return}
   // v5.1.8: 输入的是抖音号而非链接→明确引导（当前解析服务无按号搜索端点，做不到纯号收藏）
   if(!/^https?:\/\//i.test(url)){
@@ -1859,7 +1857,7 @@ async function addFav(){
     }
   }
   const list=getFav();list.unshift(entry);saveFav(list);
-  document.getElementById('favUrl').value='';document.getElementById('favName').value='';document.getElementById('favNote').value='';
+  document.getElementById('favUrl').value='';document.getElementById('favName').value='';
   renderFav();
   showToast('已收藏：'+(FAV_NAMES[platform]||platform)+' '+name+(entry.auto?'（已开启自动更新）':''));
 }
@@ -1914,7 +1912,7 @@ function renderFav(){
   if(!list.length){el.innerHTML='<div style="color:var(--sub);font-size:13px;padding:16px 0">还没有收藏的博主，在上方添加。</div>';return}
   el.innerHTML=list.map(f=>{
     const icon=favSvgIcon(f.platform,24);
-    const pfName=FAV_NAMES[f.platform]||'';
+    const pfName=FAV_NAMES[f.platform]||(f.platform==='wb'?'微博':(f.platform==='tt'?'TikTok':(f.platform==='x'?'X':f.platform))); // v1.0.18: 历史旧平台名兼容显示（已不支持新增）
     const date=new Date(f.savedAt).toLocaleDateString();
     return '<div class="setitem fav-card" data-id="'+f.id+'" data-url="'+escapeHtml(f.url)+'" style="flex-direction:column;align-items:stretch;padding:12px;width:100%;box-sizing:border-box;min-width:0;overflow:hidden">'+ // v5.1.6: overflow:hidden 切断 nowrap 长名的 min-content 撑开（412 宽真机复现：长名 426px 撑开 .page 致整页右溢出）
       '<div style="display:flex;align-items:center;gap:8px;min-width:0">'+
@@ -2001,7 +1999,7 @@ if(IS_NATIVE_APP){
         }
       }).catch(function(){});
       // 状态栏背景色与顶栏渐变起始色一致，避免色差割裂
-      try{SB.setBackgroundColor({color:'#f5efe3'}).catch(function(){})}catch(e){}
+      try{SB.setBackgroundColor({color:'#f5efe3'}).catch(function(){})}catch(e){} // 工坊版：状态栏与纸感顶栏同色
     }
   }catch(e){}
   // 第2层：env() 探针——仅当返回值 > 28（深刘海/挖孔屏）时覆盖
@@ -2332,7 +2330,14 @@ function viewFrame(){
         const vid=document.getElementById('viewFlowVid');
         if(vid)vid.addEventListener('ended',function(){viewFlowNext()},{once:true});
       }else{
-        set('<video src="'+src+'" autoplay muted loop playsinline preload="auto"></video><div class="v-hint">▶ 动图自动循环 · 点击视频切换播放</div>');
+        set('<video src="'+src+'" autoplay playsinline preload="auto" id="viewFlowVid"></video><div class="v-hint">▶ 视频 · 播完暂停（开「连播」自动下一个）</div>'); // v1.0.18: 视频有声播放、不再静音循环（此前当动图播，丢失原声）；点击视频可暂停/续播
+        const vid=document.getElementById('viewFlowVid');
+        if(vid){
+          vid.addEventListener('ended',function(){ // 播完停在结尾，滑动手势切下一作
+            vid.pause();
+          },{once:true});
+          vid.addEventListener('click',function(ev){ev.stopPropagation();if(vid.paused)vid.play().catch(function(){});else vid.pause()},{once:false});
+        }
       }
     }else{
       set('<img src="'+src+'" alt="">');
@@ -3880,6 +3885,7 @@ async function cloudTake(i){ // 逐文件 get_download_url→直链下载（夸�
   }
   t.status='taken';cloudTasksSave(list);renderCloudTasks();
   showToast('取回完成：成功 '+ok+(fail?('，失败 '+fail):''));
+  dlResultMsg('✅ 取回 '+ok+' 个文件到 '+cfg.saveDir+'。多图作品已自动带 BGM——到「鹇雩」下拉刷新聚合，即可像抖音流一样刷图听BGM、连播视频'); // v1.0.18: 引导鹇雩刷图（BGM 同播+连播的抖音流体验闭环）
 }
 let _favSyncT=0;
 async function favSyncCloud(){ // v1.0.15: 收藏变更→follow.json 上传「羽藏任务」，节点自动跟随（新增全量回填/删除停追）；1.5s 防抖合并连续变更
@@ -3889,7 +3895,7 @@ async function favSyncCloud(){ // v1.0.15: 收藏变更→follow.json 上传「�
   await new Promise(function(r){setTimeout(r,1500)});
   if(_favSyncT!==now)return;
   try{
-    const favs=getFav().filter(function(f){return f.platform==='dy'||f.platform==='bili'}).map(function(f){
+    const favs=getFav().filter(function(f){return f.platform==='dy'||f.platform==='bili'||f.platform==='xhs'}).map(function(f){
       return {platform:f.platform,url:f.url,alias:f.alias||f.name||'',auto:f.auto!==false};
     });
     await qkWriteTask('follow.json',JSON.stringify({v:1,favs:favs}));
@@ -4083,7 +4089,7 @@ async function qkUploadRel(relPath,parentFid,onProgress){ // v1.0.17: ≤16MB �
       const off=i*PART,len=Math.min(PART,size-off);
       let bytes;
       try{
-        const r=await D.readPart({path:String(relPath),offset:Number(off),length:Number(len)});
+        const r=await D.readPart({path:String(relPath),offset:Number(off),offsetStr:String(off),length:Number(len),lengthStr:String(len)});
         bytes=qkB64Bytes(r.data);
       }catch(e){throw new Error('[2]读取分片'+(i+1)+'失败：'+String((e&&e.message)||e))}
       if(!bytes||bytes.length!==len)throw new Error('[2]分片'+(i+1)+'长度不符 读='+((bytes&&bytes.length)||0)+' 应='+len);
@@ -4121,7 +4127,7 @@ async function qkUploadRel(relPath,parentFid,onProgress){ // v1.0.17: ≤16MB �
     if(common['X-Oss-Content-Sha256'])hdrs['X-Oss-Content-Sha256']=common['X-Oss-Content-Sha256'];
     if(common['X-Oss-Date'])hdrs['X-Oss-Date']=common['X-Oss-Date'];
     if(!(len>0))throw new Error('[6]分片'+(i+1)+'长度异常 len='+len+' size='+size+' nparts='+nparts);
-    const r=await D.uploadPart({url:String(u.upload_url),path:String(relPath),offset:Number(off),length:Number(len),headers:hdrs});
+    const r=await D.uploadPart({url:String(u.upload_url),path:String(relPath),offset:Number(off),offsetStr:String(off),length:Number(len),lengthStr:String(len),headers:hdrs}); // v1.0.18: lengthStr/offsetStr 双字段防 bridge 类型丢失（真机 length=null 复现）
     if(!r||!(r.status>=200&&r.status<300))throw new Error('[6]分片'+(i+1)+'上传失败：'+JSON.stringify(r||{}).substring(0,120));
     if(r.etag===undefined)throw new Error('[6]分片'+(i+1)+'未返回etag：'+JSON.stringify(r).substring(0,120));
     ctxList[i].etag=r.etag;
